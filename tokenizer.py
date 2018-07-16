@@ -23,7 +23,7 @@ delimiters = [ # https://docs.python.org/3/reference/lexical_analysis.html#delim
 #delimiters.sort(key = lambda x: len(x), reverse = True)
 operators_and_delimiters = sorted(operators + delimiters, key = lambda x: len(x), reverse = True)
 
-class Exception(Exception):
+class Error(Exception):
     def __init__(self, message, pos):
         self.message = message
         self.pos = pos
@@ -81,7 +81,7 @@ def tokenize(source, newline_chars = None, comments = None):
                 if indentation_level > prev_indentation_level:
                     expected_an_indented_block = False
                 else:
-                    raise Exception('expected an indented block', i)
+                    raise Error('expected an indented block', i)
 
             if indentation_level == prev_indentation_level: # [1:] [-1]:‘If it is equal, nothing happens.’ [:2]
                 if len(tokens):
@@ -97,7 +97,7 @@ def tokenize(source, newline_chars = None, comments = None):
                     if level == indentation_level:
                         break
                     if level < indentation_level:
-                        raise Exception('unindent does not match any outer indentation level', i)
+                        raise Error('unindent does not match any outer indentation level', i)
 
             prev_indentation_level = indentation_level
 
@@ -139,7 +139,7 @@ def tokenize(source, newline_chars = None, comments = None):
                     nesting_elements.append((ch, lexem_start))
                 elif ch in ')]}': # ([{
                     if len(nesting_elements) == 0 or nesting_elements[-1][0] != {')':'(', ']':'[', '}':'{'}[ch]: # }])
-                        raise Exception('there is no corresponding opening parenthesis/bracket/brace for `' + ch + '`', lexem_start)
+                        raise Error('there is no corresponding opening parenthesis/bracket/brace for `' + ch + '`', lexem_start)
                     nesting_elements.pop()
                 elif ch == ';':
                     category = Token.Category.STATEMENT_SEPARATOR
@@ -167,7 +167,7 @@ def tokenize(source, newline_chars = None, comments = None):
                 startqpos = i - 1
                 while True:
                     if i == len(source):
-                        raise Exception('unclosed string literal', startqpos)
+                        raise Error('unclosed string literal', startqpos)
                     ch = source[i]
                     i += 1
                     if ch == '"':
@@ -175,12 +175,12 @@ def tokenize(source, newline_chars = None, comments = None):
                 category = Token.Category.STRING_LITERAL
 
             else:
-                raise Exception('unexpected character ' + ch, lexem_start)
+                raise Error('unexpected character ' + ch, lexem_start)
 
             tokens.append(Token(lexem_start, i, category))
 
     if len(nesting_elements):
-        raise Exception('there is no corresponding closing parenthesis/bracket/brace for `' + nesting_elements[-1][0] + '`', nesting_elements[-1][1])
+        raise Error('there is no corresponding closing parenthesis/bracket/brace for `' + nesting_elements[-1][0] + '`', nesting_elements[-1][1])
 
     while len(indentation_levels): # [4:] [-1]:‘At the end of the file, a DEDENT token is generated for each number remaining on the stack that is larger than zero.’
         tokens.append(Token(i, i, Token.Category.DEDENT))

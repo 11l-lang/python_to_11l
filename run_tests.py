@@ -38,7 +38,7 @@ for test in open("tests/tokenizer/errors.txt", encoding="utf8").read().split("\n
     was_error = False
     try:
         tokenizer.tokenize(test_source)
-    except tokenizer.Exception as e:
+    except tokenizer.Error as e:
         was_error = True
         if error and "Error: " + e.message == error[0] and e.pos == error[1]:
             print('OK (Error)')

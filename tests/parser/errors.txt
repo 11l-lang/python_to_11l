@@ -1,0 +1,29 @@
+def sum(x, y) # comment
+^            Error: expected `:`
+    r = x + y
+    return r
+
+
+def (x, y):
+^   Error: expected function name
+    return x + y
+
+
+def sum x, y:
+^       Error: expected `(` after function name
+    return x + y
+# )
+
+
+def sum(, y):
+^       Error: expected function's argument name
+    return x + y
+
+
+def sum(x y): # (
+^         Error: expected `,` or `)` in function's arguments list
+    return x + y
+
+
+is
+Error: unrecognized statement started with keyword^

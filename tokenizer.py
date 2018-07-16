@@ -44,8 +44,14 @@ class Token:
         self.end = end
         self.category = category
 
+    def value(self, source):
+        return source[self.start:self.end]
+
     def to_str(self, source):
-        return "Token("+str(self.category)+", \""+source[self.start:self.end]+"\")"
+        return "Token("+str(self.category)+", \""+self.value(source)+"\")"
+
+    def is_literal(self):
+        return self.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL)
 
 def tokenize(source, newline_chars = None, comments = None):
     tokens = []

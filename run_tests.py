@@ -1,4 +1,4 @@
-﻿import re, tokenizer
+﻿import re, tokenizer, parse
 
 for test in open("tests/tokenizer/errors.txt", encoding="utf8").read().split("\n\n\n"):
     if test.startswith('---'):
@@ -64,5 +64,15 @@ for test in open("tests/tokenizer/tokens.txt", encoding="utf8").read().split("\n
     tokens = "\n".join([t.to_str(source) for t in tokenizer.tokenize(source)])
     if tokens != expected_tokens:
         print("Tokens mismatch for test:\n" + source + "Tokens:\n" + tokens + "\nExpected tokens:\n" + expected_tokens)
+        break
+    else:
+        print("OK")
+
+for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n\n"):
+    source, expected_translated_source = test.split("===\n")
+    translated_source = parse.parse(tokenizer.tokenize(source), source).to_str()
+    if translated_source != expected_translated_source:
+        print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source)
+        break
     else:
         print("OK")

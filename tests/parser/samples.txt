@@ -1,0 +1,7 @@
+def sum(x, y):
+    r = x + y
+    return r
+===
+F sum(x, y)
+   r = x + y
+   R r

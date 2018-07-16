@@ -1,0 +1,11 @@
+if 1:
+    b = a
+===
+Token(Category.KEYWORD, "if")
+Token(Category.NUMERIC_LITERAL, "1")
+Token(Category.OPERATOR_OR_DELIMITER, ":")
+Token(Category.INDENT, "")
+Token(Category.IDENTIFIER, "b")
+Token(Category.OPERATOR_OR_DELIMITER, "=")
+Token(Category.IDENTIFIER, "a")
+Token(Category.DEDENT, "")

@@ -58,3 +58,11 @@ for test in open("tests/tokenizer/errors.txt", encoding="utf8").read().split("\n
         print("There should be error in test:\n" + test)
         break
     print('OK')
+
+for test in open("tests/tokenizer/tokens.txt", encoding="utf8").read().split("\n\n\n"):
+    source, expected_tokens = test.split("===\n")
+    tokens = "\n".join([t.to_str(source) for t in tokenizer.tokenize(source)])
+    if tokens != expected_tokens:
+        print("Tokens mismatch for test:\n" + source + "Tokens:\n" + tokens + "\nExpected tokens:\n" + expected_tokens)
+    else:
+        print("OK")

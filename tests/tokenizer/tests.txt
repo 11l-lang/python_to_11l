@@ -1,3 +1,0 @@
-for tok in tokenize(s):
-print(tok.to_str(s) + ", ", end="")
-^Error: expected an indented block

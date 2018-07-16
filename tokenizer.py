@@ -16,10 +16,10 @@ operators = [ # https://docs.python.org/3/reference/lexical_analysis.html#operat
 #operators.sort(key = lambda x: len(x), reverse = True)
 
 delimiters = [ # https://docs.python.org/3/reference/lexical_analysis.html#delimiters        
-              '(',       ')'       '[',       ']',       '{',       '}',
-              ',',       ':'       '.',       ';',       '@',       '=',       '->',
-              '+=',      '-='      '*=',      '/=',      '//=',     '%=',      '@=',
-              '&=',      '|='      '^=',      '>>=',     '<<=',     '**=',]
+              '(',       ')',       '[',       ']',       '{',       '}',
+              ',',       ':',       '.',       ';',       '@',       '=',       '->',
+              '+=',      '-=',      '*=',      '/=',      '//=',     '%=',      '@=',
+              '&=',      '|=',      '^=',      '>>=',     '<<=',     '**=',]
 #delimiters.sort(key = lambda x: len(x), reverse = True)
 operators_and_delimiters = sorted(operators + delimiters, key = lambda x: len(x), reverse = True)
 
@@ -78,7 +78,7 @@ def tokenize(source, newline_chars = None, comments = None):
                 if indentation_level > prev_indentation_level:
                     expected_an_indented_block = False
                 else:
-                    raise Exception('expected an indented block')
+                    raise Exception('expected an indented block', i)
 
             if indentation_level == prev_indentation_level: # [1:] [-1]:‘If it is equal, nothing happens.’ [:2]
                 if len(tokens):

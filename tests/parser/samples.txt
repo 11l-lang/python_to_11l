@@ -16,3 +16,58 @@ String message
 Int pos = 0
 Array[String] type_args
 Tuple[String, Int] t
+
+
+class Exception(Exception):
+    message : str
+    line : int
+    column : int
+    pos : int
+
+    def __init__(self, message, line, column, pos):
+        self.message = message
+        self.line = line
+        self.column = column
+        self.pos = pos
+===
+T Exception
+   String message
+   Int line
+   Int column
+   Int pos
+
+   F (message, line, column, pos)
+      .message = message
+      .line = line
+      .column = column
+      .pos = pos
+
+
+class Person:
+    name : str
+    age : int
+
+    def __init__(name, age):
+        self.name = name
+        self.age  = age
+===
+T Person
+   String name
+   Int age
+
+   F (name, age)
+      .name = name
+      .age  = age
+
+
+class Shape:
+    position : Tuple[int, int]
+
+class Circle(Shape):
+    radious : int
+===
+T Shape
+   Tuple[Int, Int] position
+
+T Circle(Shape)
+   Int radious

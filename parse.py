@@ -17,22 +17,37 @@ class SymbolNode:
         prev_token_end = self.children[0].token.start
         for c in self.children:
             r += source[prev_token_end:c.token.start]
-            r += c.token.value(source)
+            if c.token.value(source) != 'self': # hack for a while
+                r += c.token.value(source)
             prev_token_end = c.token.end
         return r
 
 class ASTNode:
+    pass
+
+class ASTNodeWithChildren(ASTNode):
     # children : List['ASTNode'] = [] # OMFG! This actually means static (common for all objects of type ASTNode) variable, not default value of member variable, that was unexpected to me as it contradicts C++11 behavior
     children : List['ASTNode']
+    tokeni : int
+
     def __init__(self):
         self.children = []
 
-class ASTProgram(ASTNode):
+    def newlines(self):
+        return '' if self.tokeni == 0 else (source[tokens[self.tokeni-2].end:tokens[self.tokeni].start].count("\n")-1) * "\n"
+
+class ASTProgram(ASTNodeWithChildren):
     def to_str(self):
         r = ''
         for c in self.children:
             r += c.to_str(0)
         return r
+
+class ASTExpression(ASTNode):
+    expression : SymbolNode
+
+    def to_str(self, indent):
+        return ' ' * (indent*3) + self.expression.to_str() + "\n"
 
 class ASTAssignment(ASTNode):
     dest : Token
@@ -57,7 +72,7 @@ class ASTAssignmentWithTypeHint(ASTTypeHint):
     def to_str(self, indent):
         return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
 
-class ASTFunctionDefinition(ASTNode):
+class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
     function_arguments : List[str]# = []
 
@@ -66,7 +81,8 @@ class ASTFunctionDefinition(ASTNode):
         self.function_arguments = []
 
     def to_str(self, indent):
-        r = ' ' * (indent*3) + 'F ' + self.function_name + '(' + ", ".join(self.function_arguments) + ")\n"
+        r = self.newlines() + ' ' * (indent*3) + 'F ' + (self.function_name if self.function_name != '__init__' else '') \
+            + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ")\n"
         for c in self.children:
             r += c.to_str(indent+1)
         return r
@@ -77,12 +93,12 @@ class ASTReturn(ASTNode):
     def to_str(self, indent):
         return ' ' * (indent*3) + 'R ' + self.expression.to_str() + "\n"
 
-class ASTClassDefinition(ASTNode):
+class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
     class_name : str
 
     def to_str(self, indent):
-        r = ' ' * (indent*3) + 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name else '') + "\n"
+        r = self.newlines() + ' ' * (indent*3) + 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name != 'Exception' else '') + "\n"
         for c in self.children:
             r += c.to_str(indent+1)
         return r
@@ -142,6 +158,7 @@ def parse_internal(this_node) -> ASTNode:
         if token.category == Token.Category.KEYWORD:
             if token.value(source) == 'def':
                 node = ASTFunctionDefinition()
+                node.tokeni = tokeni
                 node.function_name = expected_name('function name')
 
                 if token.value(source) != '(': # )
@@ -165,7 +182,7 @@ def parse_internal(this_node) -> ASTNode:
 
             elif token.value(source) == 'class':
                 node = ASTClassDefinition()
-
+                node.tokeni = tokeni
                 node.class_name = expected_name('class name')
 
                 if token.value(source) == '(':
@@ -228,10 +245,15 @@ def parse_internal(this_node) -> ASTNode:
                 next_token()
 
         elif token.category == Token.Category.DEDENT:
+            next_token()
             return this_node
 
         else:
-            raise Error('unrecognized statement', token.start)
+            node = ASTExpression()
+            node.expression = expression()
+            assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
+            if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                next_token()
 
         this_node.children.append(node)
 

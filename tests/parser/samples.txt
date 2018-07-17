@@ -5,3 +5,14 @@ def sum(x, y):
 F sum(x, y)
    r = x + y
    R r
+
+
+message : str
+pos : int = 0
+type_args : List[str]
+t : Tuple[str, int]
+===
+String message
+Int pos = 0
+Array[String] type_args
+Tuple[String, Int] t

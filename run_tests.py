@@ -77,7 +77,19 @@ for test in open("tests/tokenizer/tokens.txt", encoding="utf8").read().split("\n
 
 for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n\n"):
     source, expected_translated_source = test.split("===\n")
-    translated_source = parse.parse(tokenizer.tokenize(source), source).to_str()
+    expected_translated_source += "\n"
+    try:
+        translated_source = parse.parse(tokenizer.tokenize(source), source).to_str()
+    except parse.Error as e:
+        next_line_pos = source.find("\n", e.pos)
+        if next_line_pos == -1:
+            next_line_pos = len(source)
+        prev_line_pos = source.rfind("\n", 0, e.pos) + 1
+        print('Error: ' + e.message + ' at ' + str(e.pos) + "\n" + source[prev_line_pos:next_line_pos] + "\n" + re.sub(r'[^\t]', ' ',
+                                                                                                                       source[
+                                                                                                                       prev_line_pos:e.pos]) + '^')
+        print("in test:\n" + test)
+        break
     if translated_source != expected_translated_source:
         print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source)
         break

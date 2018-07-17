@@ -27,3 +27,23 @@ def sum(x y): # (
 
 is
 Error: unrecognized statement started with keyword^
+
+
+class (Base):
+^     Error: expected class name
+
+
+class Class():
+^           Error: expected base class name
+
+
+i : 0
+^   Error: expected type name
+
+
+i : str int
+^       Error: expected end of statement
+
+
+t : Tuple[str int]
+^             Error: expected `,` or `]` in type's arguments list

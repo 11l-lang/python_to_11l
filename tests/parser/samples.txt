@@ -71,3 +71,21 @@ T Shape
 
 T Circle(Shape)
    Int radious
+
+
+---
+def get_newline_chars():
+    newline_chars = []
+    i = 0
+    while i < len(instr):
+        if instr[i] == "\r" or (instr[i] == "\n" and instr[i-1:i] != "\r"):
+            newline_chars += [i]
+        i += 1
+    return newline_chars
+===
+F get_newline_chars()
+    A i = 0
+    L i < instr.len
+        I instr[i] == "\r" | (instr[i] == "\n" & instr[i-1.<i] != "\r"):
+            R [+]= i
+        i++

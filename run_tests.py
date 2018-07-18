@@ -76,6 +76,8 @@ for test in open("tests/tokenizer/tokens.txt", encoding="utf8").read().split("\n
         print("OK")
 
 for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n\n"):
+    if test.startswith('---'):
+        continue
     source, expected_translated_source = test.split("===\n")
     expected_translated_source += "\n"
     try:

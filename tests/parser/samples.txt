@@ -18,7 +18,8 @@ Array[String] type_args
 Tuple[String, Int] t
 
 
-class Exception(Exception):
+# Test for some class based on class Exception
+class MyException(Exception):
     message : str
     line : int
     column : int
@@ -30,7 +31,7 @@ class Exception(Exception):
         self.column = column
         self.pos = pos
 ===
-T Exception
+T MyException
    String message
    Int line
    Int column
@@ -43,6 +44,7 @@ T Exception
       .pos = pos
 
 
+# Test for some class which is not based on other one
 class Person:
     name : str
     age : int
@@ -60,6 +62,7 @@ T Person
       .age  = age
 
 
+# Test for some class based on non Exception class
 class Shape:
     position : Tuple[int, int]
 

@@ -1,9 +1,31 @@
 ﻿from tokenizer import Token
-from typing import List
+from typing import List, Dict, Callable
+
+class SymbolBase:
+    id : str
+    lbp : int
+    nud_bp : int
+    led_bp : int
+    nud : Callable[['SymbolNode'], 'SymbolNode']
+    led : Callable[['SymbolNode', 'SymbolNode'], 'SymbolNode']
+
+    def set_nud_bp(self, nud_bp, nud):
+        self.nud_bp = nud_bp
+        self.nud    = nud
+
+    def set_led_bp(self, led_bp, led):
+        self.led_bp = led_bp
+        self.led    = led
+
+    def __init__(self):
+        def nud(s): raise Error('syntax error', token.start)
+        self.nud = nud
+        def led(s, l): raise Error('unknown operator', token.start)
+        self.led = led
 
 class SymbolNode:
     token : Token
-    #symbol : SymbolBase
+    symbol : SymbolBase
     children : List['SymbolNode']# = []
     function_call : bool
     tuple : bool
@@ -11,16 +33,66 @@ class SymbolNode:
     def __init__(self, token):
         self.token = token
         self.children = []
+        self.function_call = False
+        self.tuple = False
 
     def to_str(self):
-        r = ''
-        prev_token_end = self.children[0].token.start
-        for c in self.children:
-            r += source[prev_token_end:c.token.start]
-            if c.token.value(source) != 'self': # hack for a while
-                r += c.token.value(source)
-            prev_token_end = c.token.end
-        return r
+        # r = ''
+        # prev_token_end = self.children[0].token.start
+        # for c in self.children:
+        #     r += source[prev_token_end:c.token.start]
+        #     if c.token.value(source) != 'self': # hack for a while
+        #         r += c.token.value(source)
+        #     prev_token_end = c.token.end
+        # return r
+        if self.token.is_literal() or self.token.category == Token.Category.NAME:
+            return self.token.value(source) if self.token.value(source) != 'self' else '' # hack for a while
+
+        if self.symbol.id == '(': # )
+            if self.function_call:
+                res = self.children[0].token.value(source) + '('
+                for i in range(1, len(self.children)):
+                    res += self.children[i].to_str()
+                    if i < len(self.children)-1:
+                        res += ', '
+                return res + ')'
+            elif self.tuple:
+                res = '('
+                for i in range(len(self.children)):
+                    res += self.children[i].to_str()
+                    if i < len(self.children)-1:
+                        res += ', '
+                if len(self.children) == 1:
+                    res += ','
+                return res + ')'
+            else:
+                assert(len(self.children) == 1)
+                return '(' + self.children[0].to_str() + ')'
+
+        if len(self.children) == 1:
+            return '(' + self.symbol.id + self.children[0].to_str() + ')'
+        elif len(self.children) == 2:
+            #return '(' + self.children[0].to_str() + self.symbol.id + self.children[1].to_str() + ')'
+            if self.symbol.id == '.':
+                return self.children[0].to_str() + self.symbol.id + self.children[1].to_str()
+            else:
+                return self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str()
+
+        return ''
+
+symbol_table : Dict[str, SymbolBase] = {}
+
+def symbol(id, bp = 0):
+    try:
+        s = symbol_table[id]
+    except KeyError:
+        s = SymbolBase()
+        s.id = id
+        s.lbp = bp
+        symbol_table[id] = s
+    else:
+        s.lbp = max(bp, s.lbp)
+    return s
 
 class ASTNode:
     pass
@@ -55,6 +127,13 @@ class ASTAssignment(ASTNode):
 
     def to_str(self, indent):
         return ' ' * (indent*3) + self.dest.value(source) + ' = ' + self.expression.to_str() + "\n"
+
+class ASTExprAssignment(ASTNode):
+    dest_expression : SymbolNode
+    expression : SymbolNode
+
+    def to_str(self, indent):
+        return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
 python_types_to_11l = {'int':'Int', 'str':'String', 'List':'Array', 'Tuple':'Tuple'}
 
@@ -119,17 +198,121 @@ def next_token():
     else:
         token = tokens[tokeni]
         tokensn = SymbolNode(token)
-        #tokensn.symbol = symbol_table["(literal)" if token.is_literal() else "(name)" if token.category == Token.Category.NAME else token.value]
+        if token.category not in (Token.Category.KEYWORD, Token.Category.INDENT):
+            tokensn.symbol = symbol_table["(literal)" if token.is_literal() else "(name)" if token.category == Token.Category.NAME else ';' if token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT) else token.value(source)]
+
+def advance(value):
+    if token.value(source) != value:
+        raise Error('expected ' + value, token.start)
+    next_token()
 
 def peek_token(how_much = 1):
     return tokens[tokeni+how_much] if tokeni+how_much < len(tokens) else Token()
 
-def expression():
-    r = SymbolNode(token)
-    while token != None and token.category not in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT):
-        r.children.append(tokensn)
+# This implementation is based on [http://svn.effbot.org/public/stuff/sandbox/topdown/tdop-4.py]
+def expression(rbp = 0):
+    t = tokensn
+    next_token()
+    left = t.symbol.nud(t)
+    while rbp < tokensn.symbol.lbp:
+        t = tokensn
         next_token()
-    return r
+        left = t.symbol.led(t, left)
+    return left
+
+def infix(id, bp):
+    def led(self, left):
+        self.children.append(left)
+        self.children.append(expression(self.symbol.led_bp))
+        return self
+    symbol(id, bp).set_led_bp(bp, led)
+
+def infix_r(id, bp):
+    def led(self, left):
+        self.children.append(left)
+        self.children.append(expression(self.symbol.led_bp - 1))
+        return self
+    symbol(id, bp).set_led_bp(bp, led)
+
+def prefix(id, bp):
+    def nud(self, left):
+        self.children.append(expression(self.symbol.nud_bp))
+        return self
+    symbol(id, bp).set_nud_bp(bp, nud)
+
+symbol("lambda", 20)
+symbol("if", 20); symbol("else") # ternary form
+
+infix_r("or", 30); infix_r("and", 40); prefix("not", 50)
+
+infix("in", 60); infix("not", 60) # not in
+infix("is", 60);
+infix("<", 60); infix("<=", 60)
+infix(">", 60); infix(">=", 60)
+infix("<>", 60); infix("!=", 60); infix("==", 60)
+
+infix("|", 70); infix("^", 80); infix("&", 90)
+
+infix("<<", 100); infix(">>", 100)
+
+infix("+", 110); infix("-", 110)
+
+infix("*", 120); infix("/", 120); infix("//", 120)
+infix("%", 120)
+
+prefix("-", 130); prefix("+", 130); prefix("~", 130)
+
+infix_r("**", 140)
+
+symbol(".", 150); symbol("[", 150); symbol("(", 150); symbol(")"); symbol("]")
+
+symbol("(name)").nud = lambda self: self
+symbol("(literal)").nud = lambda self: self
+
+#symbol("(end)")
+symbol(';')
+symbol(',')
+
+def led(self, left):
+    if token.category != Token.Category.NAME:
+        raise Error('expected an attribute name', token.start)
+    self.children.append(left)
+    self.children.append(tokensn)
+    next_token()
+    return self
+symbol('.').led = led
+
+def led(self, left):
+    self.function_call = True
+    self.children.append(left) # (
+    if token.value(source) != ')':
+        while True:
+            self.children.append(expression())
+            if token.value(source) != ',':
+                break
+            advance(',') # (
+    advance(')')
+    return self
+symbol('(').led = led
+
+def nud(self):
+    comma = False # ((
+    if token.value(source) != ')':
+        while True:
+            if token.value(source) == ')':
+                break
+            self.children.append(expression())
+            if token.value(source) != ',':
+                break
+            comma = True
+            advance(',')
+    advance(')')
+    if len(self.children) == 0 or comma:
+        self.tuple = True
+    return self
+symbol('(').nud = nud # )
+
+symbol(":"); symbol("=")
 
 def parse_internal(this_node) -> ASTNode:
     global token
@@ -246,11 +429,21 @@ def parse_internal(this_node) -> ASTNode:
 
         elif token.category == Token.Category.DEDENT:
             next_token()
+            if token.category == Token.Category.STATEMENT_SEPARATOR: # Token.Category.EOF
+                next_token()
+                assert(token == None)
             return this_node
 
         else:
-            node = ASTExpression()
-            node.expression = expression()
+            node_expression = expression()
+            if token != None and token.value(source) == '=':
+                node = ASTExprAssignment()
+                node.dest_expression = node_expression
+                next_token()
+                node.expression = expression()
+            else:
+                node = ASTExpression()
+                node.expression = node_expression
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
@@ -261,7 +454,7 @@ def parse_internal(this_node) -> ASTNode:
 
 def parse(tokens_, source_):
     global tokens, source, tokeni, token
-    tokens = tokens_
+    tokens = tokens_ + [Token(len(source_), len(source_), Token.Category.STATEMENT_SEPARATOR)]
     source = source_
     if len(tokens):
         tokeni = -1

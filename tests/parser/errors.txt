@@ -47,3 +47,7 @@ i : str int
 
 t : Tuple[str int]
 ^             Error: expected `,` or `]` in type's arguments list
+
+
+a.,
+^ Error: expected an attribute name

@@ -18,9 +18,9 @@ class SymbolBase:
         self.led    = led
 
     def __init__(self):
-        def nud(s): raise Error('syntax error', token.start)
+        def nud(s): raise Error('unknown unary operator', s.token.start)
         self.nud = nud
-        def led(s, l): raise Error('unknown operator', token.start)
+        def led(s, l): raise Error('unknown binary operator', s.token.start)
         self.led = led
 
 class SymbolNode:
@@ -29,12 +29,14 @@ class SymbolNode:
     children : List['SymbolNode']# = []
     function_call : bool
     tuple : bool
+    is_list : bool
 
     def __init__(self, token):
         self.token = token
         self.children = []
         self.function_call = False
         self.tuple = False
+        self.is_list = False
 
     def to_str(self):
         # r = ''
@@ -50,12 +52,17 @@ class SymbolNode:
 
         if self.symbol.id == '(': # )
             if self.function_call:
-                res = self.children[0].token.value(source) + '('
-                for i in range(1, len(self.children)):
-                    res += self.children[i].to_str()
-                    if i < len(self.children)-1:
-                        res += ', '
-                return res + ')'
+                func_name = self.children[0].token.value(source)
+                if func_name == 'len': # replace `len(container)` with `container.len`
+                    assert(len(self.children) == 2)
+                    return self.children[1].to_str() + '.len'
+                else:
+                    res = func_name + '('
+                    for i in range(1, len(self.children)):
+                        res += self.children[i].to_str()
+                        if i < len(self.children)-1:
+                            res += ', '
+                    return res + ')'
             elif self.tuple:
                 res = '('
                 for i in range(len(self.children)):
@@ -69,18 +76,29 @@ class SymbolNode:
                 assert(len(self.children) == 1)
                 return '(' + self.children[0].to_str() + ')'
 
+        elif self.symbol.id == '[': # ]
+            if self.is_list:
+                pass # [--]
+            else:
+                return self.children[0].to_str() + '[' + self.children[1].to_str() + ']'
+
         if len(self.children) == 1:
-            return '(' + self.symbol.id + self.children[0].to_str() + ')'
+            #return '(' + self.symbol.id + self.children[0].to_str() + ')'
+            return self.symbol.id + self.children[0].to_str()
         elif len(self.children) == 2:
             #return '(' + self.children[0].to_str() + self.symbol.id + self.children[1].to_str() + ')'
             if self.symbol.id == '.':
                 return self.children[0].to_str() + self.symbol.id + self.children[1].to_str()
             else:
                 return self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str()
+        elif len(self.children) == 3:
+            assert(self.symbol.id == 'if')
+            return 'I ' + self.children[1].to_str() + ' {' + self.children[0].to_str() + '} E ' + self.children[2].to_str()
 
         return ''
 
 symbol_table : Dict[str, SymbolBase] = {}
+allowed_keywords_in_expressions : List[str] = []
 
 def symbol(id, bp = 0):
     try:
@@ -90,6 +108,9 @@ def symbol(id, bp = 0):
         s.id = id
         s.lbp = bp
         symbol_table[id] = s
+        if id[0].isalpha(): # this is keyword-in-expression
+            assert(id.isalpha())
+            allowed_keywords_in_expressions.append(id)
     else:
         s.lbp = max(bp, s.lbp)
     return s
@@ -198,8 +219,9 @@ def next_token():
     else:
         token = tokens[tokeni]
         tokensn = SymbolNode(token)
-        if token.category not in (Token.Category.KEYWORD, Token.Category.INDENT):
-            tokensn.symbol = symbol_table["(literal)" if token.is_literal() else "(name)" if token.category == Token.Category.NAME else ';' if token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT) else token.value(source)]
+        if token.category != Token.Category.INDENT:
+            if token.category != Token.Category.KEYWORD or token.value(source) in allowed_keywords_in_expressions:
+                tokensn.symbol = symbol_table["(literal)" if token.is_literal() else "(name)" if token.category == Token.Category.NAME else ';' if token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT) else token.value(source)]
 
 def advance(value):
     if token.value(source) != value:
@@ -235,7 +257,7 @@ def infix_r(id, bp):
     symbol(id, bp).set_led_bp(bp, led)
 
 def prefix(id, bp):
-    def nud(self, left):
+    def nud(self):
         self.children.append(expression(self.symbol.nud_bp))
         return self
     symbol(id, bp).set_nud_bp(bp, nud)
@@ -311,6 +333,21 @@ def nud(self):
         self.tuple = True
     return self
 symbol('(').nud = nud # )
+
+def led(self, left):
+    self.children.append(left)
+    self.children.append(expression())
+    advance(']')
+    return self
+symbol('[').led = led
+
+def led(self, left):
+    self.children.append(left)
+    self.children.append(expression())
+    advance('else')
+    self.children.append(expression())
+    return self
+symbol('if').led = led
 
 symbol(":"); symbol("=")
 

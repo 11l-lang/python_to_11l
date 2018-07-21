@@ -51,3 +51,11 @@ t : Tuple[str int]
 
 a.,
 ^ Error: expected an attribute name
+
+
+r = %a
+^   Error: unknown unary operator
+
+
+r = a ~ b
+^     Error: unknown binary operator

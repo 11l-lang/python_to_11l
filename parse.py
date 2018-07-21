@@ -78,7 +78,12 @@ class SymbolNode:
 
         elif self.symbol.id == '[': # ]
             if self.is_list:
-                pass # [--]
+                res = '['
+                for i in range(len(self.children)):
+                    res += self.children[i].to_str()
+                    if i < len(self.children)-1:
+                        res += ', '
+                return res + ']'
             else:
                 return self.children[0].to_str() + '[' + self.children[1].to_str() + ']'
 
@@ -340,6 +345,20 @@ def led(self, left):
     advance(']')
     return self
 symbol('[').led = led
+
+def nud(self):
+    self.is_list = True
+    if token.value(source) != ']':
+        while True:
+            if token.value(source) == ']':
+                break
+            self.children.append(expression())
+            if token.value(source) != ',':
+                break
+            advance(',')
+    advance(']')
+    return self
+symbol('[').nud = nud
 
 def led(self, left):
     self.children.append(left)

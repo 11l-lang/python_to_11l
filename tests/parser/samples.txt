@@ -59,7 +59,7 @@ T Person
 
    F (name, age)
       .name = name
-      .age  = age
+      .age = age
 
 
 # Test for some class based on non Exception class
@@ -92,3 +92,8 @@ F get_newline_chars()
         I instr[i] == "\r" | (instr[i] == "\n" & instr[i-1.<i] != "\r"):
             R [+]= i
         i++
+
+
+(1,)
+===
+(1,)

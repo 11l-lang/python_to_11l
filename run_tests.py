@@ -45,6 +45,7 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
         except Exception as e:
             #assert(isinstance(e, tokenizer.Error) or isinstance(e, parse.Error))
             if not (isinstance(e, tokenizer.Error) or isinstance(e, parse.Error)):
+                print("Exception in test:\n" + test)
                 raise e
             was_error = True
             if error and "Error: " + e.message == error[0] and e.pos == error[1]:
@@ -92,6 +93,9 @@ for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n
                                                                                                                        prev_line_pos:e.pos]) + '^')
         print("in test:\n" + test)
         break
+    except Exception as e:
+        print("Exception in test:\n" + test)
+        raise e
     if translated_source != expected_translated_source:
         print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source)
         break

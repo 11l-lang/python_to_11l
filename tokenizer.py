@@ -32,12 +32,13 @@ class Token:
     class Category(IntEnum):
         NAME = 0 # or IDENTIFIER
         KEYWORD = 1
-        OPERATOR_OR_DELIMITER = 2
-        NUMERIC_LITERAL = 3
-        STRING_LITERAL = 4
-        INDENT = 5 # [https://docs.python.org/3/reference/lexical_analysis.html#indentation][-1]
-        DEDENT = 6
-        STATEMENT_SEPARATOR = 7
+        CONSTANT = 2
+        OPERATOR_OR_DELIMITER = 3
+        NUMERIC_LITERAL = 4
+        STRING_LITERAL = 5
+        INDENT = 6 # [https://docs.python.org/3/reference/lexical_analysis.html#indentation][-1]
+        DEDENT = 7
+        STATEMENT_SEPARATOR = 8
 
     def __init__(self, start, end, category):
         self.start = start
@@ -157,7 +158,10 @@ def tokenize(source, newline_chars = None, comments = None):
                         break
                     i += 1
                 if source[lexem_start:i] in keywords:
-                    category = Token.Category.KEYWORD
+                    if source[lexem_start:i] in ['None', 'False', 'True']:
+                        category = Token.Category.CONSTANT
+                    else:
+                        category = Token.Category.KEYWORD
                 else:
                     category = Token.Category.NAME
 

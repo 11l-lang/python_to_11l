@@ -88,3 +88,7 @@ if a or b and c:
 or this way:\
 `a or (b and c)`
     return
+
+
+x = lambda , x
+           ^Error: expected an argument name

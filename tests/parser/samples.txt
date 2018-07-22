@@ -104,3 +104,20 @@ prev_indentation_level = indentation_levels[-1] if len(indentation_levels) else 
 ===
 prev_indentation_level = I indentation_levels.len {indentation_levels[-1]} E 0
 [1, 2]
+
+
+---
+def to_str(self, indent):
+    return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
+===
+F to_str(indent)
+   R T.super.to_str(indent)[0.<@-1]‘ = ’(.expression.to_str())"\n"
+
+
+if (a and b) or c:
+    if a and (b or c):
+        return
+===
+I (a & b) | c
+   I a & (b | c)
+      R

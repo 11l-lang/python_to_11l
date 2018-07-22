@@ -94,7 +94,7 @@ def tokenize(source, newline_chars = None, comments = None):
                     tokens.append(Token(linestart-1, linestart, Token.Category.STATEMENT_SEPARATOR))
             elif indentation_level > prev_indentation_level: # [2:] [-1]:‘If it is larger, it is pushed on the stack, and one INDENT token is generated.’ [:3]
                 indentation_levels.append(indentation_level)
-                tokens.append(Token(i, i, Token.Category.INDENT))
+                tokens.append(Token(linestart, i, Token.Category.INDENT))
             else: # [3:] [-1]:‘If it is smaller, it ~‘must’ be one of the numbers occurring on the stack; all numbers on the stack that are larger are popped off, and for each number popped off a DEDENT token is generated.’ [:4]
                 while True:
                     indentation_levels.pop()

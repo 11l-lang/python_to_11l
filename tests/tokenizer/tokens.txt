@@ -4,7 +4,7 @@ if 1:
 Token(Category.KEYWORD, "if")
 Token(Category.NUMERIC_LITERAL, "1")
 Token(Category.OPERATOR_OR_DELIMITER, ":")
-Token(Category.INDENT, "")
+Token(Category.INDENT, "    ")
 Token(Category.NAME, "b")
 Token(Category.OPERATOR_OR_DELIMITER, "=")
 Token(Category.NAME, "a")

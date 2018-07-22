@@ -33,6 +33,7 @@ class SymbolNode:
 
     def __init__(self, token):
         self.token = token
+        self.symbol = None
         self.children = []
         self.function_call = False
         self.tuple = False
@@ -95,7 +96,7 @@ class SymbolNode:
             if self.symbol.id == '.':
                 return self.children[0].to_str() + self.symbol.id + self.children[1].to_str()
             else:
-                return self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str()
+                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             return 'I ' + self.children[1].to_str() + ' {' + self.children[0].to_str() + '} E ' + self.children[2].to_str()
@@ -121,7 +122,8 @@ def symbol(id, bp = 0):
     return s
 
 class ASTNode:
-    pass
+    def walk_expressions(self, f):
+        pass
 
 class ASTNodeWithChildren(ASTNode):
     # children : List['ASTNode'] = [] # OMFG! This actually means static (common for all objects of type ASTNode) variable, not default value of member variable, that was unexpected to me as it contradicts C++11 behavior
@@ -130,9 +132,13 @@ class ASTNodeWithChildren(ASTNode):
 
     def __init__(self):
         self.children = []
+        self.tokeni = tokeni
 
-    def newlines(self):
-        return '' if self.tokeni == 0 else (source[tokens[self.tokeni-2].end:tokens[self.tokeni].start].count("\n")-1) * "\n"
+    def children_to_str(self, indent, r):
+        r = ('' if self.tokeni == 0 else (source[tokens[self.tokeni-2].end:tokens[self.tokeni].start].count("\n")-1) * "\n") + ' ' * (indent*3) + r + "\n"
+        for c in self.children:
+            r += c.to_str(indent+1)
+        return r
 
 class ASTProgram(ASTNodeWithChildren):
     def to_str(self):
@@ -147,6 +153,9 @@ class ASTExpression(ASTNode):
     def to_str(self, indent):
         return ' ' * (indent*3) + self.expression.to_str() + "\n"
 
+    def walk_expressions(self, f):
+        f(self.expression)
+
 class ASTAssignment(ASTNode):
     dest : Token
     expression : SymbolNode
@@ -154,12 +163,19 @@ class ASTAssignment(ASTNode):
     def to_str(self, indent):
         return ' ' * (indent*3) + self.dest.value(source) + ' = ' + self.expression.to_str() + "\n"
 
+    def walk_expressions(self, f):
+        f(self.expression)
+
 class ASTExprAssignment(ASTNode):
     dest_expression : SymbolNode
     expression : SymbolNode
 
     def to_str(self, indent):
         return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+
+    def walk_expressions(self, f):
+        f(self.dest_expression)
+        f(self.expression)
 
 python_types_to_11l = {'int':'Int', 'str':'String', 'List':'Array', 'Tuple':'Tuple'}
 
@@ -177,6 +193,9 @@ class ASTAssignmentWithTypeHint(ASTTypeHint):
     def to_str(self, indent):
         return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
 
+    def walk_expressions(self, f):
+        f(self.expression)
+
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
     function_arguments : List[str]# = []
@@ -186,27 +205,33 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         self.function_arguments = []
 
     def to_str(self, indent):
-        r = self.newlines() + ' ' * (indent*3) + 'F ' + (self.function_name if self.function_name != '__init__' else '') \
-            + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ")\n"
-        for c in self.children:
-            r += c.to_str(indent+1)
-        return r
+        return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '') \
+            + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ')')
+
+class ASTIf(ASTNodeWithChildren):
+    expression : SymbolNode
+
+    def to_str(self, indent):
+        return self.children_to_str(indent, 'I ' + self.expression.to_str())
+
+    def walk_expressions(self, f):
+        f(self.expression)
 
 class ASTReturn(ASTNode):
     expression : SymbolNode
 
     def to_str(self, indent):
-        return ' ' * (indent*3) + 'R ' + self.expression.to_str() + "\n"
+        return ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str() if self.expression != None else '') + "\n"
+
+    def walk_expressions(self, f):
+        if self.expression != None: f(self.expression)
 
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
     class_name : str
 
     def to_str(self, indent):
-        r = self.newlines() + ' ' * (indent*3) + 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name != 'Exception' else '') + "\n"
-        for c in self.children:
-            r += c.to_str(indent+1)
-        return r
+        return self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name != 'Exception' else ''))
 
 class Error(Exception):
     def __init__(self, message, pos):
@@ -238,8 +263,13 @@ def peek_token(how_much = 1):
 
 # This implementation is based on [http://svn.effbot.org/public/stuff/sandbox/topdown/tdop-4.py]
 def expression(rbp = 0):
+    def check_tokensn():
+        if tokensn.symbol == None:
+            raise Error('no symbol corresponding to token `' + token.value(source) + '` (belonging to ' + str(token.category) +') found while parsing expression', token.start)
+    check_tokensn()
     t = tokensn
     next_token()
+    check_tokensn()
     left = t.symbol.nud(t)
     while rbp < tokensn.symbol.lbp:
         t = tokensn
@@ -397,7 +427,6 @@ def parse_internal(this_node) -> ASTNode:
         if token.category == Token.Category.KEYWORD:
             if token.value(source) == 'def':
                 node = ASTFunctionDefinition()
-                node.tokeni = tokeni
                 node.function_name = expected_name('function name')
 
                 if token.value(source) != '(': # )
@@ -421,7 +450,6 @@ def parse_internal(this_node) -> ASTNode:
 
             elif token.value(source) == 'class':
                 node = ASTClassDefinition()
-                node.tokeni = tokeni
                 node.class_name = expected_name('class name')
 
                 if token.value(source) == '(':
@@ -431,10 +459,20 @@ def parse_internal(this_node) -> ASTNode:
                 new_scope_expected()
                 parse_internal(node)
 
+            elif token.value(source) == 'if':
+                node = ASTIf()
+                next_token()
+                node.expression = expression()
+                new_scope_expected()
+                parse_internal(node)
+
             elif token.value(source) == 'return':
                 next_token()
                 node = ASTReturn()
-                node.expression = expression()
+                if token.category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
+                    node.expression = None
+                else:
+                    node.expression = expression()
                 if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
@@ -517,4 +555,31 @@ def parse(tokens_, source_):
         token = None
         next_token()
     p = ASTProgram()
-    return parse_internal(p)
+    ast = parse_internal(p)
+
+    def check_for_and_or(node):
+        def f(e : SymbolNode):
+            if e.symbol.id == 'or' and \
+              (e.children[0].symbol.id == 'and' or e.children[1].symbol.id == 'and'):
+                if e.children[0].symbol.id == 'and':
+                    start = e.children[0].children[0].token.start
+                    end = e.children[1].token.end
+                    midend = e.children[0].children[1].token.end
+                    midstart = e.children[0].children[1].token.start
+                else:
+                    start = e.children[0].token.start
+                    end = e.children[1].children[1].token.end
+                    midend = e.children[1].children[0].token.end
+                    midstart = e.children[1].children[0].token.start
+                raise Error('relative precedence of operators `and` and `or` is undetermined; please add parentheses this way: `(' \
+                    + source[start:midend  ] + ')' + source[midend  :end] + '` or this way: `' \
+                    + source[start:midstart] + '(' + source[midstart:end] + ')`', start)
+
+        node.walk_expressions(f)
+
+        if isinstance(node, ASTNodeWithChildren):
+            for child in node.children:
+                check_for_and_or(child)
+    check_for_and_or(ast)
+
+    return ast

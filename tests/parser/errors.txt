@@ -59,3 +59,26 @@ r = %a
 
 r = a ~ b
 ^     Error: unknown binary operator
+
+
+r = pass
+^   Error: no symbol corresponding to token `pass` (belonging to Category.KEYWORD) found while parsing expression
+
+
+r = a pass b
+^     Error: no symbol corresponding to token `pass` (belonging to Category.KEYWORD) found while parsing expression
+
+
+if a and b or c
+    return
+Error: no symbol corresponding to token `    ` (belonging to Category.INDENT) found while parsing expression^
+
+
+if a and b or c:
+^  Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way: `(a and b) or c` or this way: `a and (b or c)`
+    return
+
+
+if a or b and c:
+^  Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way: `(a or b) and c` or this way: `a or (b and c)`
+    return

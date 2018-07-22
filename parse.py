@@ -49,7 +49,10 @@ class SymbolNode:
         #     prev_token_end = c.token.end
         # return r
         if self.token.is_literal() or self.token.category == Token.Category.NAME:
-            return self.token.value(source) if self.token.value(source) != 'self' else '' # hack for a while
+            return self.token.value(source)
+
+        if self.token.category == Token.Category.CONSTANT:
+            return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
 
         if self.symbol.id == '(': # )
             if self.function_call:
@@ -87,6 +90,16 @@ class SymbolNode:
                 return res + ']'
             else:
                 return self.children[0].to_str() + '[' + self.children[1].to_str() + ']'
+        elif self.symbol.id == 'lambda':
+            r = '(' if len(self.children) != 3 else ''
+            for i in range(0, len(self.children)-1, 2):
+                r += self.children[i].to_str()
+                if self.children[i+1] != None:
+                    r += ' = ' + self.children[i+1].to_str()
+                if i < len(self.children)-3:
+                    r += ', '
+            if len(self.children) != 3: r += ')'
+            return r + ' -> ' + self.children[-1].to_str()
 
         if len(self.children) == 1:
             #return '(' + self.symbol.id + self.children[0].to_str() + ')'
@@ -94,7 +107,7 @@ class SymbolNode:
         elif len(self.children) == 2:
             #return '(' + self.children[0].to_str() + self.symbol.id + self.children[1].to_str() + ')'
             if self.symbol.id == '.':
-                return self.children[0].to_str() + self.symbol.id + self.children[1].to_str()
+                return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
             else:
                 return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
@@ -251,7 +264,17 @@ def next_token():
         tokensn = SymbolNode(token)
         if token.category != Token.Category.INDENT:
             if token.category != Token.Category.KEYWORD or token.value(source) in allowed_keywords_in_expressions:
-                tokensn.symbol = symbol_table["(literal)" if token.is_literal() else "(name)" if token.category == Token.Category.NAME else ';' if token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT) else token.value(source)]
+                if token.is_literal():
+                    key = '(literal)'
+                elif token.category == Token.Category.NAME:
+                    key = '(name)'
+                elif token.category == Token.Category.CONSTANT:
+                    key = '(constant)'
+                elif token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT):
+                    key = ';'
+                else:
+                    key = token.value(source)
+                tokensn.symbol = symbol_table[key]
 
 def advance(value):
     if token.value(source) != value:
@@ -325,6 +348,7 @@ symbol(".", 150); symbol("[", 150); symbol("(", 150); symbol(")"); symbol("]")
 
 symbol("(name)").nud = lambda self: self
 symbol("(literal)").nud = lambda self: self
+symbol('(constant)').nud = lambda self: self
 
 #symbol("(end)")
 symbol(';')
@@ -399,6 +423,26 @@ def led(self, left):
 symbol('if').led = led
 
 symbol(":"); symbol("=")
+
+def nud(self):
+    if token.value(source) != ':':
+        while True:
+            if token.category != Token.Category.NAME:
+                raise Error('expected an argument name', token.start)
+            self.children.append(tokensn)
+            next_token()
+            if token.value(source) == '=':
+                next_token()
+                self.children.append(expression())
+            else:
+                self.children.append(None)
+            if token.value(source) != ',':
+                break
+            advance(',')
+    advance(':')
+    self.children.append(expression())
+    return self
+symbol('lambda').nud = nud
 
 def parse_internal(this_node) -> ASTNode:
     global token

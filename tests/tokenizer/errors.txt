@@ -1,39 +1,39 @@
 for tok in tokenize(s):
 print(tok.to_str(s) + ", ", end="")
-Error: expected an indented block^
+^Error: expected an indented block
 
 
 if 1:
     i = 0
    j = 1
-^  Error: unindent does not match any outer indentation level
+   ^Error: unindent does not match any outer indentation level
 
 
 # {{
 fn f() {
 }}
-^Error: there is no corresponding opening parenthesis/bracket/brace for `}`
+ ^Error: there is no corresponding opening parenthesis/bracket/brace for `}`
 
 
 # [[(
 r = (a + b]
-^         Error: there is no corresponding opening parenthesis/bracket/brace for `]`
+          ^Error: there is no corresponding opening parenthesis/bracket/brace for `]`
 
 
 r = [a + b)
-^         Error: there is no corresponding opening parenthesis/bracket/brace for `)`
+          ^Error: there is no corresponding opening parenthesis/bracket/brace for `)`
 # ]
 
 
 r = (a +
-^   Error: there is no corresponding closing parenthesis/bracket/brace for `(`
+    ^Error: there is no corresponding closing parenthesis/bracket/brace for `(`
 # ))
 
 
 str = "unclosed string
-^     Error: unclosed string literal
+      ^Error: unclosed string literal
 
 
 str = ‘unclosed string
-^     Error: unexpected character ‘
+      ^Error: unexpected character ‘
 # ’’

@@ -20,7 +20,7 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
         while i < len(test):
             line_start = i
             while True:
-                if test[i] != ' ':
+                if test[i] not in (' ', "\t"):
                     break
                 i += 1
                 assert(i < len(test))
@@ -62,11 +62,11 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
                 print("Exception in test:\n" + test)
                 raise e
             was_error = True
-            if error and "Error: " + e.message == error[0] and e.pos == error[1]:
+            if error and 'Error: ' + e.message == error[0] and e.pos == error[1]:
                 print('OK (Error)')
                 continue
             else:
-                kdiff3("Error: " + e.message, error[0])
+                kdiff3('Error: ' + e.message, error[0] if error != None else '')
                 next_line_pos = test_source.find("\n", e.pos)
                 if next_line_pos == -1:
                     next_line_pos = len(test_source)

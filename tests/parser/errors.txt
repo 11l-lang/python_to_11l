@@ -1,84 +1,90 @@
 def sum(x, y) # comment
-^            Error: expected `:`
+             ^Error: expected `:`
     r = x + y
     return r
 
 
 def (x, y):
-^   Error: expected function name
+    ^Error: expected function name
     return x + y
 
 
 def sum x, y:
-^       Error: expected `(` after function name
+        ^Error: expected `(` after function name
     return x + y
 # )
 
 
 def sum(, y):
-^       Error: expected function's argument name
+        ^Error: expected function's argument name
     return x + y
 
 
 def sum(x y): # (
-^         Error: expected `,` or `)` in function's arguments list
+          ^Error: expected `,` or `)` in function's arguments list
     return x + y
 
 
 is
-Error: unrecognized statement started with keyword^
+^Error: unrecognized statement started with keyword
 
 
 class (Base):
-^     Error: expected class name
+      ^Error: expected class name
 
 
 class Class():
-^           Error: expected base class name
+            ^Error: expected base class name
 
 
 i : 0
-^   Error: expected type name
+    ^Error: expected type name
 
 
 i : str int
-^       Error: expected end of statement
+        ^Error: expected end of statement
 
 
 t : Tuple[str int]
-^             Error: expected `,` or `]` in type's arguments list
+              ^Error: expected `,` or `]` in type's arguments list
 
 
 a.,
-^ Error: expected an attribute name
+  ^Error: expected an attribute name
 
 
 r = %a
-^   Error: unknown unary operator
+    ^Error: unknown unary operator
 
 
 r = a ~ b
-^     Error: unknown binary operator
+      ^Error: unknown binary operator
 
 
 r = pass
-^   Error: no symbol corresponding to token `pass` (belonging to Category.KEYWORD) found while parsing expression
+    ^Error: no symbol corresponding to token `pass` (belonging to Category.KEYWORD) found while parsing expression
 
 
 r = a pass b
-^     Error: no symbol corresponding to token `pass` (belonging to Category.KEYWORD) found while parsing expression
+      ^Error: no symbol corresponding to token `pass` (belonging to Category.KEYWORD) found while parsing expression
 
 
 if a and b or c
     return
-Error: no symbol corresponding to token `    ` (belonging to Category.INDENT) found while parsing expression^
+^Error: no symbol corresponding to token `    ` (belonging to Category.INDENT) found while parsing expression
 
 
 if a and b or c:
-^  Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way: `(a and b) or c` or this way: `a and (b or c)`
+   ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
+`(a and b) or c`\
+or this way:\
+`a and (b or c)`
     return
 
 
 if a or b and c:
-^  Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way: `(a or b) and c` or this way: `a or (b and c)`
+   ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
+`(a or b) and c`\
+or this way:\
+`a or (b and c)`
     return

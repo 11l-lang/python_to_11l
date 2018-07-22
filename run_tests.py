@@ -1,4 +1,14 @@
-﻿import re, tokenizer, parse
+﻿import re, tokenizer, parse, os, tempfile
+
+def kdiff3(str1, str2):
+    for envvar in ['ProgramFiles', 'ProgramFiles(x86)', 'ProgramW6432']:
+        os.environ["PATH"] += os.pathsep + os.getenv(envvar, '') + r'\KDiff3'
+    command = 'kdiff3'
+    for file in [('left', str1), ('right', str2)]:
+        full_fname = os.path.join(tempfile.gettempdir(), file[0])
+        command += ' "' + full_fname + '"'
+        open(full_fname, "wt", encoding='utf-8-sig').write(file[1])
+    os.system(command)
 
 for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
     for test in open(file_name, encoding="utf8").read().split("\n\n\n"):
@@ -6,35 +16,39 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
             continue
         test_source = ""
         error = None
-        last_line_len = 0
-        def process_line(line):
-            global test_source, last_line_len, error
-            if line.startswith('^') or line.endswith("^"):
-                if line.startswith('^'):
-                    position = re.search(r'[^\t ]', line[1:]).start() + 1
-                    message = line[position:]
-                else:
-                    position = 0
-                    message = line[:-1]
-                position += len(test_source) - last_line_len - 1
-                if message.startswith('Error: '):
-                    error = (message, position)
-                return
-            test_source += line + "\n"
-            last_line_len = len(line)
-
-        line_start = 0
         i = 0
         while i < len(test):
-            if test[i] == "\n":
-                if test[i-3:i] == '```':
-                    i = test.find('```', i)
-                    assert(i != -1)
-                    i += 3
-                process_line(test[line_start:i])
-                line_start = i+1
-            i += 1
-        process_line(test[line_start:i])
+            line_start = i
+            while True:
+                if test[i] != ' ':
+                    break
+                i += 1
+                assert(i < len(test))
+
+            if test[i] == '^':
+                message_start = i
+                while True:
+                    i = test.find("\n", i+1)
+                    if i == -1:
+                        i = len(test)
+                    elif test[i-1] == '\\':
+                        continue
+                    break
+                message = test[message_start+1:i].replace("\\\n", "\n")
+                position = message_start - line_start + len(test_source) - last_line_len - 1
+                if message.startswith('Error: '):
+                    error = (message, position)
+
+            else:
+                i = test.find("\n", i)
+                if i == -1:
+                    i = len(test)
+                test_source += test[line_start:i] + "\n"
+                last_line_len = i - line_start
+
+            if i < len(test):
+                assert(test[i] == "\n")
+                i += 1
 
         was_error = False
         try:
@@ -52,6 +66,7 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
                 print('OK (Error)')
                 continue
             else:
+                kdiff3("Error: " + e.message, error[0])
                 next_line_pos = test_source.find("\n", e.pos)
                 if next_line_pos == -1:
                     next_line_pos = len(test_source)
@@ -61,10 +76,10 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
                                                                                                               test_source[
                                                                                                               prev_line_pos:e.pos]) + '^')
                 print("in test:\n" + test)
-                break
+                exit(1)
         if error != None and not was_error:
             print("There should be error in test:\n" + test)
-            break
+            exit(1)
         print('OK')
 
 for test in open("tests/tokenizer/tokens.txt", encoding="utf8").read().split("\n\n\n"):
@@ -72,7 +87,7 @@ for test in open("tests/tokenizer/tokens.txt", encoding="utf8").read().split("\n
     tokens = "\n".join([t.to_str(source) for t in tokenizer.tokenize(source)])
     if tokens != expected_tokens:
         print("Tokens mismatch for test:\n" + source + "Tokens:\n" + tokens + "\nExpected tokens:\n" + expected_tokens)
-        break
+        exit(1)
     else:
         print("OK")
 
@@ -92,12 +107,12 @@ for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n
                                                                                                                        source[
                                                                                                                        prev_line_pos:e.pos]) + '^')
         print("in test:\n" + test)
-        break
+        exit(1)
     except Exception as e:
         print("Exception in test:\n" + test)
         raise e
     if translated_source != expected_translated_source:
         print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source)
-        break
+        exit(1)
     else:
         print("OK")

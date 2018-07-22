@@ -571,8 +571,8 @@ def parse(tokens_, source_):
                     end = e.children[1].children[1].token.end
                     midend = e.children[1].children[0].token.end
                     midstart = e.children[1].children[0].token.start
-                raise Error('relative precedence of operators `and` and `or` is undetermined; please add parentheses this way: `(' \
-                    + source[start:midend  ] + ')' + source[midend  :end] + '` or this way: `' \
+                raise Error("relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\n`(" \
+                    + source[start:midend  ] + ')' + source[midend  :end] + "`\nor this way:\n`" \
                     + source[start:midstart] + '(' + source[midstart:end] + ')`', start)
 
         node.walk_expressions(f)

@@ -27,6 +27,8 @@ class SymbolNode:
     token : Token
     symbol : SymbolBase
     children : List['SymbolNode']# = []
+    parent : 'SymbolNode' = None
+    ast_parent : 'ASTNode'
     function_call : bool
     tuple : bool
     is_list : bool
@@ -38,6 +40,10 @@ class SymbolNode:
         self.function_call = False
         self.tuple = False
         self.is_list = False
+
+    def append_child(self, child):
+        child.parent = self
+        self.children.append(child)
 
     def to_str(self):
         # r = ''
@@ -59,6 +65,8 @@ class SymbolNode:
                 func_name = self.children[0].token.value(source)
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 2)
+                    if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
+                        return '!' + self.children[1].to_str() + '.empty'
                     return self.children[1].to_str() + '.len'
                 else:
                     res = func_name + '('
@@ -89,7 +97,10 @@ class SymbolNode:
                         res += ', '
                 return res + ']'
             else:
-                return self.children[0].to_str() + '[' + self.children[1].to_str() + ']'
+                if self.children[1].to_str() == '-1':
+                    return self.children[0].to_str() + '.last'
+                else:
+                    return self.children[0].to_str() + '[' + self.children[1].to_str() + ']'
         elif self.symbol.id == 'lambda':
             r = '(' if len(self.children) != 3 else ''
             for i in range(0, len(self.children)-1, 2):
@@ -135,6 +146,8 @@ def symbol(id, bp = 0):
     return s
 
 class ASTNode:
+    parent : 'ASTNode'
+
     def walk_expressions(self, f):
         pass
 
@@ -153,6 +166,16 @@ class ASTNodeWithChildren(ASTNode):
             r += c.to_str(indent+1)
         return r
 
+class ASTNodeWithExpression(ASTNode):
+    expression : SymbolNode
+
+    def set_expression(self, expression):
+        self.expression = expression
+        self.expression.ast_parent = self
+
+    def walk_expressions(self, f):
+        f(self.expression)
+
 class ASTProgram(ASTNodeWithChildren):
     def to_str(self):
         r = ''
@@ -160,35 +183,29 @@ class ASTProgram(ASTNodeWithChildren):
             r += c.to_str(0)
         return r
 
-class ASTExpression(ASTNode):
-    expression : SymbolNode
-
+class ASTExpression(ASTNodeWithExpression):
     def to_str(self, indent):
         return ' ' * (indent*3) + self.expression.to_str() + "\n"
 
-    def walk_expressions(self, f):
-        f(self.expression)
-
-class ASTAssignment(ASTNode):
+class ASTAssignment(ASTNodeWithExpression):
     dest : Token
-    expression : SymbolNode
 
     def to_str(self, indent):
         return ' ' * (indent*3) + self.dest.value(source) + ' = ' + self.expression.to_str() + "\n"
 
-    def walk_expressions(self, f):
-        f(self.expression)
-
-class ASTExprAssignment(ASTNode):
+class ASTExprAssignment(ASTNodeWithExpression):
     dest_expression : SymbolNode
-    expression : SymbolNode
+
+    def set_dest_expression(self, dest_expression):
+        self.dest_expression = dest_expression
+        self.dest_expression.ast_parent = self
 
     def to_str(self, indent):
         return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
     def walk_expressions(self, f):
         f(self.dest_expression)
-        f(self.expression)
+        super().walk_expressions(f)
 
 python_types_to_11l = {'int':'Int', 'str':'String', 'List':'Array', 'Tuple':'Tuple'}
 
@@ -200,14 +217,9 @@ class ASTTypeHint(ASTNode):
     def to_str(self, indent):
         return ' ' * (indent*3) + python_types_to_11l[self.type] + ('[' + ', '.join(python_types_to_11l[ty] for ty in self.type_args) + ']' if len(self.type_args) else '') + ' ' + self.var + "\n"
 
-class ASTAssignmentWithTypeHint(ASTTypeHint):
-    expression : SymbolNode
-
+class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
     def to_str(self, indent):
         return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
-
-    def walk_expressions(self, f):
-        f(self.expression)
 
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
@@ -221,18 +233,11 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '') \
             + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ')')
 
-class ASTIf(ASTNodeWithChildren):
-    expression : SymbolNode
-
+class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
     def to_str(self, indent):
         return self.children_to_str(indent, 'I ' + self.expression.to_str())
 
-    def walk_expressions(self, f):
-        f(self.expression)
-
-class ASTReturn(ASTNode):
-    expression : SymbolNode
-
+class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
         return ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str() if self.expression != None else '') + "\n"
 
@@ -302,21 +307,21 @@ def expression(rbp = 0):
 
 def infix(id, bp):
     def led(self, left):
-        self.children.append(left)
-        self.children.append(expression(self.symbol.led_bp))
+        self.append_child(left)
+        self.append_child(expression(self.symbol.led_bp))
         return self
     symbol(id, bp).set_led_bp(bp, led)
 
 def infix_r(id, bp):
     def led(self, left):
-        self.children.append(left)
-        self.children.append(expression(self.symbol.led_bp - 1))
+        self.append_child(left)
+        self.append_child(expression(self.symbol.led_bp - 1))
         return self
     symbol(id, bp).set_led_bp(bp, led)
 
 def prefix(id, bp):
     def nud(self):
-        self.children.append(expression(self.symbol.nud_bp))
+        self.append_child(expression(self.symbol.nud_bp))
         return self
     symbol(id, bp).set_nud_bp(bp, nud)
 
@@ -357,18 +362,18 @@ symbol(',')
 def led(self, left):
     if token.category != Token.Category.NAME:
         raise Error('expected an attribute name', token.start)
-    self.children.append(left)
-    self.children.append(tokensn)
+    self.append_child(left)
+    self.append_child(tokensn)
     next_token()
     return self
 symbol('.').led = led
 
 def led(self, left):
     self.function_call = True
-    self.children.append(left) # (
+    self.append_child(left) # (
     if token.value(source) != ')':
         while True:
-            self.children.append(expression())
+            self.append_child(expression())
             if token.value(source) != ',':
                 break
             advance(',') # (
@@ -382,7 +387,7 @@ def nud(self):
         while True:
             if token.value(source) == ')':
                 break
-            self.children.append(expression())
+            self.append_child(expression())
             if token.value(source) != ',':
                 break
             comma = True
@@ -394,8 +399,8 @@ def nud(self):
 symbol('(').nud = nud # )
 
 def led(self, left):
-    self.children.append(left)
-    self.children.append(expression())
+    self.append_child(left)
+    self.append_child(expression())
     advance(']')
     return self
 symbol('[').led = led
@@ -406,7 +411,7 @@ def nud(self):
         while True:
             if token.value(source) == ']':
                 break
-            self.children.append(expression())
+            self.append_child(expression())
             if token.value(source) != ',':
                 break
             advance(',')
@@ -415,10 +420,10 @@ def nud(self):
 symbol('[').nud = nud
 
 def led(self, left):
-    self.children.append(left)
-    self.children.append(expression())
+    self.append_child(left)
+    self.append_child(expression())
     advance('else')
-    self.children.append(expression())
+    self.append_child(expression())
     return self
 symbol('if').led = led
 
@@ -429,18 +434,18 @@ def nud(self):
         while True:
             if token.category != Token.Category.NAME:
                 raise Error('expected an argument name', token.start)
-            self.children.append(tokensn)
+            self.append_child(tokensn)
             next_token()
             if token.value(source) == '=':
                 next_token()
-                self.children.append(expression())
+                self.append_child(expression())
             else:
                 self.children.append(None)
             if token.value(source) != ',':
                 break
             advance(',')
     advance(':')
-    self.children.append(expression())
+    self.append_child(expression())
     return self
 symbol('lambda').nud = nud
 
@@ -506,7 +511,7 @@ def parse_internal(this_node) -> ASTNode:
             elif token.value(source) == 'if':
                 node = ASTIf()
                 next_token()
-                node.expression = expression()
+                node.set_expression(expression())
                 new_scope_expected()
                 parse_internal(node)
 
@@ -516,7 +521,7 @@ def parse_internal(this_node) -> ASTNode:
                 if token.category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
                     node.expression = None
                 else:
-                    node.expression = expression()
+                    node.set_expression(expression())
                 if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
@@ -528,7 +533,7 @@ def parse_internal(this_node) -> ASTNode:
             node.dest = token
             next_token()
             next_token()
-            node.expression = expression()
+            node.set_expression(expression())
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
@@ -552,7 +557,7 @@ def parse_internal(this_node) -> ASTNode:
             if token != None and token.value(source) == '=':
                 node = ASTAssignmentWithTypeHint()
                 next_token()
-                node.expression = expression()
+                node.set_expression(expression())
             else:
                 node = ASTTypeHint()
                 if not (token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
@@ -576,16 +581,17 @@ def parse_internal(this_node) -> ASTNode:
             node_expression = expression()
             if token != None and token.value(source) == '=':
                 node = ASTExprAssignment()
-                node.dest_expression = node_expression
+                node.set_dest_expression(node_expression)
                 next_token()
-                node.expression = expression()
+                node.set_expression(expression())
             else:
                 node = ASTExpression()
-                node.expression = node_expression
+                node.set_expression(node_expression)
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
 
+        node.parent = this_node
         this_node.children.append(node)
 
     return this_node

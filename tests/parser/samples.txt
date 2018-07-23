@@ -140,3 +140,18 @@ l = () -> N
 l = x -> x[0]
 l = self -> self
 l = (x, y, reverse = 0B) -> I reverse {y < x} E x < y
+
+
+class Object:
+    pass
+
+def f():
+    pass
+===
+T Object
+{
+}
+
+F f()
+{
+}

@@ -287,6 +287,11 @@ class ASTClassDefinition(ASTNodeWithChildren):
     def to_str(self, indent):
         return self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name != 'Exception' else ''))
 
+class ASTPass(ASTNode):
+    def to_str(self, indent):
+        return ' ' * ((indent-1)*3) + "{\n"\
+             + ' ' * ((indent-1)*3) + "}\n"
+
 class Error(Exception):
     def __init__(self, message, pos):
         self.message = message
@@ -543,6 +548,10 @@ def parse_internal(this_node) -> ASTNode:
 
                 new_scope_expected()
                 parse_internal(node)
+
+            elif token.value(source) == 'pass':
+                node = ASTPass()
+                next_token()
 
             elif token.value(source) == 'if':
                 node = ASTIf()

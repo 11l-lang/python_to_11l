@@ -490,7 +490,7 @@ def nud(self):
     return self
 symbol('lambda').nud = nud
 
-def parse_internal(this_node) -> ASTNode:
+def parse_internal(this_node):
     global token
 
     def new_scope_expected():
@@ -620,7 +620,7 @@ def parse_internal(this_node) -> ASTNode:
             if token.category == Token.Category.STATEMENT_SEPARATOR: # Token.Category.EOF
                 next_token()
                 assert(token == None)
-            return this_node
+            return
 
         else:
             node_expression = expression()
@@ -639,7 +639,7 @@ def parse_internal(this_node) -> ASTNode:
         node.parent = this_node
         this_node.children.append(node)
 
-    return this_node
+    return
 
 def parse(tokens_, source_):
     global tokens, source, tokeni, token
@@ -650,7 +650,7 @@ def parse(tokens_, source_):
         token = None
         next_token()
     p = ASTProgram()
-    ast = parse_internal(p)
+    parse_internal(p)
 
     def check_for_and_or(node):
         def f(e : SymbolNode):
@@ -675,6 +675,6 @@ def parse(tokens_, source_):
         if isinstance(node, ASTNodeWithChildren):
             for child in node.children:
                 check_for_and_or(child)
-    check_for_and_or(ast)
+    check_for_and_or(p)
 
-    return ast
+    return p

@@ -113,6 +113,7 @@ for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n
         raise e
     if translated_source != expected_translated_source:
         print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source)
+        kdiff3(translated_source, expected_translated_source)
         exit(1)
     else:
         print("OK")

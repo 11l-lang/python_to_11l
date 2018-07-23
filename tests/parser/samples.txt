@@ -121,10 +121,14 @@ F to_str(indent)
 if (a and b) or c:
     if a and (b or c):
         return
+if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if'):
+    return
 ===
 I (a & b) | c
    I a & (b | c)
       R
+I (.parent == N & T(.ast_parent) >= ASTIf) | (.parent != N & .parent.symbol.id == ‘if’)
+   R
 
 
 l = lambda: None

@@ -31,10 +31,12 @@ is
 
 class (Base):
       ^Error: expected class name
+    pass
 
 
 class Class():
             ^Error: expected base class name
+    pass
 
 
 i : 0
@@ -90,8 +92,31 @@ or this way:\
     return
 
 
----
 if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None and self.parent.symbol.id == 'if':
+   ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
+`((self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None) and self.parent.symbol.id == 'if'`\
+or this way:\
+`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if')`
+    return
+
+
+if self.parent == None and isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'):
+                                                                                                                          ^Error: expected an indented block
+
+
+if self.parent == None and isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'):
+   ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
+`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if')`\
+or this way:\
+`self.parent == None and (isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'))`
+    return
+
+
+if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: x) and lambda: y:
+   ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
+`((self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: x)) and lambda: y`\
+or this way:\
+`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or ((lambda: x) and lambda: y)`
     return
 
 

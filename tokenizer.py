@@ -193,6 +193,9 @@ def tokenize(source, newline_chars = None, comments = None):
     if len(nesting_elements):
         raise Error('there is no corresponding closing parenthesis/bracket/brace for `' + nesting_elements[-1][0] + '`', nesting_elements[-1][1])
 
+    if expected_an_indented_block:
+        raise Error('expected an indented block', i)
+
     while len(indentation_levels): # [4:] [-1]:‘At the end of the file, a DEDENT token is generated for each number remaining on the stack that is larger than zero.’
         tokens.append(Token(i, i, Token.Category.DEDENT))
         indentation_levels.pop()

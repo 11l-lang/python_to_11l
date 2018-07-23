@@ -45,6 +45,35 @@ class SymbolNode:
         child.parent = self
         self.children.append(child)
 
+    def leftmost(self):
+        if self.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL, Token.Category.NAME, Token.Category.CONSTANT) or self.symbol.id == 'lambda':
+            return self.token.start
+
+        if self.symbol.id == '(': # )
+            if self.function_call:
+                return self.children[0].token.start
+            else:
+                return self.token.start
+        elif self.symbol.id == '[': # ]
+            if self.is_list:
+                return self.token.start
+            else:
+                return self.children[0].token.start
+
+        if len(self.children) in (2, 3):
+            return self.children[0].leftmost()
+
+        return self.token.start
+
+    def rightmost(self):
+        if self.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL, Token.Category.NAME, Token.Category.CONSTANT):
+            return self.token.end
+
+        if self.symbol.id in '([': # ])
+            return self.children[-1].rightmost() + 1
+
+        return self.children[-1].rightmost()
+
     def to_str(self):
         # r = ''
         # prev_token_end = self.children[0].token.start
@@ -619,15 +648,15 @@ def parse(tokens_, source_):
             if e.symbol.id == 'or' and \
               (e.children[0].symbol.id == 'and' or e.children[1].symbol.id == 'and'):
                 if e.children[0].symbol.id == 'and':
-                    start = e.children[0].children[0].token.start
-                    end = e.children[1].token.end
-                    midend = e.children[0].children[1].token.end
-                    midstart = e.children[0].children[1].token.start
+                    start = e.children[0].children[0].leftmost()
+                    end = e.children[1].rightmost()
+                    midend = e.children[0].children[1].rightmost()
+                    midstart = e.children[0].children[1].leftmost()
                 else:
-                    start = e.children[0].token.start
-                    end = e.children[1].children[1].token.end
-                    midend = e.children[1].children[0].token.end
-                    midstart = e.children[1].children[0].token.start
+                    start = e.children[0].leftmost()
+                    end = e.children[1].children[1].rightmost()
+                    midend = e.children[1].children[0].rightmost()
+                    midstart = e.children[1].children[0].leftmost()
                 raise Error("relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\n`(" \
                     + source[start:midend  ] + ')' + source[midend  :end] + "`\nor this way:\n`" \
                     + source[start:midstart] + '(' + source[midstart:end] + ')`', start)

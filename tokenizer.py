@@ -173,14 +173,15 @@ def tokenize(source, newline_chars = None, comments = None):
                         i += 1
                 category = Token.Category.NUMERIC_LITERAL
 
-            elif ch == '"':
+            elif ch in ('"', "'"):
+                c = ch
                 startqpos = i - 1
                 while True:
                     if i == len(source):
                         raise Error('unclosed string literal', startqpos)
                     ch = source[i]
                     i += 1
-                    if ch == '"':
+                    if ch == c:
                         break
                 category = Token.Category.STRING_LITERAL
 

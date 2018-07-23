@@ -90,5 +90,10 @@ or this way:\
     return
 
 
+---
+if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None and self.parent.symbol.id == 'if':
+    return
+
+
 x = lambda , x
            ^Error: expected an argument name

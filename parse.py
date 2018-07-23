@@ -54,8 +54,12 @@ class SymbolNode:
         #         r += c.token.value(source)
         #     prev_token_end = c.token.end
         # return r
-        if self.token.is_literal() or self.token.category == Token.Category.NAME:
+        if self.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME):
             return self.token.value(source)
+
+        if self.token.category == Token.Category.STRING_LITERAL:
+            s = self.token.value(source)
+            return s if '\\' in s else '‘' + s[1:-1] + '’'
 
         if self.token.category == Token.Category.CONSTANT:
             return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
@@ -68,6 +72,9 @@ class SymbolNode:
                     if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
                         return '!' + self.children[1].to_str() + '.empty'
                     return self.children[1].to_str() + '.len'
+                elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
+                    assert(len(self.children) == 3)
+                    return 'T(' + self.children[1].to_str() + ') >= ' + self.children[2].to_str()
                 else:
                     res = func_name + '('
                     for i in range(1, len(self.children)):

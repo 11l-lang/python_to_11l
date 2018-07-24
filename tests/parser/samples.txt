@@ -198,11 +198,13 @@ F find_ending_sq_bracket(str, i, start = 0)
 str[:-1]
 str[1:]
 str[:1:]
+str[1:2]
 #str[3:10:2]
 ===
 str[0.<(len)-1]
 str[1..]
 str[0.<1]
+str[1.<2]
 
 
 ---

@@ -458,6 +458,9 @@ def led(self, left):
         self.slicing = True
         self.children.append(None)
         next_token()
+        if token.value(source) == ':':
+            self.children.append(None)
+            next_token()
     self.append_child(expression())
     if token.value(source) == ':':
         self.slicing = True

@@ -458,8 +458,11 @@ def led(self, left):
     self.append_child(expression())
     if token.value(source) == ':':
         self.slicing = True
-        self.children.append(None)
         next_token()
+        if token.value(source) != ']':
+            self.append_child(expression())
+        else:
+            self.children.append(None)
     advance(']')
     return self
 symbol('[').led = led

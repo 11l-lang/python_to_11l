@@ -102,6 +102,8 @@ F get_newline_chars()
 prev_indentation_level = indentation_levels[-1] if len(indentation_levels) else 0
 if len(indentation_levels):
     prev_indentation_level = indentation_levels[-1]
+#else:
+#    prev_indentation_level = 0
 [1, 2]
 ===
 prev_indentation_level = I !indentation_levels.empty {indentation_levels.last} E 0
@@ -111,11 +113,127 @@ I !indentation_levels.empty
 
 
 ---
+E
+   prev_indentation_level = 0
+
+
+---
+def sign(x):
+    if x < 0:
+        return -1
+    elif x > 0:
+        return 1
+    else:
+        return 0
+===
+F sign(x)
+   I x < 0
+      R -1
+   E I x > 0
+      R 1
+   E
+      R 0
+
+
+---
+key : str
+if token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL):
+    key = '(literal)'
+elif token.category == Token.Category.NAME:
+    key = '(name)'
+elif token.category == Token.Category.CONSTANT:
+    key = '(constant)'
+elif token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT):
+    key = ';'
+else:
+    key = token.value(source)
+===
+String key = S token.category
+   NUMERIC_LITERAL, STRING_LITERAL
+      ‘(literal)’
+   NAME
+      ‘(name)’
+   CONSTANT:
+      ‘(constant)’'
+   STATEMENT_SEPARATOR, DEDENT
+      ‘;’
+   E
+      token.value(source)
+
+
+---
+def find_ending_sq_bracket(str, i, start = 0):
+    starti = i
+    assert(str[i] == "[") # ]
+    nesting_level = 0
+    while True:
+        ch = str[i]
+        if ch == "[":
+            nesting_level += 1
+        elif ch == "]":
+            nesting_level -= 1
+            if nesting_level == 0:
+                return i
+        i += 1
+        if i == len(str):
+            exit_with_error('Unended comment started', start + starti)
+===
+F find_ending_sq_bracket(str, i, start = 0)
+   A starti = i
+   assert(str[i] == ‘[’)
+   A nesting_level = 0
+   L
+      S str[i]
+         ‘[’
+            nesting_level++
+         ‘]’
+            I --nesting_level == 0
+               return i
+      i++
+      I i == str.len
+          exit_with_error(‘Unended comment started’, start + starti)
+// balancing ]
+
+
+str[:-1]
+#str[1:]
+#str[3:10:2]
+===
+str[0.<(len)-1]
+
+
+---
+str[1..]
+str[(3.<10).step(2)]
+
+
+---
 def to_str(self, indent):
     return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
 ===
 F to_str(indent)
-   R T.super.to_str(indent)[0.<@-1]‘ = ’(.expression.to_str())"\n"
+   R T.super.to_str(indent)[0.<(len)-1]‘ = ’(.expression.to_str())"\n"
+
+
+---
+link = 'http://...'
+tag = '<a href="' + link + '"'
+tag += html_escapeq()
+===
+A link = ‘http://...’
+A tag = ‘<a href="’link‘"’
+tag ‘’= html_escapeq()
+
+
+---
+str1 = '1'
+str2 = '2'
+# str = str1 + str2 # rarely needed, so write this:
+str = str1 + '' + str2
+===
+A str1 = ‘1’
+A str2 = ‘2’
+A str = str1‘’str2
 
 
 if (a and b) or c:

@@ -25,21 +25,18 @@ class SymbolBase:
 
 class SymbolNode:
     token : Token
-    symbol : SymbolBase
+    symbol : SymbolBase = None
     children : List['SymbolNode']# = []
     parent : 'SymbolNode' = None
     ast_parent : 'ASTNode'
-    function_call : bool
-    tuple : bool
-    is_list : bool
+    function_call : bool = False
+    tuple   : bool = False
+    is_list : bool = False
+    slicing : bool = False
 
     def __init__(self, token):
         self.token = token
-        self.symbol = None
         self.children = []
-        self.function_call = False
-        self.tuple = False
-        self.is_list = False
 
     def append_child(self, child):
         child.parent = self
@@ -133,10 +130,17 @@ class SymbolNode:
                         res += ', '
                 return res + ']'
             else:
-                if self.children[1].to_str() == '-1':
-                    return self.children[0].to_str() + '.last'
+                c0 = self.children[0].to_str()
+                if self.slicing:
+                    def for_negative_bound(c):
+                        if c[0] == '-': # hacky implementation of ‘this rule’[https://docs.python.org/3/reference/simple_stmts.html]:‘If either bound is negative, the sequence's length is added to it.’
+                            c = '(len)' + c
+                        return c
+                    return c0 + '[' + ('0' if self.children[1] == None else for_negative_bound(self.children[1].to_str())) + '.<' + for_negative_bound(self.children[2].to_str()) + ']'
+                elif self.children[1].to_str() == '-1':
+                    return c0 + '.last'
                 else:
-                    return self.children[0].to_str() + '[' + self.children[1].to_str() + ']'
+                    return c0 + '[' + self.children[1].to_str() + ']'
         elif self.symbol.id == 'lambda':
             r = '(' if len(self.children) != 3 else ''
             for i in range(0, len(self.children)-1, 2):
@@ -310,7 +314,8 @@ def next_token():
         tokensn = SymbolNode(token)
         if token.category != Token.Category.INDENT:
             if token.category != Token.Category.KEYWORD or token.value(source) in allowed_keywords_in_expressions:
-                if token.is_literal():
+                key : str
+                if token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL):
                     key = '(literal)'
                 elif token.category == Token.Category.NAME:
                     key = '(name)'
@@ -441,6 +446,10 @@ symbol('(').nud = nud # )
 
 def led(self, left):
     self.append_child(left)
+    if token.value(source) == ':':
+        self.slicing = True
+        self.children.append(None)
+        next_token()
     self.append_child(expression())
     advance(']')
     return self

@@ -141,7 +141,10 @@ class SymbolNode:
                             r = '(len)' + r
                         return r
                     fnb2 = for_negative_bound(2)
-                    return c0 + '[' + (for_negative_bound(1) or '0') + '.' + ('<' + fnb2 if fnb2 else '.') + ']'
+                    s = (for_negative_bound(1) or '0') + '.' + ('<' + fnb2 if fnb2 else '.')
+                    if len(self.children) == 4 and self.children[3] != None:
+                        s = '(' + s + ').step(' + self.children[3].to_str() + ')'
+                    return c0 + '[' + s + ']'
                 elif self.children[1].to_str() == '-1':
                     return c0 + '.last'
                 else:
@@ -461,6 +464,10 @@ def led(self, left):
         next_token()
         if token.value(source) != ']':
             self.append_child(expression())
+            if token.value(source) == ':':
+                next_token()
+                if token.value(source) != ']':
+                    self.append_child(expression())
         else:
             self.children.append(None)
     advance(']')

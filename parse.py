@@ -133,10 +133,15 @@ class SymbolNode:
                 c0 = self.children[0].to_str()
                 if self.slicing:
                     def for_negative_bound(c):
-                        if c[0] == '-': # hacky implementation of ‘this rule’[https://docs.python.org/3/reference/simple_stmts.html]:‘If either bound is negative, the sequence's length is added to it.’
-                            c = '(len)' + c
-                        return c
-                    return c0 + '[' + ('0' if self.children[1] == None else for_negative_bound(self.children[1].to_str())) + '.<' + for_negative_bound(self.children[2].to_str()) + ']'
+                        child = self.children[c]
+                        if child == None:
+                            return None
+                        r = child.to_str()
+                        if r[0] == '-': # hacky implementation of ‘this rule’[https://docs.python.org/3/reference/simple_stmts.html]:‘If either bound is negative, the sequence's length is added to it.’
+                            r = '(len)' + r
+                        return r
+                    fnb2 = for_negative_bound(2)
+                    return c0 + '[' + (for_negative_bound(1) or '0') + '.' + ('<' + fnb2 if fnb2 else '.') + ']'
                 elif self.children[1].to_str() == '-1':
                     return c0 + '.last'
                 else:
@@ -451,6 +456,10 @@ def led(self, left):
         self.children.append(None)
         next_token()
     self.append_child(expression())
+    if token.value(source) == ':':
+        self.slicing = True
+        self.children.append(None)
+        next_token()
     advance(']')
     return self
 symbol('[').led = led

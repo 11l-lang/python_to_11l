@@ -102,22 +102,18 @@ F get_newline_chars()
 prev_indentation_level = indentation_levels[-1] if len(indentation_levels) else 0
 if len(indentation_levels):
     prev_indentation_level = indentation_levels[-1]
-#else:
-#    prev_indentation_level = 0
+else:
+    prev_indentation_level = 0
 [1, 2]
 ===
 prev_indentation_level = I !indentation_levels.empty {indentation_levels.last} E 0
 I !indentation_levels.empty
    prev_indentation_level = indentation_levels.last
+E
+   prev_indentation_level = 0
 [1, 2]
 
 
----
-E
-   prev_indentation_level = 0
-
-
----
 def sign(x):
     if x < 0:
         return -1

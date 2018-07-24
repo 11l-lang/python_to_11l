@@ -282,8 +282,20 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ')')
 
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
+    else_or_elif : ASTNode = None
+
     def to_str(self, indent):
-        return self.children_to_str(indent, 'I ' + self.expression.to_str())
+        return self.children_to_str(indent, 'I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
+
+class ASTElse(ASTNodeWithChildren):
+    def to_str(self, indent):
+        return self.children_to_str(indent, 'E')
+
+class ASTElseIf(ASTNodeWithChildren, ASTNodeWithExpression):
+    else_or_elif : ASTNode = None
+
+    def to_str(self, indent):
+        return self.children_to_str(indent, 'E I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
 
 class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -590,6 +602,22 @@ def parse_internal(this_node):
                 node.set_expression(expression())
                 new_scope_expected()
                 parse_internal(node)
+
+                n = node
+                while token != None and token.value(source) in ('elif', 'else'):
+                    if token.value(source) == 'elif':
+                        n.else_or_elif = ASTElseIf()
+                        n = n.else_or_elif
+                        next_token()
+                        n.set_expression(expression())
+                        new_scope_expected()
+                        parse_internal(n)
+                    if token != None and token.value(source) == 'else':
+                        n.else_or_elif = ASTElse()
+                        next_token()
+                        new_scope_expected()
+                        parse_internal(n.else_or_elif)
+                        break
 
             elif token.value(source) == 'return':
                 next_token()

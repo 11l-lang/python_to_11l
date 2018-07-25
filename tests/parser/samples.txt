@@ -297,3 +297,12 @@ python_types_to_11l = {'int':'Int', 'str':'String', 'List':'Array', 'Tuple':'Tup
 tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
 R S .token.value(source) {‘None’ {‘N’}; ‘False’ {‘0B’}; ‘True’ {‘1B’}}
 python_types_to_11l = S {‘int’ {‘Int’}; ‘str’ {‘String’}; ‘List’ {‘Array’}; ‘Tuple’ {‘Tuple’}}
+
+
+return not x == y
+return not x
+return not (x)
+===
+R !(x == y)
+R !x
+R !(x)

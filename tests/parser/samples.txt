@@ -288,3 +288,12 @@ a is not b
 ===
 &a == &b
 &a != &b
+
+
+tag = {'*':'b', '_':'u', '-':'s', '~':'i'}[prev_char()]
+return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
+python_types_to_11l = {'int':'Int', 'str':'String', 'List':'Array', 'Tuple':'Tuple'}
+===
+tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
+R S .token.value(source) {‘None’ {‘N’}; ‘False’ {‘0B’}; ‘True’ {‘1B’}}
+python_types_to_11l = S {‘int’ {‘Int’}; ‘str’ {‘String’}; ‘List’ {‘Array’}; ‘Tuple’ {‘Tuple’}}

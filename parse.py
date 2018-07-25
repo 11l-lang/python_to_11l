@@ -93,7 +93,7 @@ class SymbolNode:
 
         if self.symbol.id == '(': # )
             if self.function_call:
-                func_name = self.children[0].token.value(source)
+                func_name = self.children[0].to_str()
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 2)
                     if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
@@ -148,8 +148,18 @@ class SymbolNode:
                     return c0 + '[' + s + ']'
                 elif self.children[1].to_str() == '-1':
                     return c0 + '.last'
+                elif self.children[0].symbol.id == '{': # }
+                    return 'S ' + self.children[1].to_str() + c0[1:]
                 else:
                     return c0 + '[' + self.children[1].to_str() + ']'
+
+        elif self.symbol.id == '{': # }
+            res = 'S {'
+            for i in range(0, len(self.children), 2):
+                res += self.children[i].to_str() + ' {' + self.children[i+1].to_str() + '}'
+                if i < len(self.children)-2:
+                    res += '; '
+            return res + '}'
 
         elif self.symbol.id == 'lambda':
             r = '(' if len(self.children) != 3 else ''
@@ -488,7 +498,7 @@ def led(self, left):
     self.append_child(expression())
     if token.value(source) == ':':
         self.slicing = True
-        next_token()
+        next_token() # [[[
         if token.value(source) != ']':
             self.append_child(expression())
             if token.value(source) == ':':
@@ -504,7 +514,7 @@ symbol('[').led = led
 def nud(self):
     self.is_list = True
     if token.value(source) != ']':
-        while True:
+        while True: # [[
             if token.value(source) == ']':
                 break
             self.append_child(expression())
@@ -513,7 +523,23 @@ def nud(self):
             advance(',')
     advance(']')
     return self
-symbol('[').nud = nud
+symbol('[').nud = nud # ]
+
+def nud(self): # {{{
+    if token.value(source) != '}':
+        while True:
+            if token.value(source) == '}':
+                break
+            self.append_child(expression())
+            advance(':')
+            self.append_child(expression())
+            if token.value(source) != ',':
+                break
+            advance(',')
+    advance('}')
+    return self
+symbol('{').nud = nud
+symbol('}')
 
 def led(self, left):
     self.append_child(left)

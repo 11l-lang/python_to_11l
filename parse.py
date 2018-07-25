@@ -33,6 +33,7 @@ class SymbolNode:
     tuple   : bool = False
     is_list : bool = False
     slicing : bool = False
+    is_not  : bool = False
 
     def __init__(self, token):
         self.token = token
@@ -167,6 +168,9 @@ class SymbolNode:
             else:
                 assert(len(self.children) == 2)
                 return self.children[0].to_str() + ' !C ' + self.children[1].to_str()
+
+        elif self.symbol.id == 'is':
+            return '&' + self.children[0].to_str() + (' != ' if self.is_not else ' == ') + '&' + self.children[1].to_str()
 
         if len(self.children) == 1:
             #return '(' + self.symbol.id + self.children[0].to_str() + ')'
@@ -551,6 +555,15 @@ def led(self, left):
     self.append_child(expression(60))
     return self
 symbol('not').led = led
+
+def led(self, left):
+    if token.value(source) == 'not':
+        next_token()
+        self.is_not = True
+    self.append_child(left)
+    self.append_child(expression(60))
+    return self
+symbol('is').led = led
 
 def parse_internal(this_node):
     global token

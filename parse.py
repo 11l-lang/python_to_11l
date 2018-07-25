@@ -149,6 +149,7 @@ class SymbolNode:
                     return c0 + '.last'
                 else:
                     return c0 + '[' + self.children[1].to_str() + ']'
+
         elif self.symbol.id == 'lambda':
             r = '(' if len(self.children) != 3 else ''
             for i in range(0, len(self.children)-1, 2):
@@ -160,6 +161,13 @@ class SymbolNode:
             if len(self.children) != 3: r += ')'
             return r + ' -> ' + self.children[-1].to_str()
 
+        elif self.symbol.id == 'not':
+            if len(self.children) == 1:
+                return '!' + self.children[0].to_str()
+            else:
+                assert(len(self.children) == 2)
+                return self.children[0].to_str() + ' !C ' + self.children[1].to_str()
+
         if len(self.children) == 1:
             #return '(' + self.symbol.id + self.children[0].to_str() + ')'
             return self.symbol.id + self.children[0].to_str()
@@ -168,7 +176,7 @@ class SymbolNode:
             if self.symbol.id == '.':
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
             else:
-                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
+                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             return 'I ' + self.children[1].to_str() + ' {' + self.children[0].to_str() + '} E ' + self.children[2].to_str()
@@ -532,6 +540,17 @@ def nud(self):
     self.append_child(expression())
     return self
 symbol('lambda').nud = nud
+
+# multitoken operators
+
+def led(self, left):
+    if token.value(source) != 'in':
+        raise Error('invalid syntax', token.start)
+    next_token()
+    self.append_child(left)
+    self.append_child(expression(60))
+    return self
+symbol('not').led = led
 
 def parse_internal(this_node):
     global token

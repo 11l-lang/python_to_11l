@@ -122,3 +122,7 @@ or this way:\
 
 x = lambda , x
            ^Error: expected an argument name
+
+
+1 not 2
+      ^Error: invalid syntax

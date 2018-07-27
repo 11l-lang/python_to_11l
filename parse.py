@@ -189,7 +189,7 @@ class SymbolNode:
             #return '(' + self.symbol.id + self.children[0].to_str() + ')'
             return self.symbol.id + self.children[0].to_str()
         elif len(self.children) == 2:
-            #return '(' + self.children[0].to_str() + self.symbol.id + self.children[1].to_str() + ')'
+            #return '(' + self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str() + ')'
             if self.symbol.id == '.':
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
             else:

@@ -300,9 +300,11 @@ python_types_to_11l = S {‘int’ {‘Int’}; ‘str’ {‘String’}; ‘Lis
 
 
 return not x == y
+return not "\n" in ins
 return not x
 return not (x)
 ===
 R !(x == y)
+R !("\n" C ins)
 R !x
 R !(x)

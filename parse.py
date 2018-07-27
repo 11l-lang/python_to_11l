@@ -174,7 +174,7 @@ class SymbolNode:
 
         elif self.symbol.id == 'not':
             if len(self.children) == 1:
-                if self.children[0].token.category == Token.Category.OPERATOR_OR_DELIMITER and len(self.children[0].children) == 2:
+                if (self.children[0].token.category == Token.Category.OPERATOR_OR_DELIMITER or (self.children[0].token.category == Token.Category.KEYWORD and self.children[0].symbol.id == 'in')) and len(self.children[0].children) == 2:
                     return '!(' + self.children[0].to_str() + ')'
                 else:
                     return '!' + self.children[0].to_str()

@@ -37,3 +37,8 @@ str = "unclosed string
 str = ‘unclosed string
       ^Error: unexpected character ‘
 # ’’
+
+
+print(1)
+    print(2)
+    ^Error: unexpected indent

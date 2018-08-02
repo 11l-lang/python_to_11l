@@ -1,7 +1,5 @@
-def sum(x, y) # comment
+def sum(x, y) return x + y
              ^Error: expected `:`
-    r = x + y
-    return r
 
 
 def (x, y):
@@ -71,6 +69,7 @@ r = a pass b
       ^Error: no symbol corresponding to token `pass` (belonging to Category.KEYWORD) found while parsing expression
 
 
+---
 if a and b or c
     return
 ^Error: no symbol corresponding to token `    ` (belonging to Category.INDENT) found while parsing expression

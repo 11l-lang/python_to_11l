@@ -82,15 +82,16 @@ def tokenize(source, newline_chars = None, comments = None):
             prev_indentation_level = indentation_levels[-1] if len(indentation_levels) else 0
 
             if expected_an_indented_block:
-                if indentation_level > prev_indentation_level:
-                    expected_an_indented_block = False
-                else:
+                if not indentation_level > prev_indentation_level:
                     raise Error('expected an indented block', i)
 
             if indentation_level == prev_indentation_level: # [1:] [-1]:‘If it is equal, nothing happens.’ [:2]
                 if len(tokens):
                     tokens.append(Token(linestart-1, linestart, Token.Category.STATEMENT_SEPARATOR))
             elif indentation_level > prev_indentation_level: # [2:] [-1]:‘If it is larger, it is pushed on the stack, and one INDENT token is generated.’ [:3]
+                if not expected_an_indented_block:
+                    raise Error('unexpected indent', i)
+                expected_an_indented_block = False
                 indentation_levels.append(indentation_level)
                 tokens.append(Token(linestart, i, Token.Category.INDENT))
             else: # [3:] [-1]:‘If it is smaller, it ~‘must’ be one of the numbers occurring on the stack; all numbers on the stack that are larger are popped off, and for each number popped off a DEDENT token is generated.’ [:4]
@@ -102,8 +103,6 @@ def tokenize(source, newline_chars = None, comments = None):
                         break
                     if level < indentation_level:
                         raise Error('unindent does not match any outer indentation level', i)
-
-            prev_indentation_level = indentation_level
 
         ch = source[i]
 

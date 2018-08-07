@@ -91,6 +91,14 @@ or this way:\
     return
 
 
+if d and (a or b and c):
+          ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
+`(a or b) and c`\
+or this way:\
+`a or (b and c)`
+    return
+
+
 if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None and self.parent.symbol.id == 'if':
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
 `((self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None) and self.parent.symbol.id == 'if'`\

@@ -796,6 +796,9 @@ def parse(tokens_, source_):
                 raise Error("relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\n`(" \
                     + source[start:midend  ] + ')' + source[midend  :end] + "`\nor this way:\n`" \
                     + source[start:midstart] + '(' + source[midstart:end] + ')`', start)
+            for child in e.children:
+                if child != None:
+                    f(child)
 
         node.walk_expressions(f)
 

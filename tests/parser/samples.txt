@@ -308,3 +308,16 @@ R !(x == y)
 R !("\n" C ins)
 R !x
 R !(x)
+
+
+def to_html(self, instr, outfile = None):
+    i = 0
+    def write_to_i(add_str, skip_chars = 1):
+        write_to_pos(i, i+skip_chars)
+        outfile.write(add_str)
+===
+F to_html(instr, outfile = N)
+   i = 0
+   F write_to_i(add_str, skip_chars = 1)
+      write_to_pos(i, i + skip_chars)
+      outfile.write(add_str)

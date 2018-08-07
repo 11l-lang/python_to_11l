@@ -1,5 +1,5 @@
 ﻿from tokenizer import Token
-from typing import List, Dict, Callable
+from typing import List, Tuple, Dict, Callable
 
 class SymbolBase:
     id : str
@@ -296,7 +296,7 @@ class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
 
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
-    function_arguments : List[str]# = []
+    function_arguments : List[Tuple[str, SymbolNode]]# = []
 
     def __init__(self):
         super().__init__()
@@ -304,7 +304,8 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
 
     def to_str(self, indent):
         return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '') \
-            + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ')')
+            + '(' + ", ".join(map(lambda arg: arg[0] + ('' if arg[1] == None else ' = ' + arg[1].to_str()),
+                self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0][0] != 'self' else self.function_arguments[1:])) + ')')
 
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
     else_or_elif : ASTNode = None
@@ -630,8 +631,14 @@ def parse_internal(this_node):
                 while token.value(source) != ')':
                     if token.category != Token.Category.NAME:
                         raise Error('expected function\'s argument name', token.start)
-                    node.function_arguments.append(token.value(source))
-                    next_token() # ((
+                    func_name = token.value(source)
+                    next_token()
+                    if token.value(source) == '=':
+                        next_token()
+                        default = expression()
+                    else:
+                        default = None
+                    node.function_arguments.append((func_name, default)) # ((
                     if token.value(source) not in ',)':
                         raise Error('expected `,` or `)` in function\'s arguments list', token.start)
                     if token.value(source) == ',':

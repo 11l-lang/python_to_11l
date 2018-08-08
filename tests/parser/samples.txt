@@ -3,7 +3,7 @@ def sum(x, y):
     return r
 ===
 F sum(x, y)
-   r = x + y
+   A r = x + y
    R r
 
 
@@ -99,18 +99,24 @@ F get_newline_chars()
 (1,)
 
 
+indentation_levels : List[int]
 prev_indentation_level = indentation_levels[-1] if len(indentation_levels) else 0
 if len(indentation_levels):
     prev_indentation_level = indentation_levels[-1]
 else:
     prev_indentation_level = 0
+def f(): # test for error when instead of `s = self \n while not s.is_function:` was `s = self.parent \n while s != None and not s.is_function:`
+    prev_indentation_level = 0
 [1, 2]
 ===
-prev_indentation_level = I !indentation_levels.empty {indentation_levels.last} E 0
+Array[Int] indentation_levels
+A prev_indentation_level = I !indentation_levels.empty {indentation_levels.last} E 0
 I !indentation_levels.empty
    prev_indentation_level = indentation_levels.last
 E
    prev_indentation_level = 0
+F f()
+   A prev_indentation_level = 0
 [1, 2]
 
 
@@ -150,7 +156,7 @@ String key = S token.category
    NAME
       ‘(name)’
    CONSTANT:
-      ‘(constant)’'
+      ‘(constant)’
    STATEMENT_SEPARATOR, DEDENT
       ‘;’
    E
@@ -191,6 +197,7 @@ F find_ending_sq_bracket(str, i, start = 0)
 // balancing ]
 
 
+str : str
 str[:-1]
 str[1:]
 str[:1:]
@@ -199,6 +206,7 @@ str[::2]
 str[3:10:2]
 str[3:10:]
 ===
+String str
 str[0.<(len)-1]
 str[1..]
 str[0.<1]
@@ -237,15 +245,26 @@ A str2 = ‘2’
 A str = str1‘’str2
 
 
+a : bool
+b : bool
+c : bool
 if (a and b) or c:
     if a and (b or c):
         return
+class ASTIf:
+    pass
 if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if'):
     return
 ===
+Bool a
+Bool b
+Bool c
 I (a & b) | c
    I a & (b | c)
       R
+T ASTIf
+{
+}
 I (.parent == N & T(.ast_parent) >= ASTIf) | (.parent != N & .parent.symbol.id == ‘if’)
    R
 
@@ -255,7 +274,7 @@ l = lambda x: x[0]
 l = lambda self: self # `self` here should not be replaced with ``
 l = lambda x, y, reverse = False: y < x if reverse else x < y
 ===
-l = () -> N
+A l = () -> N
 l = x -> x[0]
 l = self -> self
 l = (x, y, reverse = 0B) -> I reverse {y < x} E x < y
@@ -283,27 +302,43 @@ F f()
 1 !C 2
 
 
+a : str
+b : str
 a is b
 a is not b
 ===
+String a
+String b
 &a == &b
 &a != &b
 
 
+source : str
+def prev_char():
+   return "\0"
 tag = {'*':'b', '_':'u', '-':'s', '~':'i'}[prev_char()]
 return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
 python_types_to_11l = {'int':'Int', 'str':'String', 'List':'Array', 'Tuple':'Tuple'}
 ===
-tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
+String source
+F prev_char()
+   R "\0"
+A tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
 R S .token.value(source) {‘None’ {‘N’}; ‘False’ {‘0B’}; ‘True’ {‘1B’}}
-python_types_to_11l = S {‘int’ {‘Int’}; ‘str’ {‘String’}; ‘List’ {‘Array’}; ‘Tuple’ {‘Tuple’}}
+A python_types_to_11l = S {‘int’ {‘Int’}; ‘str’ {‘String’}; ‘List’ {‘Array’}; ‘Tuple’ {‘Tuple’}}
 
 
+x : bool
+y : bool
+ins : str
 return not x == y
 return not "\n" in ins
 return not x
 return not (x)
 ===
+Bool x
+Bool y
+String ins
 R !(x == y)
 R !("\n" C ins)
 R !x
@@ -312,12 +347,25 @@ R !(x)
 
 def to_html(self, instr, outfile = None):
     i = 0
+    writepos = 0
+    def write_to_pos(pos, npos):
+        nonlocal writepos
+        outfile.write(instr[writepos:pos])
+        writepos = npos
     def write_to_i(add_str, skip_chars = 1):
-        write_to_pos(i, i+skip_chars)
+        def write():
+            write_to_pos(i, i+skip_chars)
+        write()
         outfile.write(add_str)
 ===
 F to_html(instr, outfile = N)
-   i = 0
+   A i = 0
+   A writepos = 0
+   F write_to_pos(pos, npos)
+      @outfile.write(@instr[@writepos.<pos])
+      @writepos = npos
    F write_to_i(add_str, skip_chars = 1)
-      write_to_pos(i, i + skip_chars)
-      outfile.write(add_str)
+      F write()
+         @@write_to_pos(@@i, @@i + @skip_chars)
+      write()
+      @outfile.write(add_str)

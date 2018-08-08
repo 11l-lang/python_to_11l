@@ -75,6 +75,9 @@ if a and b or c
 ^Error: no symbol corresponding to token `    ` (belonging to Category.INDENT) found while parsing expression
 
 
+a : bool
+b : bool
+c : bool
 if a and b or c:
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
 `(a and b) or c`\
@@ -83,6 +86,9 @@ or this way:\
     return
 
 
+a : bool
+b : bool
+c : bool
 if a or b and c:
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
 `(a or b) and c`\
@@ -91,6 +97,10 @@ or this way:\
     return
 
 
+a : bool
+b : bool
+c : bool
+d : bool
 if d and (a or b and c):
           ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
 `(a or b) and c`\
@@ -99,6 +109,8 @@ or this way:\
     return
 
 
+class ASTIf:
+    pass
 if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None and self.parent.symbol.id == 'if':
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
 `((self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None) and self.parent.symbol.id == 'if'`\
@@ -107,10 +119,14 @@ or this way:\
     return
 
 
+class ASTIf:
+    pass
 if self.parent == None and isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'):
                                                                                                                           ^Error: expected an indented block
 
 
+class ASTIf:
+    pass
 if self.parent == None and isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'):
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
 `(self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if')`\
@@ -119,11 +135,13 @@ or this way:\
     return
 
 
-if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: x) and lambda: y:
+class ASTIf:
+    pass
+if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: 1) and lambda: 2:
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
-`((self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: x)) and lambda: y`\
+`((self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: 1)) and lambda: 2`\
 or this way:\
-`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or ((lambda: x) and lambda: y)`
+`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or ((lambda: 1) and lambda: 2)`
     return
 
 
@@ -133,3 +151,20 @@ x = lambda , x
 
 1 not 2
       ^Error: invalid syntax
+
+
+i : int = 0
+i : int = 1
+^Error: redefinition of already defined variable is not allowed
+
+
+i = j
+    ^Error: variable is not defined
+
+
+nonlocal i,
+            ^Error: expected nonlocal variable name
+
+
+A l = lambda: None
+  ^Error: expected end of statement

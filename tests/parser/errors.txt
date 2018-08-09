@@ -57,6 +57,7 @@ r = %a
     ^Error: unknown unary operator
 
 
+---
 r = a ~ b
       ^Error: unknown binary operator
 

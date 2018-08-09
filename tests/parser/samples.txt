@@ -216,7 +216,6 @@ str[(3.<10).step(2)]
 str[3.<10]
 
 
----
 def to_str(self, indent):
     return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
 ===
@@ -224,17 +223,19 @@ F to_str(indent)
    R T.super.to_str(indent)[0.<(len)-1]‘ = ’(.expression.to_str())"\n"
 
 
----
+def html_escapeq(str):
+    return str.replace('&', '&amp;').replace('"', '&quot;')
 link = 'http://...'
-tag = '<a href="' + link + '"'
+tag : str = '<a href="' + link + '"' # while type inference is not supported, type hint is necessary to convert from `+=` to `‘’=`
 tag += html_escapeq()
 ===
+F html_escapeq(str)
+   R str.replace(‘&’, ‘&amp;’).replace(‘"’, ‘&quot;’)
 A link = ‘http://...’
-A tag = ‘<a href="’link‘"’
+String tag = ‘<a href="’link‘"’
 tag ‘’= html_escapeq()
 
 
----
 str1 = '1'
 str2 = '2'
 # str = str1 + str2 # rarely needed, so write this:
@@ -319,6 +320,7 @@ def prev_char():
 tag = {'*':'b', '_':'u', '-':'s', '~':'i'}[prev_char()]
 return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
 python_types_to_11l = {'int':'Int', 'str':'String', 'List':'Array', 'Tuple':'Tuple'}
+return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id) + ' ' + self.children[1].to_str()
 ===
 String source
 F prev_char()
@@ -326,6 +328,7 @@ F prev_char()
 A tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
 R S .token.value(source) {‘None’ {‘N’}; ‘False’ {‘0B’}; ‘True’ {‘1B’}}
 A python_types_to_11l = S {‘int’ {‘Int’}; ‘str’ {‘String’}; ‘List’ {‘Array’}; ‘Tuple’ {‘Tuple’}}
+R .children[0].to_str()‘ ’(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})‘ ’(.children[1].to_str())
 
 
 x : bool

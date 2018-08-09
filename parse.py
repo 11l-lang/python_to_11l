@@ -3,7 +3,11 @@ from typing import List, Tuple, Dict, Callable
 
 class Scope:
     parent : 'Scope'
-    vars : set
+    class Var:
+        type : str
+        def __init__(self, type):
+            self.type = type
+    vars : Dict[str, Var]
     nonlocals : set
     is_function : bool
 
@@ -11,13 +15,13 @@ class Scope:
         self.parent = None
         if func_args != None:
             self.is_function = True
-            self.vars = set(func_args)
+            self.vars = dict(map(lambda x: (x, Scope.Var(None)), func_args))
         else:
             self.is_function = False
-            self.vars = set()
+            self.vars = {}
         self.nonlocals = set()
 
-    def add_var(self, name, error_if_already_defined = False):
+    def add_var(self, name, error_if_already_defined = False, type = None, err_token = None):
         if not (name in self.vars) and not (name in self.nonlocals):
             s = self
             while not s.is_function:
@@ -26,16 +30,16 @@ class Scope:
                 s = s.parent
                 if s == None:
                     break
-            self.vars.add(name)
+            self.vars[name] = Scope.Var(type)
             return True
         elif error_if_already_defined:
-            raise Error('redefinition of already defined variable is not allowed', token.start)
+            raise Error('redefinition of already defined variable is not allowed', (err_token if err_token != None else token).start)
         return False
 
     def find(self, name, token):
         if name == 'self':
             return 0
-        if name in ('isinstance', 'len'):
+        if name in ('isinstance', 'len', 'super'):
             return 0
         if name in self.nonlocals:
             return 1
@@ -49,6 +53,15 @@ class Scope:
             s = s.parent
             if s == None:
                 raise Error('variable is not defined', token.start)
+
+    def var_type(self, name):
+        s = self
+        while True:
+            if name in s.vars:
+                return s.vars[name].type
+            s = s.parent
+            if s == None:
+                return None
 
 scope : Scope
 
@@ -150,6 +163,8 @@ class SymbolNode:
 
         if self.symbol.id == '(': # )
             if self.function_call:
+                if self.children[0].symbol.id == '.' and self.children[0].children[0].symbol.id == '{' and self.children[0].children[1].token.value(source) == 'get': # }
+                    return '(' + self.children[0].to_str() + ')'
                 func_name = self.children[0].to_str()
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 2)
@@ -159,6 +174,9 @@ class SymbolNode:
                 elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
                     assert(len(self.children) == 3)
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[2].to_str()
+                elif func_name == 'super': # replace `super()` with `T.super`
+                    assert(len(self.children) == 1)
+                    return 'T.super'
                 else:
                     res = func_name + '('
                     for i in range(1, len(self.children)):
@@ -248,7 +266,16 @@ class SymbolNode:
         elif len(self.children) == 2:
             #return '(' + self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str() + ')'
             if self.symbol.id == '.':
+                if self.children[0].symbol.id == '{' and self.children[1].token.category == Token.Category.NAME and self.children[1].token.value(source) == 'get':
+                    return 'S ' + self.parent.children[1].to_str() + self.children[0].to_str()[1:-1] + ' E ' + self.parent.children[2].to_str() + '}'
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
+            elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].scope.var_type(self.children[0].token.value(source)) == 'str':
+                return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
+            elif self.symbol.id == '+' and (self.children[0].token.category == Token.Category.STRING_LITERAL
+                                         or self.children[1].token.category == Token.Category.STRING_LITERAL
+                                         or (self.children[0].symbol.id == '+' and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL)):
+                c1 = self.children[1].to_str()
+                return self.children[0].to_str() + ('(' + c1 + ')' if c1[0] == '.' else c1)
             else:
                 return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
@@ -467,7 +494,7 @@ def prefix(id, bp):
     def nud(self):
         self.append_child(expression(self.symbol.nud_bp))
         return self
-    symbol(id, bp).set_nud_bp(bp, nud)
+    symbol(id).set_nud_bp(bp, nud)
 
 symbol("lambda", 20)
 symbol("if", 20); symbol("else") # ternary form
@@ -494,6 +521,8 @@ prefix("-", 130); prefix("+", 130); prefix("~", 130)
 infix_r("**", 140)
 
 symbol(".", 150); symbol("[", 150); symbol("(", 150); symbol(")"); symbol("]")
+
+infix_r('+=', 10); infix_r('-=', 10); infix_r('*=', 10); infix_r('/=', 10); infix_r('//=', 10); infix_r('%=', 10); infix_r('>>=', 10); infix_r('<<=', 10); infix_r('**=', 10)
 
 symbol("(name)").nud = lambda self: self
 symbol("(literal)").nud = lambda self: self
@@ -790,10 +819,11 @@ def parse_internal(this_node):
                 next_token()
 
         elif token.category == Token.Category.NAME and peek_token().value(source) == ':': # this is type hint
+            name_token = token
             var = token.value(source)
-            scope.add_var(var, True)
             next_token()
             type = expected_name('type name')
+            scope.add_var(var, True, type, name_token)
             type_args = []
             if token.value(source) == '[':
                 next_token()

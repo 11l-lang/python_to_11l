@@ -372,3 +372,12 @@ F to_html(instr, outfile = N)
          @@write_to_pos(@@i, @@i + @skip_chars)
       write()
       @outfile.write(add_str)
+
+
+token = None
+err_token = None
+err_token if err_token != None else token
+===
+A token = N
+A err_token = N
+err_token ? token

@@ -280,7 +280,10 @@ class SymbolNode:
                 return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
-            return 'I ' + self.children[1].to_str() + ' {' + self.children[0].to_str() + '} E ' + self.children[2].to_str()
+            c0 = self.children[0].to_str()
+            if self.children[1].symbol.id == '!=' and self.children[1].children[1].token.value(source) == 'None' and self.children[1].children[0].to_str() == c0: # replace `a if a != None else b` with `a ? b`
+                return c0 + ' ? ' + self.children[2].to_str()
+            return 'I ' + self.children[1].to_str() + ' {' + c0 + '} E ' + self.children[2].to_str()
 
         return ''
 

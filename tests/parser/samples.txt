@@ -184,7 +184,8 @@ String key = S token.category
       token.value(source)
 
 
----
+def exit_with_error(message, pos):
+    pass
 def find_ending_sq_bracket(str, i, start = 0):
     starti = i
     assert(str[i] == "[") # ]
@@ -201,6 +202,9 @@ def find_ending_sq_bracket(str, i, start = 0):
         if i == len(str):
             exit_with_error('Unended comment started', start + starti)
 ===
+F exit_with_error(message, pos)
+{
+}
 F find_ending_sq_bracket(str, i, start = 0)
    A starti = i
    assert(str[i] == ‘[’)
@@ -211,10 +215,13 @@ F find_ending_sq_bracket(str, i, start = 0)
             nesting_level++
          ‘]’
             I --nesting_level == 0
-               return i
+               R i
       i++
       I i == str.len
-          exit_with_error(‘Unended comment started’, start + starti)
+         @exit_with_error(‘Unended comment started’, start + starti)
+
+
+---
 // balancing ]
 
 

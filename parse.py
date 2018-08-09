@@ -39,7 +39,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return 0
-        if name in ('isinstance', 'len', 'super'):
+        if name in ('isinstance', 'len', 'super', 'assert'):
             return 0
         if name in self.nonlocals:
             return 1
@@ -273,6 +273,8 @@ class SymbolNode:
                 return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
             elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
                 return self.children[0].to_str() + '++'
+            elif self.symbol.id == '-=' and self.children[1].token.value(source) == '1':
+                return '--' + self.children[0].to_str()
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].scope.var_type(self.children[0].token.value(source)) == 'str':
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+' and (self.children[0].token.category == Token.Category.STRING_LITERAL
@@ -314,6 +316,8 @@ class ASTNode:
 
     def walk_expressions(self, f):
         pass
+    def walk_children(self, f):
+        pass
 
 class ASTNodeWithChildren(ASTNode):
     # children : List['ASTNode'] = [] # OMFG! This actually means static (common for all objects of type ASTNode) variable, not default value of member variable, that was unexpected to me as it contradicts C++11 behavior
@@ -323,6 +327,10 @@ class ASTNodeWithChildren(ASTNode):
     def __init__(self):
         self.children = []
         self.tokeni = tokeni
+
+    def walk_children(self, f):
+        for child in self.children:
+            f(child)
 
     def children_to_str(self, indent, r):
         r = ('' if self.tokeni == 0 else (source[tokens[self.tokeni-2].end:tokens[self.tokeni].start].count("\n")-1) * "\n") + ' ' * (indent*3) + r + "\n"
@@ -409,9 +417,30 @@ class ASTElseIf(ASTNodeWithChildren, ASTNodeWithExpression):
     def to_str(self, indent):
         return self.children_to_str(indent, 'E I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
 
+class ASTSwitch(ASTNodeWithExpression):
+    class Case(ASTNodeWithChildren, ASTNodeWithExpression):
+        def __init__(self):
+            super().__init__()
+            self.tokeni = 0
+    cases : List[Case]
+
+    def __init__(self):
+        self.cases = []
+
+    def walk_children(self, f):
+        for case in self.cases:
+            for child in case.children:
+                f(child)
+
+    def to_str(self, indent):
+        r = ' ' * (indent*3) + 'S ' + self.expression.to_str() + "\n"
+        for case in self.cases:
+            r += case.children_to_str(indent + 1, case.expression.to_str())
+        return r
+
 class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
     def to_str(self, indent):
-        return self.children_to_str(indent, 'L ' + self.expression.to_str())
+        return self.children_to_str(indent, 'L' if self.expression.token.category == Token.Category.CONSTANT and self.expression.token.value(source) == 'True' else 'L ' + self.expression.to_str())
 
 class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -943,10 +972,61 @@ def parse(tokens_, source_):
                     f(child)
 
         node.walk_expressions(f)
-
-        if isinstance(node, ASTNodeWithChildren):
-            for child in node.children:
-                check_for_and_or(child)
+        node.walk_children(check_for_and_or)
     check_for_and_or(p)
+
+    def transformations(node):
+        if type(node) == ASTSwitch:
+            for case in node.cases:
+                transformations(case)
+        elif isinstance(node, ASTNodeWithChildren):
+            index = 0
+            while index < len(node.children):
+                child = node.children[index]
+                if index < len(node.children) - 1 and type(child) == ASTExprAssignment and child.dest_expression.token.category == Token.Category.NAME and type(node.children[index+1]) == ASTIf: # transform if-elif-else chain into switch
+                    if_node = node.children[index+1]
+                    var_name = child.dest_expression.token.value(source)
+                    was_break = False
+                    while True:
+                        if not (if_node.expression.symbol.id == '==' and if_node.expression.children[0].token.category == Token.Category.NAME and if_node.expression.children[0].token.value(source) == var_name):
+                            was_break = True
+                            break
+                        if type(if_node) == ASTElse:
+                            break
+                        if_node = if_node.else_or_elif
+                        if if_node == None:
+                            break
+                    if not was_break:
+                        switch_node = ASTSwitch()
+                        switch_node.set_expression(child.expression)
+                        if_node = node.children[index+1]
+                        while True:
+                            case = ASTSwitch.Case()
+                            case.parent = switch_node
+                            case.set_expression(if_node.expression.children[1])
+                            case.children = if_node.children
+                            for child in case.children:
+                                child.parent = case
+                            switch_node.cases.append(case)
+
+                            if type(if_node) == ASTElse:
+                                break
+                            if_node = if_node.else_or_elif
+                            if if_node == None:
+                                break
+                        node.children.pop(index)
+                        node.children.pop(index)
+                        node.children.insert(index, switch_node)
+                        continue # to update child = node.children[index]
+                if index < len(node.children) - 1 and type(child) == ASTExpression and child.expression.symbol.id == '-=' and child.expression.children[1].token.value(source) == '1' \
+                        and type(node.children[index+1]) == ASTIf and len(node.children[index+1].expression.children) == 2 \
+                        and node.children[index+1].expression.children[0].token.value(source) == child.expression.children[0].token.value(source): # transform `nesting_level -= 1 \n if nesting_level == 0:` into `if --nesting_level == 0`
+                    node.children[index+1].expression.children[0] = child.expression
+                    node.children.pop(index)
+                    continue
+
+                transformations(child)
+                index += 1
+    transformations(p)
 
     return p

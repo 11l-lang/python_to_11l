@@ -355,7 +355,8 @@ R .children[0].to_str()‘ ’(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|
 x : bool
 y : bool
 ins : str
-return not x == y
+return not x == y # operator `==` in Python has higher precedence than `not` (in 11l it's precedence is lower)
+return not x or y # operators `or` and `and` in Python have lower precedence than `not`
 return not "\n" in ins
 return not x
 return not (x)
@@ -364,6 +365,7 @@ Bool x
 Bool y
 String ins
 R !(x == y)
+R !x | y
 R !("\n" C ins)
 R !x
 R !(x)

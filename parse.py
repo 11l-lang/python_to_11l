@@ -269,6 +269,10 @@ class SymbolNode:
                 if self.children[0].symbol.id == '{' and self.children[1].token.category == Token.Category.NAME and self.children[1].token.value(source) == 'get':
                     return 'S ' + self.parent.children[1].to_str() + self.children[0].to_str()[1:-1] + ' E ' + self.parent.children[2].to_str() + '}'
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
+            elif self.symbol.id == '+=' and self.children[1].symbol.id == '[': # ]
+                return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
+            elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
+                return self.children[0].to_str() + '++'
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].scope.var_type(self.children[0].token.value(source)) == 'str':
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+' and (self.children[0].token.category == Token.Category.STRING_LITERAL
@@ -404,6 +408,10 @@ class ASTElseIf(ASTNodeWithChildren, ASTNodeWithExpression):
 
     def to_str(self, indent):
         return self.children_to_str(indent, 'E I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
+
+class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
+    def to_str(self, indent):
+        return self.children_to_str(indent, 'L ' + self.expression.to_str())
 
 class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -781,6 +789,12 @@ def parse_internal(this_node):
                         next_token()
                         new_scope(n.else_or_elif)
                         break
+
+            elif token.value(source) == 'while':
+                node = ASTWhile()
+                next_token()
+                node.set_expression(expression())
+                new_scope(node)
 
             elif token.value(source) == 'return':
                 next_token()

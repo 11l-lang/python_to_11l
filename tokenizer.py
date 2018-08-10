@@ -162,12 +162,47 @@ def tokenize(source, newline_chars = None, comments = None):
                 else:
                     category = Token.Category.NAME
 
-            elif '0' <= ch <= '9': # this is NUMERIC_LITERAL
-                if ch in '01' and source[i:i+1] == 'B':
-                    i += 1
+            elif (ch in '-+' and '0' <= source[i:i+1] <= '9') or '0' <= ch <= '9': # this is NUMERIC_LITERAL
+                if ch in '-+':
+                    assert(False) # considering sign as a part of numeric literal is a bad idea — expressions like `j-3` are cease to parse correctly
+                    #sign = ch
+                    ch = source[i:i+1]
                 else:
-                    while i < len(source) and '0' <= source[i] <= '9':
+                    i -= 1
+                is_hex = ch == '0' and source[i+1:i+2] in ('x', 'X')
+                is_oct = ch == '0' and source[i+1:i+2] in ('o', 'O')
+                is_bin = ch == '0' and source[i+1:i+2] in ('b', 'B')
+                if is_hex or is_oct or is_bin:
+                    i += 2
+                    if not '0' <= source[i:i+1] <= '9':
+                        raise Error('expected digit', i)
+                start = i
+                i += 1
+                if is_hex:
+                    while i < len(source) and ('0' <= source[i] <= '9' or 'a' <= source[i] <= 'z' or 'A' <= source[i] <= 'Z' or source[i] == '_'):
                         i += 1
+                elif is_oct:
+                    while i < len(source) and ('0' <= source[i] <= '7' or source[i] == '_'):
+                        i += 1
+                elif is_bin:
+                    while i < len(source) and (source[i] in '01' or source[i] == '_'):
+                        i += 1
+                else:
+                    while i < len(source) and ('0' <= source[i] <= '9' or source[i] in '_.eE'):
+                        if source[i] in 'eE':
+                            if source[i+1:i+2] in '-+':
+                                i += 1
+                        i += 1
+                    if '_' in source[start:i] and not '.' in source[start:i]: # float numbers do not checked for a while
+                        number = source[start:i].replace('_', '')
+                        number_with_separators = ''
+                        j = len(number)
+                        while j > 3:
+                            number_with_separators = '_' + number[j-3:j] + number_with_separators
+                            j -= 3
+                        number_with_separators = number[0:j] + number_with_separators
+                        if source[start:i] != number_with_separators:
+                            raise Error('digit separator in this number is located in the wrong place (should be: '+ number_with_separators +')', start)
                 category = Token.Category.NUMERIC_LITERAL
 
             elif ch in ('"', "'"):

@@ -42,3 +42,11 @@ str = ‘unclosed string
 print(1)
     print(2)
     ^Error: unexpected indent
+
+
+a = 0b + 1
+      ^Error: expected digit
+
+
+123_45
+^Error: digit separator in this number is located in the wrong place (should be: 12_345)

@@ -416,8 +416,43 @@ err_token ? token
 ch : str
 if '0' <= ch <= '9':
     pass
+if not '0' <= ch <= '9':
+    pass
 ===
 String ch
 I ch C ‘0’..‘9’
 {
 }
+I !(ch C ‘0’..‘9’)
+{
+}
+
+
+12_345
+0o123_45
+-0x0000FFFF
+0b10101010
+-0b10101010
+1.234_5e20
+===
+12'345
+123'45o
+-0000'FFFF
+10101010b
+-10101010b
+1.234'5e20
+
+
+n = '123'
+number_with_separators = ''
+j = len(n)
+while j > 4:
+    number_with_separators = "'" + n[j-4:j] + number_with_separators
+    j -= 4
+===
+A n = ‘123’
+A number_with_separators = ‘’
+A j = n.len
+L j > 4
+   number_with_separators = ‘'’n[j - 4.<j]‘’number_with_separators
+   j -= 4

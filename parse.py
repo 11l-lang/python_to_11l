@@ -106,6 +106,9 @@ class SymbolNode:
         self.children = []
         self.scope = scope
 
+    def var_type(self):
+        return self.scope.var_type(self.token.value(source))
+
     def append_child(self, child):
         child.parent = self
         self.children.append(child)
@@ -152,7 +155,28 @@ class SymbolNode:
             return self.capture_level*'@' + self.token.value(source)
 
         if self.token.category == Token.Category.NUMERIC_LITERAL:
-            return self.token.value(source)
+            n = self.token.value(source)
+            i = 0
+            # if n[0] in '-+':
+            #     sign = n[0]
+            #     i = 1
+            # else:
+            #     sign = ''
+            sign = ''
+            is_hex = n[i:i+1] == '0' and n[i+1:i+2] in ('x', 'X')
+            is_oct = n[i:i+1] == '0' and n[i+1:i+2] in ('o', 'O')
+            is_bin = n[i:i+1] == '0' and n[i+1:i+2] in ('b', 'B')
+            if is_hex or is_oct or is_bin:
+                i += 2
+                if is_hex:
+                    n = n[i:].replace('_', '')
+                    number_with_separators = ''
+                    j = len(n)
+                    while j > 4:
+                        number_with_separators = "'" + n[j-4:j] + number_with_separators
+                        j -= 4
+                    return sign + n[0:j] + number_with_separators
+            return sign + n[i:].replace('_', "'") + ('o' if is_oct else 'b' if is_bin else '')
 
         if self.token.category == Token.Category.STRING_LITERAL:
             s = self.token.value(source)
@@ -275,13 +299,15 @@ class SymbolNode:
                 return self.children[0].to_str() + '++'
             elif self.symbol.id == '-=' and self.children[1].token.value(source) == '1':
                 return '--' + self.children[0].to_str()
-            elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].scope.var_type(self.children[0].token.value(source)) == 'str':
+            elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'str':
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+' and (self.children[0].token.category == Token.Category.STRING_LITERAL
                                          or self.children[1].token.category == Token.Category.STRING_LITERAL
                                          or (self.children[0].symbol.id == '+' and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL)):
                 c1 = self.children[1].to_str()
                 return self.children[0].to_str() + ('(' + c1 + ')' if c1[0] == '.' else c1)
+            elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
+                return self.children[0].to_str() + '‘’' + self.children[1].to_str()
             elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `if '0' <= ch <= '9'` with `I ch C ‘0’..‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '..' + self.children[1].to_str()
             else:
@@ -856,12 +882,13 @@ def parse_internal(this_node):
                 raise Error('unrecognized statement started with keyword', token.start)
 
         elif token.category == Token.Category.NAME and peek_token().value(source) == '=':
+            name_token = token
             node = ASTExprAssignment()
-            node.add_var = scope.add_var(token.value(source))
             node.set_dest_expression(tokensn)
             next_token()
             next_token()
             node.set_expression(expression())
+            node.add_var = scope.add_var(name_token.value(source), False, 'str' if node.expression.token.category == Token.Category.STRING_LITERAL else None, name_token)
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()

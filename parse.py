@@ -282,6 +282,8 @@ class SymbolNode:
                                          or (self.children[0].symbol.id == '+' and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL)):
                 c1 = self.children[1].to_str()
                 return self.children[0].to_str() + ('(' + c1 + ')' if c1[0] == '.' else c1)
+            elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `if '0' <= ch <= '9'` with `I ch C ‘0’..‘9’`
+                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '..' + self.children[1].to_str()
             else:
                 return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:

@@ -411,3 +411,13 @@ err_token if err_token != None else token
 A token = N
 A err_token = N
 err_token ? token
+
+
+ch : str
+if '0' <= ch <= '9':
+    pass
+===
+String ch
+I ch C ‘0’..‘9’
+{
+}

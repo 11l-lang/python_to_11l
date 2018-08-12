@@ -39,7 +39,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return 0
-        if name in ('isinstance', 'len', 'super', 'assert'):
+        if name in ('isinstance', 'len', 'super'):
             return 0
         if name in self.nonlocals:
             return 1
@@ -400,6 +400,21 @@ class ASTExprAssignment(ASTNodeWithExpression):
 
     def walk_expressions(self, f):
         f(self.dest_expression)
+        super().walk_expressions(f)
+
+class ASTAssert(ASTNodeWithExpression):
+    expression2 : SymbolNode = None
+
+    def set_expression2(self, expression2):
+        self.expression2 = expression2
+        self.expression2.ast_parent = self
+
+    def to_str(self, indent):
+        return ' ' * (indent*3) + 'assert(' + (self.expression.children[0].to_str() if self.expression.symbol.id == '(' and not self.expression.tuple and not self.expression.function_call # )
+            else self.expression.to_str()) + (', ' + self.expression2.to_str() if self.expression2 != None else '') + ")\n"
+
+    def walk_expressions(self, f):
+        if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
 python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'List':'Array', 'Tuple':'Tuple'}
@@ -854,8 +869,8 @@ def parse_internal(this_node):
                 new_scope(node)
 
             elif token.value(source) == 'return':
-                next_token()
                 node = ASTReturn()
+                next_token()
                 if token.category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
                     node.expression = None
                 else:
@@ -877,6 +892,16 @@ def parse_internal(this_node):
                 if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
                 continue
+
+            elif token.value(source) == 'assert':
+                node = ASTAssert()
+                next_token()
+                node.set_expression(expression())
+                if token.value(source) == ',':
+                    next_token()
+                    node.set_expression2(expression())
+                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
 
             else:
                 raise Error('unrecognized statement started with keyword', token.start)

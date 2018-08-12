@@ -8,7 +8,6 @@ keywords = [ # https://docs.python.org/3/reference/lexical_analysis.html#keyword
             'as',         'def',        'from',       'nonlocal',   'while',
             'assert',     'del',        'global',     'not',        'with',
             'async',      'elif',       'if',         'or',         'yield',]
-keywords.remove('assert') # consider assert as function
 
 operators = [ # https://docs.python.org/3/reference/lexical_analysis.html#operators
              '+',       '-',       '*',       '**',      '/',       '//',      '%',      '@',

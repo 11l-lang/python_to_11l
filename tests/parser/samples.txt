@@ -456,3 +456,13 @@ A j = n.len
 L j > 4
    number_with_separators = ‘'’n[j - 4.<j]‘’number_with_separators
    j -= 4
+
+
+def roman(n):
+    pass
+assert roman(6) == 'VI', '6'
+===
+F roman(n)
+{
+}
+assert(roman(6) == ‘VI’, ‘6’)

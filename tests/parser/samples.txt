@@ -460,9 +460,15 @@ L j > 4
 
 def roman(n):
     pass
-assert roman(6) == 'VI', '6'
+
+if __name__ == '__main__':
+    assert roman(6) == 'VI', '6'
+    print("Earn cool rewards by using the 'Check' button!")
 ===
 F roman(n)
 {
 }
+
+:start:
 assert(roman(6) == ‘VI’, ‘6’)
+print(‘Earn cool rewards by using the 'Check' button!’)

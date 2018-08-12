@@ -39,7 +39,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return 0
-        if name in ('isinstance', 'len', 'super'):
+        if name in ('isinstance', 'len', 'super', 'print'):
             return 0
         if name in self.nonlocals:
             return 1
@@ -504,6 +504,10 @@ class ASTPass(ASTNode):
         return ' ' * ((indent-1)*3) + "{\n"\
              + ' ' * ((indent-1)*3) + "}\n"
 
+class ASTStart(ASTNodeWithChildren):
+    def to_str(self, indent):
+        return self.children_to_str(indent-1, ':start:')
+
 class Error(Exception):
     def __init__(self, message, pos):
         self.message = message
@@ -843,24 +847,34 @@ def parse_internal(this_node):
                 next_token()
 
             elif token.value(source) == 'if':
-                node = ASTIf()
-                next_token()
-                node.set_expression(expression())
-                new_scope(node)
+                if peek_token().value(source) == '__name__':
+                    node = ASTStart()
+                    next_token()
+                    next_token()
+                    assert(token.value(source) == '==')
+                    next_token()
+                    assert(token.value(source) in ("'__main__'", '"__main__"'))
+                    next_token()
+                    new_scope(node)
+                else:
+                    node = ASTIf()
+                    next_token()
+                    node.set_expression(expression())
+                    new_scope(node)
 
-                n = node
-                while token != None and token.value(source) in ('elif', 'else'):
-                    if token.value(source) == 'elif':
-                        n.else_or_elif = ASTElseIf()
-                        n = n.else_or_elif
-                        next_token()
-                        n.set_expression(expression())
-                        new_scope(n)
-                    if token != None and token.value(source) == 'else':
-                        n.else_or_elif = ASTElse()
-                        next_token()
-                        new_scope(n.else_or_elif)
-                        break
+                    n = node
+                    while token != None and token.value(source) in ('elif', 'else'):
+                        if token.value(source) == 'elif':
+                            n.else_or_elif = ASTElseIf()
+                            n = n.else_or_elif
+                            next_token()
+                            n.set_expression(expression())
+                            new_scope(n)
+                        if token != None and token.value(source) == 'else':
+                            n.else_or_elif = ASTElse()
+                            next_token()
+                            new_scope(n.else_or_elif)
+                            break
 
             elif token.value(source) == 'while':
                 node = ASTWhile()

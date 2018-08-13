@@ -229,6 +229,13 @@ class SymbolNode:
                     if i < len(self.children)-1:
                         res += ', '
                 return res + ']'
+            elif self.children[0].symbol.id == '{': # }
+                res = 'S ' + self.children[1].to_str() + ' {'
+                for i in range(0, len(self.children[0].children), 2):
+                    res += self.children[0].children[i].to_str() + ' {' + self.children[0].children[i+1].to_str() + '}'
+                    if i < len(self.children[0].children)-2:
+                        res += '; '
+                return res + '}'
             else:
                 c0 = self.children[0].to_str()
                 if self.slicing:
@@ -247,18 +254,16 @@ class SymbolNode:
                     return c0 + '[' + s + ']'
                 elif self.children[1].to_str() == '-1':
                     return c0 + '.last'
-                elif self.children[0].symbol.id == '{': # }
-                    return 'S ' + self.children[1].to_str() + c0[1:]
                 else:
                     return c0 + '[' + self.children[1].to_str() + ']'
 
         elif self.symbol.id == '{': # }
-            res = 'S {'
+            res = '['
             for i in range(0, len(self.children), 2):
-                res += self.children[i].to_str() + ' {' + self.children[i+1].to_str() + '}'
+                res += self.children[i].to_str() + ' = ' + self.children[i+1].to_str()
                 if i < len(self.children)-2:
-                    res += '; '
-            return res + '}'
+                    res += ', '
+            return res + ']'
 
         elif self.symbol.id == 'lambda':
             r = '(' if len(self.children) != 3 else ''
@@ -290,8 +295,13 @@ class SymbolNode:
         elif len(self.children) == 2:
             #return '(' + self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str() + ')'
             if self.symbol.id == '.':
-                if self.children[0].symbol.id == '{' and self.children[1].token.category == Token.Category.NAME and self.children[1].token.value(source) == 'get':
-                    return 'S ' + self.parent.children[1].to_str() + self.children[0].to_str()[1:-1] + ' E ' + self.parent.children[2].to_str() + '}'
+                if self.children[0].symbol.id == '{' and self.children[1].token.category == Token.Category.NAME and self.children[1].token.value(source) == 'get': # }
+                    res = 'S ' + self.parent.children[1].to_str() + ' {'
+                    for i in range(0, len(self.children[0].children), 2):
+                        res += self.children[0].children[i].to_str() + ' {' + self.children[0].children[i+1].to_str() + '}'
+                        if i < len(self.children[0].children)-2:
+                            res += '; '
+                    return res + ' E ' + self.parent.children[2].to_str() + '}'
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[1].symbol.id == '[': # ]
                 return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())

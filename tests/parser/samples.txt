@@ -355,7 +355,7 @@ F prev_char()
    R "\0"
 A tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
 R S .token.value(source) {‘None’ {‘N’}; ‘False’ {‘0B’}; ‘True’ {‘1B’}}
-A python_types_to_11l = S {‘int’ {‘Int’}; ‘str’ {‘String’}; ‘List’ {‘Array’}; ‘Tuple’ {‘Tuple’}}
+A python_types_to_11l = [‘int’ = ‘Int’, ‘str’ = ‘String’, ‘List’ = ‘Array’, ‘Tuple’ = ‘Tuple’]
 R .children[0].to_str()‘ ’(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})‘ ’(.children[1].to_str())
 
 

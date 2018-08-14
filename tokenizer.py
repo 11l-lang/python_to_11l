@@ -49,7 +49,7 @@ class Token:
         return source[self.start:self.end]
 
     def to_str(self, source):
-        return "Token("+str(self.category)+", \""+self.value(source)+"\")"
+        return 'Token('+str(self.category)+', "'+self.value(source)+'")'
 
 def tokenize(source, newline_chars = None, comments = None):
     tokens = []
@@ -154,7 +154,7 @@ def tokenize(source, newline_chars = None, comments = None):
                         break
                     i += 1
                 if source[lexem_start:i] in keywords:
-                    if source[lexem_start:i] in ['None', 'False', 'True']:
+                    if source[lexem_start:i] in ('None', 'False', 'True'):
                         category = Token.Category.CONSTANT
                     else:
                         category = Token.Category.KEYWORD

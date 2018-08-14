@@ -450,7 +450,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         self.function_arguments = []
 
     def to_str(self, indent):
-        return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '') \
+        return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '')
             + '(' + ", ".join(map(lambda arg: arg[0] + ('' if arg[1] == None else ' = ' + arg[1].to_str()),
                 self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0][0] != 'self' else self.function_arguments[1:])) + ')')
 
@@ -825,14 +825,14 @@ def parse_internal(this_node):
                 while token.value(source) != ')':
                     if token.category != Token.Category.NAME:
                         raise Error('expected function\'s argument name', token.start)
-                    func_name = token.value(source)
+                    func_arg_name = token.value(source)
                     next_token()
                     if token.value(source) == '=':
                         next_token()
                         default = expression()
                     else:
                         default = None
-                    node.function_arguments.append((func_name, default)) # ((
+                    node.function_arguments.append((func_arg_name, default)) # ((
                     if token.value(source) not in ',)':
                         raise Error('expected `,` or `)` in function\'s arguments list', token.start)
                     if token.value(source) == ',':

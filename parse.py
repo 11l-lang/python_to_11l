@@ -1,4 +1,7 @@
-﻿from tokenizer import Token
+﻿try:
+    from python_to_11l.tokenizer import Token
+except ImportError:
+    from tokenizer import Token
 from typing import List, Tuple, Dict, Callable
 
 class Scope:

@@ -117,3 +117,5 @@ for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n
         exit(1)
     else:
         print("OK")
+
+print('All OK')

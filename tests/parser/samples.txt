@@ -128,6 +128,9 @@ else:
     prev_indentation_level = 0
 def f(): # test for error when instead of `s = self \n while not s.is_function:` was `s = self.parent \n while s != None and not s.is_function:`
     prev_indentation_level = 0
+def children_to_str_detect_single_stmt(self, indent, r):
+    if len(self.children) > 1 or len(self.children) == 0:
+        return self.children_to_str(indent, r)
 [1, 2]
 ===
 Array[Int] indentation_levels
@@ -138,6 +141,9 @@ E
    prev_indentation_level = 0
 F f()
    A prev_indentation_level = 0
+F children_to_str_detect_single_stmt(indent, r)
+   I .children.len > 1 | .children.empty
+      R .children_to_str(indent, r)
 [1, 2]
 
 

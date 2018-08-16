@@ -50,3 +50,7 @@ a = 0b + 1
 
 123_45
 ^Error: digit separator in this number is located in the wrong place (should be: 12_345)
+
+
+a = \1
+     ^Error: only new line character allowed after backslash

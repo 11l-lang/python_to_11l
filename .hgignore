@@ -1,0 +1,3 @@
+syntax: glob
+.vs/
+__pycache__/

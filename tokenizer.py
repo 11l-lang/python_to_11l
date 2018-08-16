@@ -216,6 +216,15 @@ def tokenize(source, newline_chars = None, comments = None):
                         break
                 category = Token.Category.STRING_LITERAL
 
+            elif ch == '\\':
+                if source[i] not in "\r\n":
+                    raise Error('only new line character allowed after backslash', i)
+                if source[i] == "\r":
+                    i += 1
+                if source[i] == "\n":
+                    i += 1
+                continue
+
             else:
                 raise Error('unexpected character ' + ch, lexem_start)
 

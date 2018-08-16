@@ -261,6 +261,8 @@ class SymbolNode:
                     return c0 + '[' + self.children[1].to_str() + ']'
 
         elif self.symbol.id == '{': # }
+            if len(self.children) == 0:
+                return 'Dict()'
             res = '['
             for i in range(0, len(self.children), 2):
                 res += self.children[i].to_str() + ' = ' + self.children[i+1].to_str()
@@ -306,7 +308,7 @@ class SymbolNode:
                             res += '; '
                     return res + ' E ' + self.parent.children[2].to_str() + '}'
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
-            elif self.symbol.id == '+=' and self.children[1].symbol.id == '[': # ]
+            elif self.symbol.id == '+=' and self.children[1].symbol.id == '[' and self.children[1].is_list: # ]
                 return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
             elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
                 return self.children[0].to_str() + '++'

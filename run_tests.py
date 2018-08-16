@@ -56,11 +56,7 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
                 tokenizer.tokenize(test_source)
             else:
                 parse.parse(tokenizer.tokenize(test_source), test_source)
-        except Exception as e:
-            #assert(isinstance(e, tokenizer.Error) or isinstance(e, parse.Error))
-            if not (isinstance(e, tokenizer.Error) or isinstance(e, parse.Error)):
-                print("Exception in test:\n" + test)
-                raise e
+        except (tokenizer.Error, parse.Error) as e:
             was_error = True
             if error and 'Error: ' + e.message == error[0] and e.pos == error[1]:
                 print('OK (Error)')
@@ -77,6 +73,9 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
                                                                                                               prev_line_pos:e.pos]) + '^')
                 print("in test:\n" + test)
                 exit(1)
+        except Exception as e:
+            print("Exception in test:\n" + test)
+            raise e
         if error != None and not was_error:
             print("There should be error in test:\n" + test)
             exit(1)

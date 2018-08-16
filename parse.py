@@ -190,8 +190,12 @@ class SymbolNode:
 
         if self.symbol.id == '(': # )
             if self.function_call:
-                if self.children[0].symbol.id == '.' and self.children[0].children[0].symbol.id == '{' and self.children[0].children[1].token.value(source) == 'get': # }
-                    return '(' + self.children[0].to_str() + ')'
+                if self.children[0].symbol.id == '.':
+                    if self.children[0].children[0].symbol.id == '{' and self.children[0].children[1].token.value(source) == 'get': # } # replace `{'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id)` with `(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})`
+                        return '(' + self.children[0].to_str() + ')'
+                    if self.children[0].children[1].token.value(source) == 'join': # replace `', '.join(arr)` with `arr.join(‘, ’)`
+                        assert(len(self.children) == 2)
+                        return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
                 func_name = self.children[0].to_str()
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 2)
@@ -300,7 +304,7 @@ class SymbolNode:
         elif len(self.children) == 2:
             #return '(' + self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str() + ')'
             if self.symbol.id == '.':
-                if self.children[0].symbol.id == '{' and self.children[1].token.category == Token.Category.NAME and self.children[1].token.value(source) == 'get': # }
+                if self.children[0].symbol.id == '{' and self.children[1].token.category == Token.Category.NAME and self.children[1].token.value(source) == 'get': # } # replace `{'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id)` with `(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})`
                     res = 'S ' + self.parent.children[1].to_str() + ' {'
                     for i in range(0, len(self.children[0].children), 2):
                         res += self.children[0].children[i].to_str() + ' {' + self.children[0].children[i+1].to_str() + '}'

@@ -44,7 +44,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return 0
-        if name in ('isinstance', 'len', 'super', 'print', 'ord'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr'):
             return 0
         if name in self.nonlocals:
             return 1
@@ -207,6 +207,9 @@ class SymbolNode:
                 elif func_name == 'ord': # replace `ord(ch)` with `ch.code`
                     assert(len(self.children) == 2)
                     return self.children[1].to_str() + '.code'
+                elif func_name == 'chr': # replace `chr(code)` with `Char(code' code)`
+                    assert(len(self.children) == 2)
+                    return "Char(code' " + self.children[1].to_str() + ')'
                 elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
                     assert(len(self.children) == 3)
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[2].to_str()
@@ -342,7 +345,7 @@ class SymbolNode:
             elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # )
                 return self.children[0].children[1].to_str() + '.empty'
             else:
-                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
+                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             c0 = self.children[0].to_str()

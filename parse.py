@@ -587,6 +587,7 @@ def expression(rbp = 0):
         t = tokensn
         next_token()
         left = t.symbol.led(t, left)
+        check_tokensn()
     return left
 
 def infix(id, bp):

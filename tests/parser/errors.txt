@@ -169,3 +169,8 @@ nonlocal i,
 
 A l = lambda: None
   ^Error: expected end of statement
+
+
+selection_strings = [("selection", True)]
+'\n'.join([s[0] finally s in selection_strings])
+                ^Error: no symbol corresponding to token `finally` (belonging to Category.KEYWORD) found while parsing expression

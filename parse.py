@@ -27,9 +27,11 @@ class Scope:
     def add_var(self, name, error_if_already_defined = False, type = None, err_token = None):
         if not (name in self.vars) and not (name in self.nonlocals):
             s = self
-            while not s.is_function:
+            while True:
                 if name in s.vars:
                     return False
+                if s.is_function:
+                    break
                 s = s.parent
                 if s == None:
                     break
@@ -42,7 +44,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return 0
-        if name in ('isinstance', 'len', 'super', 'print'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord'):
             return 0
         if name in self.nonlocals:
             return 1
@@ -202,6 +204,9 @@ class SymbolNode:
                     if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
                         return '!' + self.children[1].to_str() + '.empty'
                     return self.children[1].to_str() + '.len'
+                elif func_name == 'ord': # replace `ord(ch)` with `ch.code`
+                    assert(len(self.children) == 2)
+                    return self.children[1].to_str() + '.code'
                 elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
                     assert(len(self.children) == 3)
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[2].to_str()

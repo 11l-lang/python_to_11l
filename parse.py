@@ -185,7 +185,7 @@ class SymbolNode:
 
         if self.token.category == Token.Category.STRING_LITERAL:
             s = self.token.value(source)
-            return s if '\\' in s else '‘' + s[1:-1] + '’'
+            return (s if s[0] == '"' else '"' + s[1:-1].replace('"', R'\"').replace(R"\'", "'") + '"') if '\\' in s else '‘' + s[1:-1] + '’'
 
         if self.token.category == Token.Category.CONSTANT:
             return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
@@ -197,7 +197,7 @@ class SymbolNode:
                         return '(' + self.children[0].to_str() + ')'
                     if self.children[0].children[1].token.value(source) == 'join': # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 2)
-                        return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
+                        return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
                 func_name = self.children[0].to_str()
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 2)
@@ -238,6 +238,8 @@ class SymbolNode:
 
         elif self.symbol.id == '[': # ]
             if self.is_list:
+                if len(self.children) == 1 and self.children[0].symbol.id == 'for':
+                    return self.children[0].to_str()
                 res = '['
                 for i in range(len(self.children)):
                     res += self.children[i].to_str()
@@ -292,6 +294,14 @@ class SymbolNode:
                     r += ', '
             if len(self.children) != 3: r += ')'
             return r + ' -> ' + self.children[-1].to_str()
+
+        elif self.symbol.id == 'for':
+            res = self.children[2].to_str()
+            if len(self.children) == 4:
+                res += '.filter(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
+            if self.children[1].to_str() != self.children[0].to_str():
+                res += '.map(' + self.children[1].to_str() + ' -> ' + self.children[0].to_str() + ')'
+            return res
 
         elif self.symbol.id == 'not':
             if len(self.children) == 1:
@@ -790,6 +800,38 @@ def nud(self):
     scope = prev_scope
     return self
 symbol('lambda').nud = nud
+
+def led(self, left):
+    global scope
+    prev_scope = scope
+    scope = for_scope = Scope([])
+    scope.parent = prev_scope
+    def set_scope_recursive(sn, scope):
+        sn.scope = scope
+        for child in sn.children:
+            if child != None:
+                set_scope_recursive(child, scope)
+    set_scope_recursive(left, scope)
+    tokensn.scope = scope
+    scope.add_var(token.value(source))
+
+    self.append_child(left)
+    self.append_child(tokensn)
+    next_token()
+    scope = prev_scope
+    advance('in')
+    if_lbp = symbol('if').lbp
+    symbol('if').lbp = 0
+    self.append_child(expression())
+    symbol('if').lbp = if_lbp
+    if token.value(source) == 'if':
+        scope = for_scope
+        next_token()
+        self.append_child(expression())
+        scope = prev_scope
+
+    return self
+symbol('for', 20).led = led
 
 # multitoken operators
 

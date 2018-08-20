@@ -308,11 +308,15 @@ l = lambda: None
 l = lambda x: x[0]
 l = lambda self: self # `self` here should not be replaced with ``
 l = lambda x, y, reverse = False: y < x if reverse else x < y
+c = 1
+l = lambda x: x < c
 ===
 A l = () -> N
 l = x -> x[0]
 l = self -> self
 l = (x, y, reverse = 0B) -> I reverse {y < x} E x < y
+A c = 1
+l = x -> x < @c
 
 
 class Object:

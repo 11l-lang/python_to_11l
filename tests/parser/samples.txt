@@ -91,7 +91,7 @@ F to_html(instr)
       A newline_chars = []
       A i = 0
       L i < @instr.len
-         I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1.<i] != "\r")
+         I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
             newline_chars [+]= i
          i++
       R newline_chars
@@ -103,7 +103,7 @@ F to_html(instr)
    F get_newline_chars()
       A i = 0
       L i < @instr.len
-         I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1.<i] != "\r")
+         I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
             R [+]= i
          i++
 
@@ -241,7 +241,7 @@ str[3:10:2]
 str[3:10:]
 ===
 String str
-str[0.<(len)-1]
+str[0 .< (len)-1]
 str[1..]
 str[0.<1]
 str[1.<2]
@@ -254,7 +254,7 @@ def to_str(self, indent):
     return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
 ===
 F to_str(indent)
-   R T.super.to_str(indent)[0.<(len)-1]‘ = ’(.expression.to_str())"\n"
+   R T.super.to_str(indent)[0 .< (len)-1]‘ = ’(.expression.to_str())"\n"
 
 
 def html_escapeq(str):
@@ -405,7 +405,7 @@ F to_html(instr, outfile = N)
    A i = 0
    A writepos = 0
    F write_to_pos(pos, npos)
-      @outfile.write(@instr[@writepos.<pos])
+      @outfile.write(@instr[@writepos .< pos])
       @writepos = npos
    F write_to_i(add_str, skip_chars = 1)
       F write()
@@ -473,7 +473,7 @@ A n = ‘123’
 A number_with_separators = ‘’
 A j = n.len
 L j > 4
-   number_with_separators = ‘'’n[j - 4.<j]‘’number_with_separators
+   number_with_separators = ‘'’n[j - 4 .< j]‘’number_with_separators
    j -= 4
 
 

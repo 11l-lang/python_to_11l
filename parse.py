@@ -43,16 +43,19 @@ class Scope:
 
     def find(self, name, token):
         if name == 'self':
-            return 0
+            return ''
         if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range'):
-            return 0
+            return ''
         if name in self.nonlocals:
-            return 1
+            return '@'
         capture_level = 0
         s = self
         while True:
             if name in s.vars:
-                return capture_level
+                if s.parent == None: # variable is declared in the global scope
+                    return ':' if capture_level > 0 else ''
+                else:
+                    return capture_level*'@'
             if s.is_function:
                 capture_level += 1
             s = s.parent
@@ -103,7 +106,7 @@ class SymbolNode:
     is_list : bool = False
     slicing : bool = False
     is_not  : bool = False
-    capture_level : int = 0
+    scope_prefix : str = ''
     scope : Scope
 
     def __init__(self, token):
@@ -157,7 +160,9 @@ class SymbolNode:
         #     prev_token_end = c.token.end
         # return r
         if self.token.category == Token.Category.NAME:
-            return self.capture_level*'@' + self.token.value(source)
+            if self.scope_prefix == ':' and self.parent and self.parent.function_call: # global functions do not require prefix `:` because global functions are ok, but global variables are not so good and they should be marked with `:`
+                return self.token.value(source)
+            return self.scope_prefix + self.token.value(source)
 
         if self.token.category == Token.Category.NUMERIC_LITERAL:
             n = self.token.value(source)
@@ -1116,7 +1121,7 @@ def parse_internal(this_node):
         def check_vars_defined(sn : SymbolNode):
             if sn.token.category == Token.Category.NAME:
                 if not (sn.parent and sn.parent.token.value(source) == '.') or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
-                    sn.capture_level = sn.scope.find(sn.token.value(source), sn.token)
+                    sn.scope_prefix = sn.scope.find(sn.token.value(source), sn.token)
             else:
                 for child in sn.children:
                     if child != None:

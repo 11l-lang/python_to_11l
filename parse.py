@@ -190,6 +190,10 @@ class SymbolNode:
         if self.token.category == Token.Category.CONSTANT:
             return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
 
+        def range_need_space(child1, child2):
+            return not((child1 == None or child1.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL))
+                   and (child2 == None or child2.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL)))
+
         if self.symbol.id == '(': # )
             if self.function_call:
                 if self.children[0].symbol.id == '.':
@@ -218,12 +222,15 @@ class SymbolNode:
                     return 'T.super'
                 elif func_name == 'range':
                     assert(2 <= len(self.children) <= 4)
-                    if len(self.children) == 2: # replace `range(e)` with `(0.<e)`
-                        return '(0.<' + self.children[1].to_str() + ')'
-                    elif len(self.children) == 3: # replace `range(b, e)` with `(b.<e)`
-                        return '(' + self.children[1].to_str() + '.<' + self.children[2].to_str() + ')'
-                    else: # replace `range(b, e, step)` with `(b.<e).step(step)`
-                        return '(' + self.children[1].to_str() + '.<' + self.children[2].to_str() + ').step(' + self.children[3].to_str() + ')'
+                    if len(self.children) == 2: # replace `range(e)` with `(0 .< e)`
+                        space = ' ' * range_need_space(self.children[1], None)
+                        return '(0' + space + '.<' + space + self.children[1].to_str() + ')'
+                    else:
+                        rangestr = ' .< ' if range_need_space(self.children[1], self.children[2]) else '.<'
+                        if len(self.children) == 3: # replace `range(b, e)` with `(b .< e)`
+                            return '(' + self.children[1].to_str() + rangestr + self.children[2].to_str() + ')'
+                        else: # replace `range(b, e, step)` with `(b .< e).step(step)`
+                            return '(' + self.children[1].to_str() + rangestr + self.children[2].to_str() + ').step(' + self.children[3].to_str() + ')'
                 else:
                     res = func_name + '('
                     for i in range(1, len(self.children)):
@@ -272,8 +279,9 @@ class SymbolNode:
                         if r[0] == '-': # hacky implementation of ‘this rule’[https://docs.python.org/3/reference/simple_stmts.html]:‘If either bound is negative, the sequence's length is added to it.’
                             r = '(len)' + r
                         return r
+                    space = ' ' * range_need_space(self.children[1], self.children[2])
                     fnb2 = for_negative_bound(2)
-                    s = (for_negative_bound(1) or '0') + '.' + ('<' + fnb2 if fnb2 else '.')
+                    s = (for_negative_bound(1) or '0') + space + '.' + ('<' + space + fnb2 if fnb2 else '.')
                     if len(self.children) == 4 and self.children[3] != None:
                         s = '(' + s + ').step(' + self.children[3].to_str() + ')'
                     return c0 + '[' + s + ']'
@@ -359,13 +367,13 @@ class SymbolNode:
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + '‘’' + self.children[1].to_str()
             elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `'0' <= ch <= '9'` with `ch C ‘0’..‘9’`
-                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '..' + self.children[1].to_str()
+                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' .. ' if range_need_space(self.children[0].children[0], self.children[1]) else '..') + self.children[1].to_str()
             elif self.symbol.id == '<'  and self.children[0].symbol.id == '<=': # replace `'0' <= ch <  '9'` with `ch C ‘0’.<‘9’`
-                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '.<' + self.children[1].to_str()
+                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' .< ' if range_need_space(self.children[0].children[0], self.children[1]) else '.<') + self.children[1].to_str()
             elif self.symbol.id == '<=' and self.children[0].symbol.id == '<' : # replace `'0' <  ch <= '9'` with `ch C ‘0’<.‘9’`
-                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '<.' + self.children[1].to_str()
+                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' <. ' if range_need_space(self.children[0].children[0], self.children[1]) else '<.') + self.children[1].to_str()
             elif self.symbol.id == '<'  and self.children[0].symbol.id == '<' : # replace `'0' <= ch <= '9'` with `ch C ‘0’<.<‘9’`
-                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '<.<' + self.children[1].to_str()
+                return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' <.< ' if range_need_space(self.children[0].children[0], self.children[1]) else '<.<') + self.children[1].to_str()
             elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # )
                 return self.children[0].children[1].to_str() + '.empty'
             else:

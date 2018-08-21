@@ -222,13 +222,14 @@ class SymbolNode:
                     return 'T.super'
                 elif func_name == 'range':
                     assert(2 <= len(self.children) <= 4)
+                    parenthesis = ('(', ')') if self.parent != None else ('', '')
                     if len(self.children) == 2: # replace `range(e)` with `(0 .< e)`
                         space = ' ' * range_need_space(self.children[1], None)
-                        return '(0' + space + '.<' + space + self.children[1].to_str() + ')'
+                        return parenthesis[0] + '0' + space + '.<' + space + self.children[1].to_str() + parenthesis[1]
                     else:
                         rangestr = ' .< ' if range_need_space(self.children[1], self.children[2]) else '.<'
                         if len(self.children) == 3: # replace `range(b, e)` with `(b .< e)`
-                            return '(' + self.children[1].to_str() + rangestr + self.children[2].to_str() + ')'
+                            return parenthesis[0] + self.children[1].to_str() + rangestr + self.children[2].to_str() + parenthesis[1]
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
                             return '(' + self.children[1].to_str() + rangestr + self.children[2].to_str() + ').step(' + self.children[3].to_str() + ')'
                 else:
@@ -550,6 +551,12 @@ class ASTSwitch(ASTNodeWithExpression):
 class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
     def to_str(self, indent):
         return self.children_to_str(indent, 'L' if self.expression.token.category == Token.Category.CONSTANT and self.expression.token.value(source) == 'True' else 'L ' + self.expression.to_str())
+
+class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
+    loop_variable : str
+
+    def to_str(self, indent):
+        return self.children_to_str(indent, 'L(' + self.loop_variable + ') ' + self.expression.to_str())
 
 class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -905,6 +912,7 @@ def parse_internal(this_node):
             if token.value(source) == 'def':
                 node = ASTFunctionDefinition()
                 node.function_name = expected_name('function name')
+                global scope
                 scope.add_var(node.function_name, True)
 
                 if token.value(source) != '(': # )
@@ -980,6 +988,21 @@ def parse_internal(this_node):
                 next_token()
                 node.set_expression(expression())
                 new_scope(node)
+
+            elif token.value(source) == 'for':
+                node = ASTFor()
+                next_token()
+                prev_scope = scope
+                scope = Scope(None)
+                scope.parent = prev_scope
+
+                node.loop_variable = token.value(source)
+                scope.add_var(node.loop_variable, True)
+                next_token()
+                advance('in')
+                node.set_expression(expression())
+                new_scope(node)
+                scope = prev_scope
 
             elif token.value(source) == 'return':
                 node = ASTReturn()

@@ -224,7 +224,7 @@ F find_ending_sq_bracket(str, i, start = 0)
                R i
       i++
       I i == str.len
-         @exit_with_error(‘Unended comment started’, start + starti)
+         exit_with_error(‘Unended comment started’, start + starti)
 
 
 ---
@@ -308,6 +308,9 @@ l = lambda: None
 l = lambda x: x[0]
 l = lambda self: self # `self` here should not be replaced with ``
 l = lambda x, y, reverse = False: y < x if reverse else x < y
+if True:
+    c = 1
+    l = lambda x: x < c
 c = 1
 l = lambda x: x < c
 ===
@@ -315,8 +318,11 @@ A l = () -> N
 l = x -> x[0]
 l = self -> self
 l = (x, y, reverse = 0B) -> I reverse {y < x} E x < y
+I 1B
+   A c = 1
+   l = x -> x < @c
 A c = 1
-l = x -> x < @c
+l = x -> x < :c
 
 
 class Object:

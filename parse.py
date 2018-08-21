@@ -44,7 +44,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return 0
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range'):
             return 0
         if name in self.nonlocals:
             return 1
@@ -216,6 +216,14 @@ class SymbolNode:
                 elif func_name == 'super': # replace `super()` with `T.super`
                     assert(len(self.children) == 1)
                     return 'T.super'
+                elif func_name == 'range':
+                    assert(2 <= len(self.children) <= 4)
+                    if len(self.children) == 2: # replace `range(e)` with `(0.<e)`
+                        return '(0.<' + self.children[1].to_str() + ')'
+                    elif len(self.children) == 3: # replace `range(b, e)` with `(b.<e)`
+                        return '(' + self.children[1].to_str() + '.<' + self.children[2].to_str() + ')'
+                    else: # replace `range(b, e, step)` with `(b.<e).step(step)`
+                        return '(' + self.children[1].to_str() + '.<' + self.children[2].to_str() + ').step(' + self.children[3].to_str() + ')'
                 else:
                     res = func_name + '('
                     for i in range(1, len(self.children)):
@@ -350,13 +358,13 @@ class SymbolNode:
                 return '(' + self.children[0].to_str() + ')‘’' + ('(' + c1 + ')' if c1[0] == '.' else c1)
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + '‘’' + self.children[1].to_str()
-            elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `if '0' <= ch <= '9'` with `I ch C ‘0’..‘9’`
+            elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `'0' <= ch <= '9'` with `ch C ‘0’..‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '..' + self.children[1].to_str()
-            elif self.symbol.id == '<'  and self.children[0].symbol.id == '<=': # replace `if '0' <= ch <  '9'` with `I ch C ‘0’.<‘9’`
+            elif self.symbol.id == '<'  and self.children[0].symbol.id == '<=': # replace `'0' <= ch <  '9'` with `ch C ‘0’.<‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '.<' + self.children[1].to_str()
-            elif self.symbol.id == '<=' and self.children[0].symbol.id == '<' : # replace `if '0' <  ch <= '9'` with `I ch C ‘0’<.‘9’`
+            elif self.symbol.id == '<=' and self.children[0].symbol.id == '<' : # replace `'0' <  ch <= '9'` with `ch C ‘0’<.‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '<.' + self.children[1].to_str()
-            elif self.symbol.id == '<'  and self.children[0].symbol.id == '<' : # replace `if '0' <= ch <= '9'` with `I ch C ‘0’<.<‘9’`
+            elif self.symbol.id == '<'  and self.children[0].symbol.id == '<' : # replace `'0' <= ch <= '9'` with `ch C ‘0’<.<‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + '<.<' + self.children[1].to_str()
             elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # )
                 return self.children[0].children[1].to_str() + '.empty'

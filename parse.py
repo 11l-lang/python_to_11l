@@ -489,7 +489,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'List':'Array', 'Tuple':'Tuple'}
+python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict'}
 
 class ASTTypeHint(ASTNode):
     var : str

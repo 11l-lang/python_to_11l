@@ -117,8 +117,8 @@ def tokenize(source, newline_chars = None, comments = None):
             if len(nesting_elements) == 0: # [https://docs.python.org/3/reference/lexical_analysis.html#implicit-line-joining ‘Implicit line joining’]:‘Expressions in parentheses, square brackets or curly braces can be split over more than one physical line without using backslashes.’
                 begin_of_line = True
         elif ch == '#':
-            i += 1
             comment_start = i
+            i += 1
             while i < len(source) and source[i] not in "\r\n":
                 i += 1
             if comments != None:

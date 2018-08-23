@@ -182,7 +182,7 @@ String key = S token.category
       ‘(literal)’
    NAME
       ‘(name)’
-   CONSTANT:
+   CONSTANT
       ‘(constant)’
    STATEMENT_SEPARATOR, DEDENT
       ‘;’

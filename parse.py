@@ -146,7 +146,7 @@ class SymbolNode:
             return self.token.end
 
         if self.symbol.id in '([': # ])
-            return self.children[-1].rightmost() + 1
+            return (self.children[-1] or self.children[-2]).rightmost() + 1
 
         return self.children[-1].rightmost()
 
@@ -229,43 +229,46 @@ class SymbolNode:
                     if self.children[0].children[0].symbol.id == '{' and self.children[0].children[1].token.value(source) == 'get': # } # replace `{'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id)` with `(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})`
                         return '(' + self.children[0].to_str() + ')'
                     if self.children[0].children[1].token.value(source) == 'join': # replace `', '.join(arr)` with `arr.join(‘, ’)`
-                        assert(len(self.children) == 2)
+                        assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
                 func_name = self.children[0].to_str()
                 if func_name == 'len': # replace `len(container)` with `container.len`
-                    assert(len(self.children) == 2)
+                    assert(len(self.children) == 3)
                     if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
                         return '!' + self.children[1].to_str() + '.empty'
                     return self.children[1].to_str() + '.len'
                 elif func_name == 'ord': # replace `ord(ch)` with `ch.code`
-                    assert(len(self.children) == 2)
+                    assert(len(self.children) == 3)
                     return self.children[1].to_str() + '.code'
                 elif func_name == 'chr': # replace `chr(code)` with `Char(code' code)`
-                    assert(len(self.children) == 2)
+                    assert(len(self.children) == 3)
                     return "Char(code' " + self.children[1].to_str() + ')'
                 elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
-                    assert(len(self.children) == 3)
-                    return 'T(' + self.children[1].to_str() + ') >= ' + self.children[2].to_str()
+                    assert(len(self.children) == 5)
+                    return 'T(' + self.children[1].to_str() + ') >= ' + self.children[3].to_str()
                 elif func_name == 'super': # replace `super()` with `T.super`
                     assert(len(self.children) == 1)
                     return 'T.super'
                 elif func_name == 'range':
-                    assert(2 <= len(self.children) <= 4)
+                    assert(3 <= len(self.children) <= 7)
                     parenthesis = ('(', ')') if self.parent != None else ('', '')
-                    if len(self.children) == 2: # replace `range(e)` with `(0 .< e)`
+                    if len(self.children) == 3: # replace `range(e)` with `(0 .< e)`
                         space = ' ' * range_need_space(self.children[1], None)
                         return parenthesis[0] + '0' + space + '.<' + space + self.children[1].to_str() + parenthesis[1]
                     else:
-                        rangestr = ' .< ' if range_need_space(self.children[1], self.children[2]) else '.<'
-                        if len(self.children) == 3: # replace `range(b, e)` with `(b .< e)`
-                            return parenthesis[0] + self.children[1].to_str() + rangestr + self.children[2].to_str() + parenthesis[1]
+                        rangestr = ' .< ' if range_need_space(self.children[1], self.children[3]) else '.<'
+                        if len(self.children) == 5: # replace `range(b, e)` with `(b .< e)`
+                            return parenthesis[0] + self.children[1].to_str() + rangestr + self.children[3].to_str() + parenthesis[1]
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
-                            return '(' + self.children[1].to_str() + rangestr + self.children[2].to_str() + ').step(' + self.children[3].to_str() + ')'
+                            return '(' + self.children[1].to_str() + rangestr + self.children[3].to_str() + ').step(' + self.children[5].to_str() + ')'
                 else:
                     res = func_name + '('
-                    for i in range(1, len(self.children)):
-                        res += self.children[i].to_str()
-                        if i < len(self.children)-1:
+                    for i in range(1, len(self.children), 2):
+                        if self.children[i+1] == None:
+                            res += self.children[i].to_str()
+                        else:
+                            res += self.children[i].to_str() + "' " + self.children[i+1].to_str()
+                        if i < len(self.children)-2:
                             res += ', '
                     return res + ')'
             elif self.tuple:
@@ -374,7 +377,7 @@ class SymbolNode:
                         res += self.children[0].children[i].to_str() + ' {' + self.children[0].children[i+1].to_str() + '}'
                         if i < len(self.children[0].children)-2:
                             res += '; '
-                    return res + ' E ' + self.parent.children[2].to_str() + '}'
+                    return res + ' E ' + self.parent.children[3].to_str() + '}'
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[1].symbol.id == '[' and self.children[1].is_list: # ]
                 return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
@@ -737,6 +740,11 @@ def led(self, left):
     if token.value(source) != ')':
         while True:
             self.append_child(expression())
+            if token.value(source) == '=':
+                next_token()
+                self.append_child(expression())
+            else:
+                self.children.append(None)
             if token.value(source) != ',':
                 break
             advance(',') # (
@@ -1147,9 +1155,17 @@ def parse_internal(this_node):
                 if not (sn.parent and sn.parent.token.value(source) == '.') or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
                     sn.scope_prefix = sn.scope.find(sn.token.value(source), sn.token)
             else:
-                for child in sn.children:
-                    if child != None:
-                        check_vars_defined(child)
+                if sn.function_call:
+                    check_vars_defined(sn.children[0])
+                    for i in range(1, len(sn.children), 2):
+                        if sn.children[i+1] == None:
+                            check_vars_defined(sn.children[i])
+                        else:
+                            check_vars_defined(sn.children[i+1]) # check of keyword arguments (sn.children[i]) is skipped
+                else:
+                    for child in sn.children:
+                        if child != None:
+                            check_vars_defined(child)
         node.walk_expressions(check_vars_defined)
 
         node.parent = this_node

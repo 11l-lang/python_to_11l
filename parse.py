@@ -189,8 +189,31 @@ class SymbolNode:
             return sign + n[i:].replace('_', "'") + ('o' if is_oct else 'b' if is_bin else '')
 
         if self.token.category == Token.Category.STRING_LITERAL:
+            def balance_pq_string(s):
+                min_nesting_level = 0
+                nesting_level = 0
+                for ch in s:
+                    if ch == "‘":
+                        nesting_level += 1
+                    elif ch == "’":
+                        nesting_level -= 1
+                        min_nesting_level = min(min_nesting_level, nesting_level)
+                nesting_level -= min_nesting_level
+                return "'"*-min_nesting_level + "‘"*-min_nesting_level + "‘" + s + "’" + "’"*nesting_level + "'"*nesting_level
+
             s = self.token.value(source)
-            return (s if s[0] == '"' else '"' + s[1:-1].replace('"', R'\"').replace(R"\'", "'") + '"') if '\\' in s else '‘' + s[1:-1] + '’'
+            if s[0] in 'rR':
+                l = 3 if s[1:4] in ('"""', "'''") else 1
+                return balance_pq_string(s[1+l:-l])
+            else:
+                l = 3 if s[0:3] in ('"""', "'''") else 1
+                if '\\' in s or ('‘' in s and not '’' in s) or (not '‘' in s and '’' in s):
+                    if s[0] == '"':
+                        return s if l == 1 else s[2:-2]
+                    else:
+                        return '"' + s[l:-l].replace('"', R'\"').replace(R"\'", "'") + '"'
+                else:
+                    return balance_pq_string(s[l:-l])
 
         if self.token.category == Token.Category.CONSTANT:
             return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]

@@ -147,6 +147,26 @@ def tokenize(source, newline_chars = None, comments = None):
                 elif ch == ';':
                     category = Token.Category.STATEMENT_SEPARATOR
 
+            elif ch in ('"', "'") or (ch in 'rR' and source[i:i+1] in ('"', "'")):
+                if ch in 'rR':
+                    ends = source[i:i+3] if source[i:i+3] in ('"""', "'''") else source[i]
+                else:
+                    i -= 1
+                    ends = source[i:i+3] if source[i:i+3] in ('"""', "'''") else ch
+                i += len(ends)
+                while True:
+                    if i == len(source):
+                        raise Error('unclosed string literal', lexem_start)
+                    if source[i] == '\\':
+                        i += 1
+                        if i == len(source):
+                            continue
+                    elif source[i:i+len(ends)] == ends:
+                        i += len(ends)
+                        break
+                    i += 1
+                category = Token.Category.STRING_LITERAL
+
             elif 'a' <= ch <= 'z' or 'A' <= ch <= 'Z' or ch == '_': # this is NAME/IDENTIFIER or KEYWORD
                 while i < len(source):
                     ch = source[i]
@@ -203,18 +223,6 @@ def tokenize(source, newline_chars = None, comments = None):
                         if source[start:i] != number_with_separators:
                             raise Error('digit separator in this number is located in the wrong place (should be: '+ number_with_separators +')', start)
                 category = Token.Category.NUMERIC_LITERAL
-
-            elif ch in ('"', "'"):
-                c = ch
-                startqpos = i - 1
-                while True:
-                    if i == len(source):
-                        raise Error('unclosed string literal', startqpos)
-                    ch = source[i]
-                    i += 1
-                    if ch == c:
-                        break
-                category = Token.Category.STRING_LITERAL
 
             elif ch == '\\':
                 if source[i] not in "\r\n":

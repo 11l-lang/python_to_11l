@@ -367,7 +367,7 @@ class SymbolNode:
 
         if len(self.children) == 1:
             #return '(' + self.symbol.id + self.children[0].to_str() + ')'
-            return self.symbol.id + self.children[0].to_str()
+            return {'~':'(-)'}.get(self.symbol.id, self.symbol.id) + self.children[0].to_str()
         elif len(self.children) == 2:
             #return '(' + self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str() + ')'
             if self.symbol.id == '.':
@@ -410,7 +410,7 @@ class SymbolNode:
             elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # )
                 return self.children[0].children[1].to_str() + '.empty'
             else:
-                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
+                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '^':'(+)'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             c0 = self.children[0].to_str()

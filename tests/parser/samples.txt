@@ -211,7 +211,7 @@ def find_ending_sq_bracket(str, i, start = 0):
 F exit_with_error(message, pos)
 {
 }
-F find_ending_sq_bracket(str, i, start = 0)
+F find_ending_sq_bracket(str, =i, start = 0)
    A starti = i
    assert(str[i] == ‘[’)
    A nesting_level = 0

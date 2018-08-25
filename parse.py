@@ -150,6 +150,9 @@ class SymbolNode:
 
         return self.children[-1].rightmost()
 
+    def token_str(self):
+        return self.token.value(source)
+
     def to_str(self):
         # r = ''
         # prev_token_end = self.children[0].token.start
@@ -1254,12 +1257,28 @@ def parse(tokens_, source_):
                         node.children.pop(index)
                         node.children.insert(index, switch_node)
                         continue # to update child = node.children[index]
+
                 if index < len(node.children) - 1 and type(child) == ASTExpression and child.expression.symbol.id == '-=' and child.expression.children[1].token.value(source) == '1' \
                         and type(node.children[index+1]) == ASTIf and len(node.children[index+1].expression.children) == 2 \
                         and node.children[index+1].expression.children[0].token.value(source) == child.expression.children[0].token.value(source): # transform `nesting_level -= 1 \n if nesting_level == 0:` into `if --nesting_level == 0`
                     node.children[index+1].expression.children[0] = child.expression
                     node.children.pop(index)
                     continue
+
+                if type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add modifier `=` to changing ones
+                    for fargi in range(len(child.function_arguments)):
+                        farg = child.function_arguments[fargi][0]
+                        found = False
+                        def detect_argument_modification(node):
+                            def f(e : SymbolNode):
+                                if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=') and e.children[0].token_str() == farg: # +=, -=, *=, /=, etc.
+                                    nonlocal found
+                                    found = True
+                            node.walk_expressions(f)
+                            node.walk_children(detect_argument_modification)
+                        detect_argument_modification(p)
+                        if found:
+                            child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1])
 
                 transformations(child)
                 index += 1

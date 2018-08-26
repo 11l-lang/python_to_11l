@@ -71,10 +71,10 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
                 print('Error: ' + e.message + "\n" + test_source[prev_line_pos:next_line_pos] + "\n" + re.sub(r'[^\t]', ' ',
                                                                                                               test_source[
                                                                                                               prev_line_pos:e.pos]) + '^')
-                print("in test:\n" + test)
+                print("in file '" + file_name + "' in test:\n" + test)
                 exit(1)
         except Exception as e:
-            print("Exception in test:\n" + test)
+            print("Exception in file '" + file_name + "' in test:\n" + test)
             raise e
         if error != None and not was_error:
             print("There should be error in test:\n" + test)
@@ -90,7 +90,8 @@ for test in open("tests/tokenizer/tokens.txt", encoding="utf8").read().split("\n
     else:
         print("OK")
 
-for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n\n"):
+file_name = "tests/parser/samples.txt"
+for test in open(file_name, encoding="utf8").read().split("\n\n\n"):
     if test.startswith('---'):
         continue
     source, expected_translated_source = test.split("===\n")
@@ -105,10 +106,10 @@ for test in open("tests/parser/samples.txt", encoding="utf8").read().split("\n\n
         print('Error: ' + e.message + ' at ' + str(e.pos) + "\n" + source[prev_line_pos:next_line_pos] + "\n" + re.sub(r'[^\t]', ' ',
                                                                                                                        source[
                                                                                                                        prev_line_pos:e.pos]) + '^')
-        print("in test:\n" + test)
+        print("in file '" + file_name + "' in test:\n" + test)
         exit(1)
     except Exception as e:
-        print("Exception in test:\n" + test)
+        print("Exception in file '" + file_name + "' in test:\n" + test)
         raise e
     if translated_source != expected_translated_source:
         print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source)

@@ -235,6 +235,8 @@ class SymbolNode:
                         assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
                 func_name = self.children[0].to_str()
+                if func_name == 'str':
+                    func_name = 'String'
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
                     if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
@@ -249,9 +251,9 @@ class SymbolNode:
                 elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
                     assert(len(self.children) == 5)
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[3].to_str()
-                elif func_name == 'super': # replace `super()` with `T.super`
+                elif func_name == 'super': # replace `super()` with `T.base`
                     assert(len(self.children) == 1)
-                    return 'T.super'
+                    return 'T.base'
                 elif func_name == 'range':
                     assert(3 <= len(self.children) <= 7)
                     parenthesis = ('(', ')') if self.parent != None else ('', '')
@@ -1196,6 +1198,8 @@ def parse(tokens_, source_):
     tokeni = -1
     token = None
     scope = Scope(None)
+    for pytype in python_types_to_11l:
+        scope.add_var(pytype)
     next_token()
     p = ASTProgram()
     if len(tokens_) == 0: return p

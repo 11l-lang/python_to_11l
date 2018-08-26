@@ -231,30 +231,30 @@ F find_ending_sq_bracket(str, =i, start = 0)
 // balancing ]
 
 
-str : str
-str[:-1]
-str[1:]
-str[:1:]
-str[1:2]
-str[::2]
-str[3:10:2]
-str[3:10:]
+s : str
+s[:-1]
+s[1:]
+s[:1:]
+s[1:2]
+s[::2]
+s[3:10:2]
+s[3:10:]
 ===
-String str
-str[0 .< (len)-1]
-str[1..]
-str[0.<1]
-str[1.<2]
-str[(0..).step(2)]
-str[(3.<10).step(2)]
-str[3.<10]
+String s
+s[0 .< (len)-1]
+s[1..]
+s[0.<1]
+s[1.<2]
+s[(0..).step(2)]
+s[(3.<10).step(2)]
+s[3.<10]
 
 
 def to_str(self, indent):
     return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
 ===
 F to_str(indent)
-   R T.super.to_str(indent)[0 .< (len)-1]‘ = ’(.expression.to_str())"\n"
+   R T.base.to_str(indent)[0 .< (len)-1]‘ = ’(.expression.to_str())"\n"
 
 
 def html_escapeq(str):
@@ -273,11 +273,11 @@ tag ‘’= html_escapeq()
 str1 = '1'
 str2 = '2'
 # str = str1 + str2 # rarely needed, so write this:
-str = str1 + '' + str2
+s = str1 + '' + str2
 ===
 A str1 = ‘1’
 A str2 = ‘2’
-A str = str1‘’str2
+A s = str1‘’str2
 
 
 a : bool

@@ -44,7 +44,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip'):
             return ''
         if name in self.nonlocals:
             return '@'
@@ -531,7 +531,8 @@ class ASTTypeHint(ASTNode):
 
 class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
     def to_str(self, indent):
-        return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
+        expression_str = self.expression.to_str()
+        return super().to_str(indent)[:-1] + (' = ' + expression_str if expression_str not in ('[]', 'Dict()') else '') + "\n"
 
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
@@ -588,10 +589,16 @@ class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
         return self.children_to_str(indent, 'L' if self.expression.token.category == Token.Category.CONSTANT and self.expression.token.value(source) == 'True' else 'L ' + self.expression.to_str())
 
 class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
-    loop_variable : str
+    loop_variables : List[str]
 
     def to_str(self, indent):
-        return self.children_to_str(indent, 'L(' + self.loop_variable + ') ' + self.expression.to_str())
+        if len(self.loop_variables) == 1:
+            return self.children_to_str(indent, 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str())
+        else:
+            r = 'L(' + ''.join(self.loop_variables) + ') ' + self.expression.to_str()
+            for index, loop_var in enumerate(self.loop_variables):
+                r += "\n" + ' ' * ((indent+1)*3) + 'A ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
+            return self.children_to_str(indent, r)
 
 class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -650,7 +657,7 @@ def next_token():
 
 def advance(value):
     if token.value(source) != value:
-        raise Error('expected ' + value, token)
+        raise Error('expected `' + value + '`', token)
     next_token()
 
 def peek_token(how_much = 1):
@@ -1037,9 +1044,14 @@ def parse_internal(this_node):
                 scope = Scope(None)
                 scope.parent = prev_scope
 
-                node.loop_variable = token.value(source)
-                scope.add_var(node.loop_variable, True)
+                node.loop_variables = [token.value(source)]
+                scope.add_var(node.loop_variables[0], True)
                 next_token()
+                while token.value(source) == ',':
+                    next_token()
+                    node.loop_variables.append(token.value(source))
+                    scope.add_var(token.value(source), True)
+                    next_token()
                 advance('in')
                 node.set_expression(expression())
                 new_scope(node)

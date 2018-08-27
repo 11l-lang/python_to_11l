@@ -1281,7 +1281,7 @@ def parse(tokens_, source_):
                     node.children.pop(index)
                     continue
 
-                if type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add modifier `=` to changing ones
+                if type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add qualifier `=` to changing ones
                     for fargi in range(len(child.function_arguments)):
                         farg = child.function_arguments[fargi][0]
                         found = False

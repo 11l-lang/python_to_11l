@@ -383,6 +383,8 @@ class SymbolNode:
                         if i < len(self.children[0].children)-2:
                             res += '; '
                     return res + ' E ' + self.parent.children[3].to_str() + '}'
+                if self.children[0].token_str() == 'sys' and self.children[1].token_str() in ('argv', 'stdin', 'stdout', 'stderr'):
+                    return ':' + self.children[1].token_str()
                 return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[1].symbol.id == '[' and self.children[1].is_list: # ]
                 return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
@@ -464,8 +466,14 @@ class ASTNodeWithChildren(ASTNode):
         for child in self.children:
             f(child)
 
-    def children_to_str(self, indent, r):
-        r = ('' if self.tokeni == 0 else (source[tokens[self.tokeni-2].end:tokens[self.tokeni].start].count("\n")-1) * "\n") + ' ' * (indent*3) + r + "\n"
+    def children_to_str(self, indent, t):
+        r = ''
+        if self.tokeni > 0:
+            ti = self.tokeni - 1
+            while ti > 0 and tokens[ti].category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
+                ti -= 1
+            r = (source[tokens[ti].end:tokens[self.tokeni].start].count("\n")-1) * "\n"
+        r += ' ' * (indent*3) + t + "\n"
         for c in self.children:
             r += c.to_str(indent+1)
         return r
@@ -486,6 +494,13 @@ class ASTProgram(ASTNodeWithChildren):
         for c in self.children:
             r += c.to_str(0)
         return r
+
+class ASTImport(ASTNode):
+    def __init__(self):
+        self.modules = []
+
+    def to_str(self, indent):
+        return ' ' * (indent*3) + '//import ' + ', '.join(self.modules) + "\n" # this is easier than avoid to add empty line here: `import sys\n\ndef f()` -> `\nF f()`
 
 class ASTExpression(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -959,10 +974,27 @@ def parse_internal(this_node):
 
     while token != None:
         if token.category == Token.Category.KEYWORD:
-            if token.value(source) == 'def':
+            global scope
+
+            if token.value(source) == 'import':
+                node = ASTImport()
+                next_token()
+                while True:
+                    if token.category != Token.Category.NAME:
+                        raise Error('expected module name', token)
+                    node.modules.append(token.value(source))
+                    scope.add_var(token.value(source), True)
+                    next_token()
+                    if token.value(source) != ',':
+                        break
+                    next_token()
+
+                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
+
+            elif token.value(source) == 'def':
                 node = ASTFunctionDefinition()
                 node.function_name = expected_name('function name')
-                global scope
                 scope.add_var(node.function_name, True)
 
                 if token.value(source) != '(': # )

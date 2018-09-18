@@ -174,3 +174,8 @@ A l = lambda: None
 selection_strings = [("selection", True)]
 '\n'.join([s[0] finally s in selection_strings])
                 ^Error: no symbol corresponding to token `finally` (belonging to Category.KEYWORD) found while parsing expression
+
+
+def f(a = 10, b):
+              ^Error: non-default argument follows default argument
+    return a + b

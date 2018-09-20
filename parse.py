@@ -996,6 +996,22 @@ def parse_internal(this_node):
                 if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
+            elif token.value(source) == 'from':
+                next_token()
+                advance('typing')
+                advance('import')
+                while True:
+                    if token.category != Token.Category.NAME:
+                        raise Error('expected name', token)
+                    next_token()
+                    if token.value(source) != ',':
+                        break
+                    next_token()
+
+                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
+                continue
+
             elif token.value(source) == 'def':
                 node = ASTFunctionDefinition()
                 node.function_name = expected_name('function name')
@@ -1159,8 +1175,8 @@ def parse_internal(this_node):
             name_token = token
             var = token.value(source)
             next_token()
-            type = expected_name('type name')
-            scope.add_var(var, True, type, name_token)
+            type_ = expected_name('type name')
+            scope.add_var(var, True, type_, name_token)
             type_args = []
             if token.value(source) == '[':
                 next_token()
@@ -1182,7 +1198,7 @@ def parse_internal(this_node):
                 if not (token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
             node.var = var
-            node.type = type
+            node.type = type_
             node.type_args = type_args
 
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
@@ -1213,6 +1229,9 @@ def parse_internal(this_node):
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
+
+            if type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self' and node.expression.token_str() == '[' and len(node.expression.children) == 0: # ] # skip `self.* = []` because `create_array({})` is meaningless
+                continue
 
         def check_vars_defined(sn : SymbolNode):
             if sn.token.category == Token.Category.NAME:

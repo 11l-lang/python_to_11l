@@ -44,7 +44,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum'):
             return ''
         if name in self.nonlocals:
             return '@'
@@ -1357,7 +1357,7 @@ def parse(tokens_, source_):
                                     found = True
                             node.walk_expressions(f)
                             node.walk_children(detect_argument_modification)
-                        detect_argument_modification(p)
+                        detect_argument_modification(child)
                         if found:
                             child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1])
 

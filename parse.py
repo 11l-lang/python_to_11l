@@ -562,9 +562,11 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
 
     def to_str(self, indent):
         fargs = list(map(lambda arg: arg[0] + ('' if arg[1] == None else ' = ' + arg[1].to_str()),
-                self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0][0] != 'self' else self.function_arguments[1:]))
+                self.function_arguments))
         if self.first_named_only_argument != None:
             fargs.insert(self.first_named_only_argument, "'")
+        if len(self.function_arguments) and self.function_arguments[0][0] == 'self':
+            fargs.pop(0)
         return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '')
             + '(' + ", ".join(fargs) + ')')
 
@@ -627,6 +629,10 @@ class ASTReturn(ASTNodeWithExpression):
 
     def walk_expressions(self, f):
         if self.expression != None: f(self.expression)
+
+class ASTException(ASTNodeWithExpression):
+    def to_str(self, indent):
+        return ' ' * (indent*3) + 'X ' + self.expression.to_str() + "\n"
 
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
@@ -1050,6 +1056,11 @@ def parse_internal(this_node):
                 next_token()
                 new_scope(node, map(lambda arg: arg[0], node.function_arguments))
 
+                if len(node.children) == 0: # needed for:
+                    n = ASTPass()           # class FileToStringProxy:
+                    n.parent = node         #     def __init__(self):
+                    node.children.append(n) #         self.result = []
+
             elif token.value(source) == 'class':
                 node = ASTClassDefinition()
                 node.class_name = expected_name('class name')
@@ -1153,6 +1164,13 @@ def parse_internal(this_node):
                 if token.value(source) == ',':
                     next_token()
                     node.set_expression2(expression())
+                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
+
+            elif token.value(source) == 'raise':
+                node = ASTException()
+                next_token()
+                node.set_expression(expression())
                 if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 

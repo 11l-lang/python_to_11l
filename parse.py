@@ -472,7 +472,7 @@ class ASTNodeWithChildren(ASTNode):
             ti = self.tokeni - 1
             while ti > 0 and tokens[ti].category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
                 ti -= 1
-            r = (source[tokens[ti].end:tokens[self.tokeni].start].count("\n")-1) * "\n"
+            r = (min(source[tokens[ti].end:tokens[self.tokeni].start].count("\n"), 2) - 1) * "\n"
         r += ' ' * (indent*3) + t + "\n"
         for c in self.children:
             r += c.to_str(indent+1)
@@ -553,7 +553,7 @@ class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
 
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
-    function_arguments : List[Tuple[str, SymbolNode]]# = []
+    function_arguments : List[Tuple[str, SymbolNode, str]]# = []
     first_named_only_argument = None
 
     def __init__(self):
@@ -561,8 +561,19 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         self.function_arguments = []
 
     def to_str(self, indent):
-        fargs = list(map(lambda arg: arg[0] + ('' if arg[1] == None else ' = ' + arg[1].to_str()),
-                self.function_arguments))
+        fargs = []
+        for arg in self.function_arguments:
+            farg = ''
+            default_value = ''
+            if arg[1] != None:
+                default_value = arg[1].to_str()
+            if arg[2] != '':
+                farg += arg[2]
+                if default_value == 'N':
+                    farg += '?'
+                farg += ' '
+            farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
+            fargs.append(farg)
         if self.first_named_only_argument != None:
             fargs.insert(self.first_named_only_argument, "'")
         if len(self.function_arguments) and self.function_arguments[0][0] == 'self':
@@ -1039,6 +1050,11 @@ def parse_internal(this_node):
                         raise Error('expected function\'s argument name', token)
                     func_arg_name = token.value(source)
                     next_token()
+                    type_ = ''
+                    if token.value(source) == ':': # this is a type hint
+                        next_token()
+                        type_ = expression().to_str()
+                        type_ = {'IO[str]': 'File'}.get(type_, type_)
                     if token.value(source) == '=':
                         next_token()
                         default = expression()
@@ -1047,7 +1063,7 @@ def parse_internal(this_node):
                         if was_default_argument and node.first_named_only_argument == None:
                             raise Error('non-default argument follows default argument', tokens[tokeni-1])
                         default = None
-                    node.function_arguments.append((func_arg_name, default)) # ((
+                    node.function_arguments.append((func_arg_name, default, type_)) # ((
                     if token.value(source) not in ',)':
                         raise Error('expected `,` or `)` in function\'s arguments list', token)
                     if token.value(source) == ',':
@@ -1377,7 +1393,7 @@ def parse(tokens_, source_):
                             node.walk_children(detect_argument_modification)
                         detect_argument_modification(child)
                         if found:
-                            child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1])
+                            child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2])
 
                 transformations(child)
                 index += 1

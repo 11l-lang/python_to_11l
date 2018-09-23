@@ -385,7 +385,22 @@ class SymbolNode:
                     return res + ' E ' + self.parent.children[3].to_str() + '}'
                 if self.children[0].token_str() == 'sys' and self.children[1].token_str() in ('argv', 'stdin', 'stdout', 'stderr'):
                     return ':' + self.children[1].token_str()
-                return (self.children[0].to_str() if self.children[0].to_str() != 'self' else '') + '.' + self.children[1].to_str()
+                if self.children[0].to_str() == 'self':
+                    parent = self
+                    while parent.parent:
+                        parent = parent.parent
+                    ast_parent = parent.ast_parent
+                    function_nesting = 0
+                    while type(ast_parent) != ASTProgram:
+                        if type(ast_parent) == ASTFunctionDefinition:
+                            function_nesting += 1
+                            if function_nesting == 2:
+                                break
+                        elif type(ast_parent) == ASTClassDefinition:
+                            break
+                        ast_parent = ast_parent.parent
+                    return ('@' if function_nesting == 2 else '') + '.' + self.children[1].to_str()
+                return self.children[0].to_str() + '.' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[1].symbol.id == '[' and self.children[1].is_list: # ]
                 return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
             elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
@@ -1112,12 +1127,14 @@ def parse_internal(this_node):
                     while token != None and token.value(source) in ('elif', 'else'):
                         if token.value(source) == 'elif':
                             n.else_or_elif = ASTElseIf()
+                            n.else_or_elif.parent = n
                             n = n.else_or_elif
                             next_token()
                             n.set_expression(expression())
                             new_scope(n)
                         if token != None and token.value(source) == 'else':
                             n.else_or_elif = ASTElse()
+                            n.else_or_elif.parent = n
                             next_token()
                             new_scope(n.else_or_elif)
                             break

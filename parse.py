@@ -383,8 +383,9 @@ class SymbolNode:
                         if i < len(self.children[0].children)-2:
                             res += '; '
                     return res + ' E ' + self.parent.children[3].to_str() + '}'
-                if self.children[0].token_str() == 'sys' and self.children[1].token_str() in ('argv', 'stdin', 'stdout', 'stderr'):
-                    return ':' + self.children[1].token_str()
+                c1ts = self.children[1].token_str()
+                if self.children[0].token_str() == 'sys' and c1ts in ('argv', 'exit', 'stdin', 'stdout', 'stderr'):
+                    return ':'*(c1ts != 'exit') + c1ts
                 if self.children[0].to_str() == 'self':
                     parent = self
                     while parent.parent:

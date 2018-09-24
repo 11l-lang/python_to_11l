@@ -551,7 +551,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict'}
+python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict'}
 
 class ASTTypeHint(ASTNode):
     var : str
@@ -559,6 +559,8 @@ class ASTTypeHint(ASTNode):
     type_args : List[str]
 
     def to_str(self, indent):
+        if self.type == 'Callable':
+            return ' ' * (indent*3) + '(' + ', '.join(python_types_to_11l[ty] for ty in self.type_args[0].split(',')) + ' -> ' + python_types_to_11l[self.type_args[1]] + ') ' + self.var + "\n"
         return ' ' * (indent*3) + python_types_to_11l[self.type] + ('[' + ', '.join(python_types_to_11l[ty] for ty in self.type_args) + ']' if len(self.type_args) else '') + ' ' + self.var + "\n"
 
 class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
@@ -1232,8 +1234,19 @@ def parse_internal(this_node):
             if token.value(source) == '[':
                 next_token()
                 while token.value(source) != ']':
-                    type_args.append(token.value(source))
-                    next_token() # [[
+                    if token.value(source) == '[':
+                        next_token()
+                        type_arg = token.value(source)
+                        next_token()
+                        while token.value(source) == ',':
+                            next_token()
+                            type_arg += ',' + token.value(source)
+                            next_token()
+                        advance(']')
+                        type_args.append(type_arg)
+                    else:
+                        type_args.append(token.value(source))
+                        next_token() # [[
                     if token.value(source) not in ',]':
                         raise Error('expected `,` or `]` in type\'s arguments list', token)
                     if token.value(source) == ',':
@@ -1281,7 +1294,8 @@ def parse_internal(this_node):
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
 
-            if type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self' and node.expression.token_str() == '[' and len(node.expression.children) == 0: # ] # skip `self.* = []` because `create_array({})` is meaningless
+            if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self' and node.expression.token_str() == '[' and len(node.expression.children) == 0 # ] # skip `self.* = []` because `create_array({})` is meaningless
+                    and type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'): # only in constructors
                 continue
 
         def check_vars_defined(sn : SymbolNode):

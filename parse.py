@@ -663,6 +663,17 @@ class ASTException(ASTNodeWithExpression):
     def to_str(self, indent):
         return ' ' * (indent*3) + 'X ' + self.expression.to_str() + "\n"
 
+class ASTExceptionTry(ASTNodeWithChildren):
+    def to_str(self, indent):
+        return self.children_to_str(indent, 'X.try')
+
+class ASTExceptionCatch(ASTNodeWithChildren):
+    exception_object_type : str
+    exception_object_name : str
+
+    def to_str(self, indent):
+        return self.children_to_str(indent, 'X.catch ' + self.exception_object_type + ' ' + self.exception_object_name)
+
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
     class_name : str
@@ -1209,6 +1220,26 @@ def parse_internal(this_node):
                 node.set_expression(expression())
                 if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
+
+            elif token.value(source) == 'try':
+                node = ASTExceptionTry()
+                next_token()
+                new_scope(node)
+
+            elif token.value(source) == 'except':
+                node = ASTExceptionCatch()
+                prev_scope = scope
+                scope = Scope(None)
+                scope.parent = prev_scope
+                node.exception_object_type = expected_name('exception object type name')
+                advance('as')
+                if token.category != Token.Category.NAME:
+                    raise Error('expected exception object name', token)
+                node.exception_object_name = token.value(source)
+                scope.add_var(node.exception_object_name, True)
+                next_token()
+                new_scope(node)
+                scope = prev_scope
 
             else:
                 raise Error('unrecognized statement started with keyword', token)

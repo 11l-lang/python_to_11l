@@ -44,7 +44,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open'):
             return ''
         if name in self.nonlocals:
             return '@'
@@ -234,9 +234,18 @@ class SymbolNode:
                     if self.children[0].children[1].token.value(source) == 'join': # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
+                    if self.children[0].children[1].token.value(source) == 'startswith': # replace `startswith` with `starts_with`
+                        assert(len(self.children) == 3)
+                        return self.children[0].children[0].to_str() + '.starts_with(' + self.children[1].to_str() + ')'
+                    if self.children[0].children[1].token.value(source) == 'endswith': # replace `endswith` with `ends_with`
+                        assert(len(self.children) == 3)
+                        return self.children[0].children[0].to_str() + '.ends_with(' + self.children[1].to_str() + ')'
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
                     func_name = 'String'
+                elif func_name == 'open':
+                    func_name = 'File'
+
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
                     if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
@@ -651,6 +660,14 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
             for index, loop_var in enumerate(self.loop_variables):
                 r += "\n" + ' ' * ((indent+1)*3) + 'A ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
             return self.children_to_str(indent, r)
+
+class ASTContinue(ASTNode):
+    def to_str(self, indent):
+        return ' ' * (indent*3) + "L.continue\n"
+
+class ASTBreak(ASTNode):
+    def to_str(self, indent):
+        return ' ' * (indent*3) + "L.break\n"
 
 class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -1178,6 +1195,18 @@ def parse_internal(this_node):
                 node.set_expression(expression())
                 new_scope(node)
                 scope = prev_scope
+
+            elif token.value(source) == 'continue':
+                node = ASTContinue()
+                next_token()
+                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
+
+            elif token.value(source) == 'break':
+                node = ASTBreak()
+                next_token()
+                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
 
             elif token.value(source) == 'return':
                 node = ASTReturn()

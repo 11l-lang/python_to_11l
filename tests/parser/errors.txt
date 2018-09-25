@@ -179,3 +179,24 @@ selection_strings = [("selection", True)]
 def f(a = 10, b):
               ^Error: non-default argument follows default argument
     return a + b
+
+
+try:
+    pass
+except as e:
+       ^Error: expected exception object type name
+    sys.exit(-1)
+
+
+try:
+    pass
+except Exception e:
+                 ^Error: expected `as`
+    sys.exit(-1)
+
+
+try:
+    pass
+except Exception as:
+                   ^Error: expected exception object name
+    sys.exit(-1)

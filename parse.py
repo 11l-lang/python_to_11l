@@ -108,11 +108,13 @@ class SymbolNode:
     is_not  : bool = False
     scope_prefix : str = ''
     scope : Scope
+    token_str_override : str
 
-    def __init__(self, token):
+    def __init__(self, token, token_str_override = None):
         self.token = token
         self.children = []
         self.scope = scope
+        self.token_str_override = token_str_override
 
     def var_type(self):
         return self.scope.var_type(self.token.value(source))
@@ -151,7 +153,7 @@ class SymbolNode:
         return self.children[-1].rightmost()
 
     def token_str(self):
-        return self.token.value(source)
+        return self.token.value(source) if not self.token_str_override else self.token_str_override
 
     def to_str(self):
         # r = ''
@@ -642,7 +644,7 @@ class ASTSwitch(ASTNodeWithExpression):
     def to_str(self, indent):
         r = ' ' * (indent*3) + 'S ' + self.expression.to_str() + "\n"
         for case in self.cases:
-            r += case.children_to_str(indent + 1, case.expression.to_str())
+            r += case.children_to_str(indent + 1, 'E' if case.expression.token_str() == 'E' else case.expression.to_str())
         return r
 
 class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
@@ -1434,10 +1436,10 @@ def parse(tokens_, source_):
                     var_name = child.dest_expression.token.value(source)
                     was_break = False
                     while True:
+                        if type(if_node) == ASTElse:
+                            break
                         if not (if_node.expression.symbol.id == '==' and if_node.expression.children[0].token.category == Token.Category.NAME and if_node.expression.children[0].token.value(source) == var_name):
                             was_break = True
-                            break
-                        if type(if_node) == ASTElse:
                             break
                         if_node = if_node.else_or_elif
                         if if_node == None:
@@ -1449,7 +1451,7 @@ def parse(tokens_, source_):
                         while True:
                             case = ASTSwitch.Case()
                             case.parent = switch_node
-                            case.set_expression(if_node.expression.children[1])
+                            case.set_expression(SymbolNode(Token(0, 0, Token.Category.KEYWORD), 'E') if type(if_node) == ASTElse else if_node.expression.children[1])
                             case.children = if_node.children
                             for child in case.children:
                                 child.parent = case

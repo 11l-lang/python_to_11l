@@ -1477,6 +1477,10 @@ def parse(tokens_, source_):
                         farg = child.function_arguments[fargi][0]
                         found = False
                         def detect_argument_modification(node):
+                            if type(node) == ASTExprAssignment and node.dest_expression.to_str() == farg:
+                                nonlocal found
+                                found = True
+                                return
                             def f(e : SymbolNode):
                                 if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=') and e.children[0].token_str() == farg: # +=, -=, *=, /=, etc.
                                     nonlocal found

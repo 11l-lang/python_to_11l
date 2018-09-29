@@ -25,7 +25,17 @@ class Scope:
         self.nonlocals = set()
 
     def add_var(self, name, error_if_already_defined = False, type = None, err_token = None):
-        if not (name in self.vars) and not (name in self.nonlocals):
+        s = self
+        while True:
+            if name in s.nonlocals:
+                return False
+            if s.is_function:
+                break
+            s = s.parent
+            if s == None:
+                break
+
+        if not (name in self.vars):
             s = self
             while True:
                 if name in s.vars:
@@ -46,8 +56,17 @@ class Scope:
             return ''
         if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open'):
             return ''
-        if name in self.nonlocals:
-            return '@'
+
+        s = self
+        while True:
+            if name in s.nonlocals:
+                return '@'
+            if s.is_function:
+                break
+            s = s.parent
+            if s == None:
+                break
+
         capture_level = 0
         s = self
         while True:
@@ -245,6 +264,8 @@ class SymbolNode:
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
                     func_name = 'String'
+                elif func_name == 'int':
+                    func_name = 'Int'
                 elif func_name == 'open':
                     func_name = 'File'
 
@@ -613,6 +634,11 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
     else_or_elif : ASTNode = None
 
+    def walk_children(self, f):
+        super().walk_children(f)
+        if self.else_or_elif != None:
+            self.else_or_elif.walk_children(f)
+
     def to_str(self, indent):
         return self.children_to_str(indent, 'I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
 
@@ -622,6 +648,11 @@ class ASTElse(ASTNodeWithChildren):
 
 class ASTElseIf(ASTNodeWithChildren, ASTNodeWithExpression):
     else_or_elif : ASTNode = None
+
+    def walk_children(self, f):
+        super().walk_children(f)
+        if self.else_or_elif != None:
+            self.else_or_elif.walk_children(f)
 
     def to_str(self, indent):
         return self.children_to_str(indent, 'E I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
@@ -688,10 +719,10 @@ class ASTExceptionTry(ASTNodeWithChildren):
 
 class ASTExceptionCatch(ASTNodeWithChildren):
     exception_object_type : str
-    exception_object_name : str
+    exception_object_name : str = ''
 
     def to_str(self, indent):
-        return self.children_to_str(indent, 'X.catch ' + self.exception_object_type + ' ' + self.exception_object_name)
+        return self.children_to_str(indent, 'X.catch ' + self.exception_object_type + (' ' + self.exception_object_name if self.exception_object_name != '' else ''))
 
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
@@ -1263,12 +1294,13 @@ def parse_internal(this_node):
                 scope = Scope(None)
                 scope.parent = prev_scope
                 node.exception_object_type = expected_name('exception object type name')
-                advance('as')
-                if token.category != Token.Category.NAME:
-                    raise Error('expected exception object name', token)
-                node.exception_object_name = token.value(source)
-                scope.add_var(node.exception_object_name, True)
-                next_token()
+                if token.value(source) != ':':
+                    advance('as')
+                    if token.category != Token.Category.NAME:
+                        raise Error('expected exception object name', token)
+                    node.exception_object_name = token.value(source)
+                    scope.add_var(node.exception_object_name, True)
+                    next_token()
                 new_scope(node)
                 scope = prev_scope
 

@@ -48,6 +48,7 @@ print(1)
     ^Error: unexpected indent
 
 
+---
 a = 0b + 1
       ^Error: expected digit
 

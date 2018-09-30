@@ -204,12 +204,16 @@ class SymbolNode:
                 i += 2
                 if is_hex:
                     n = n[i:].replace('_', '')
-                    number_with_separators = ''
-                    j = len(n)
-                    while j > 4:
-                        number_with_separators = "'" + n[j-4:j] + number_with_separators
-                        j -= 4
-                    return sign + n[0:j] + number_with_separators
+                    if len(n) <= 4: # short hexadecimal number
+                        n = '0'*(4-len(n)) + n
+                        return n[:2] + "'" + n[2:]
+                    else:
+                        number_with_separators = ''
+                        j = len(n)
+                        while j > 4:
+                            number_with_separators = "'" + n[j-4:j] + number_with_separators
+                            j -= 4
+                        return sign + '0'*(4-j) + n[0:j] + number_with_separators
             return sign + n[i:].replace('_', "'") + ('o' if is_oct else 'b' if is_bin else '')
 
         if self.token.category == Token.Category.STRING_LITERAL:

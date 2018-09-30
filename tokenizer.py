@@ -196,8 +196,8 @@ def tokenize(source, newline_chars = None, comments = None):
                 is_bin = ch == '0' and source[i+1:i+2] in ('b', 'B')
                 if is_hex or is_oct or is_bin:
                     i += 2
-                    if not '0' <= source[i:i+1] <= '9':
-                        raise Error('expected digit', i)
+                    # if not '0' <= source[i:i+1] <= '9':
+                    #     raise Error('expected digit', i)
                 start = i
                 i += 1
                 if is_hex:

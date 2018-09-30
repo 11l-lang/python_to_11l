@@ -255,12 +255,17 @@ class SymbolNode:
                     if self.children[0].children[1].token.value(source) == 'join': # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
-                    if self.children[0].children[1].token.value(source) == 'startswith': # replace `startswith` with `starts_with`
-                        assert(len(self.children) == 3)
-                        return self.children[0].children[0].to_str() + '.starts_with(' + self.children[1].to_str() + ')'
-                    if self.children[0].children[1].token.value(source) == 'endswith': # replace `endswith` with `ends_with`
-                        assert(len(self.children) == 3)
-                        return self.children[0].children[0].to_str() + '.ends_with(' + self.children[1].to_str() + ')'
+                    repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi'}.get(self.children[0].children[1].token.value(source), '')
+                    if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
+                        #assert(len(self.children) == 3)
+                        res = self.children[0].children[0].to_str() + '.' + repl + '('
+                        for i in range(1, len(self.children), 2):
+                            assert(self.children[i+1] == None)
+                            res += self.children[i].to_str()
+                            if i < len(self.children)-2:
+                                res += ', '
+                        return res + ')'
+
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
                     func_name = 'String'
@@ -442,6 +447,8 @@ class SymbolNode:
                 return '--' + self.children[0].to_str()
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'str':
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
+            elif self.symbol.id == '+' and self.children[1].symbol.id == '*' and self.children[1].children[1].token.category == Token.Category.STRING_LITERAL: # for `outfile.write('<blockquote'+(ch=='<')*' class="re"'+'>')`
+                return self.children[0].to_str() + '(' + self.children[1].to_str() + ')'
             elif self.symbol.id == '+' and (self.children[0].token.category == Token.Category.STRING_LITERAL
                                          or self.children[1].token.category == Token.Category.STRING_LITERAL
                                          or (self.children[0].symbol.id == '+' and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL)):
@@ -603,6 +610,7 @@ class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
 
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
+    function_return_type : str = ''
     function_arguments : List[Tuple[str, SymbolNode, str]]# = []
     first_named_only_argument = None
 
@@ -629,7 +637,8 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         if len(self.function_arguments) and self.function_arguments[0][0] == 'self':
             fargs.pop(0)
         return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '')
-            + '(' + ", ".join(fargs) + ')')
+            + '(' + ", ".join(fargs) + ')'
+            + ('' if self.function_return_type == '' else ' -> ' + python_types_to_11l[self.function_return_type]))
 
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
     else_or_elif : ASTNode = None
@@ -960,7 +969,7 @@ def led(self, left):
     return self
 symbol('if').led = led
 
-symbol(":"); symbol("=")
+symbol(':'); symbol('='); symbol('->')
 
 def nud(self):
     global scope
@@ -1149,6 +1158,11 @@ def parse_internal(this_node):
                         next_token()
 
                 next_token()
+                if token.value(source) == '->':
+                    next_token()
+                    node.function_return_type = token.value(source)
+                    next_token()
+
                 new_scope(node, map(lambda arg: arg[0], node.function_arguments))
 
                 if len(node.children) == 0: # needed for:
@@ -1463,7 +1477,7 @@ def parse(tokens_, source_):
             index = 0
             while index < len(node.children):
                 child = node.children[index]
-                if index < len(node.children) - 1 and type(child) == ASTExprAssignment and child.dest_expression.token.category == Token.Category.NAME and type(node.children[index+1]) == ASTIf: # transform if-elif-else chain into switch
+                if index < len(node.children) - 1 and type(child) == ASTExprAssignment and child.dest_expression.token.category == Token.Category.NAME and type(node.children[index+1]) == ASTIf and node.children[index+1].else_or_elif: # transform if-elif-else chain into switch
                     if_node = node.children[index+1]
                     var_name = child.dest_expression.token.value(source)
                     was_break = False

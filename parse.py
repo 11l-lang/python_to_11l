@@ -54,7 +54,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex'):
             return ''
 
         s = self
@@ -255,7 +255,8 @@ class SymbolNode:
             if self.function_call:
                 if self.children[0].symbol.id == '.':
                     if self.children[0].children[0].symbol.id == '{' and self.children[0].children[1].token.value(source) == 'get': # } # replace `{'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id)` with `(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})`
-                        return '(' + self.children[0].to_str() + ')'
+                        parenthesis = ('(', ')') if self.parent != None else ('', '')
+                        return parenthesis[0] + self.children[0].to_str() + parenthesis[1]
                     if self.children[0].children[1].token.value(source) == 'join': # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
@@ -341,12 +342,13 @@ class SymbolNode:
                         res += ', '
                 return res + ']'
             elif self.children[0].symbol.id == '{': # }
-                res = 'S ' + self.children[1].to_str() + ' {'
+                parenthesis = ('(', ')') if self.parent != None else ('', '')
+                res = parenthesis[0] + 'S ' + self.children[1].to_str() + ' {'
                 for i in range(0, len(self.children[0].children), 2):
                     res += self.children[0].children[i].to_str() + ' {' + self.children[0].children[i+1].to_str() + '}'
                     if i < len(self.children[0].children)-2:
                         res += '; '
-                return res + '}'
+                return res + '}' + parenthesis[1]
             else:
                 c0 = self.children[0].to_str()
                 if self.slicing:
@@ -453,6 +455,11 @@ class SymbolNode:
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+' and self.children[1].symbol.id == '*' and self.children[1].children[1].token.category == Token.Category.STRING_LITERAL: # for `outfile.write('<blockquote'+(ch=='<')*' class="re"'+'>')`
                 return self.children[0].to_str() + '(' + self.children[1].to_str() + ')'
+            elif self.symbol.id == '+' and self.children[1].symbol.id == '*' and self.children[1].children[0].token.category == Token.Category.STRING_LITERAL: # for `outfile.write("<table"+' style="display: inline"'*(prevci != 0 and instr[prevci-1] != "\n")+...)`
+                return self.children[0].to_str() + '(' + self.children[1].to_str() + ')'
+            elif self.symbol.id == '+' and self.children[0].symbol.id == '+' and self.children[1].token.category == Token.Category.STRING_LITERAL \
+                                                                             and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL: # for `outfile.write(... + '<br /></span>' # ... \n + '<div class="spoiler_text" ...)`
+                return self.children[0].to_str() + '""' + self.children[1].to_str()
             elif self.symbol.id == '+' and (self.children[0].token.category == Token.Category.STRING_LITERAL
                                          or self.children[1].token.category == Token.Category.STRING_LITERAL
                                          or (self.children[0].symbol.id == '+' and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL)):
@@ -595,7 +602,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict'}
+python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
 
 class ASTTypeHint(ASTNode):
     var : str
@@ -1347,7 +1354,7 @@ def parse_internal(this_node):
             if token.value(source) == '[':
                 next_token()
                 while token.value(source) != ']':
-                    if token.value(source) == '[':
+                    if token.value(source) == '[': # for `Callable[[str, int], str]`
                         next_token()
                         type_arg = token.value(source)
                         next_token()
@@ -1356,6 +1363,24 @@ def parse_internal(this_node):
                             type_arg += ',' + token.value(source)
                             next_token()
                         advance(']')
+                        type_args.append(type_arg)
+                    elif peek_token().value(source) == '[': # ] # for `table : List[List[List[str]]] = []` and `empty_list : List[List[str]] = []`
+                        type_arg = token.value(source)
+                        next_token()
+                        nesting_level = 0
+                        while True:
+                            type_arg += token.value(source)
+                            if token.value(source) == '[':
+                                next_token()
+                                nesting_level += 1
+                            elif token.value(source) == ']':
+                                next_token()
+                                nesting_level -= 1
+                                if nesting_level == 0:
+                                    break
+                            else:
+                                assert(token.category == Token.Category.NAME)
+                                next_token()
                         type_args.append(type_arg)
                     else:
                         type_args.append(token.value(source))

@@ -513,7 +513,7 @@ arr.join(‘, ’)
 
 indent = 0
 # [https://bitbucket.org/11l-lang/python_to_11l/src/0f3fd6937ae538434f145c81815de8c3ced4dadc/parse.py#lines-189]:
-r = self.newlines() + '' + ' ' * (indent*3) + 'F ' + (self.function_name if self.function_name != '__init__' else '') \
+r = self.newlines() + ' ' * (indent*3) + 'F ' + (self.function_name if self.function_name != '__init__' else '') \
     + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ")\n"
 ===
 A indent = 0

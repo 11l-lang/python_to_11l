@@ -608,7 +608,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
+python_types_to_11l = {'int':'Int', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
 
 class ASTTypeHint(ASTNode):
     var : str
@@ -643,7 +643,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             if arg[1] != None:
                 default_value = arg[1].to_str()
             if arg[2] != '':
-                farg += arg[2]
+                farg += python_types_to_11l[arg[2]]
                 if default_value == 'N':
                     farg += '?'
                 farg += ' '
@@ -1159,7 +1159,6 @@ def parse_internal(this_node):
                     if token.value(source) == ':': # this is a type hint
                         next_token()
                         type_ = expression().to_str()
-                        type_ = {'IO[str]': 'File'}.get(type_, type_)
                     if token.value(source) == '=':
                         next_token()
                         default = expression()

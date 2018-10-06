@@ -369,7 +369,9 @@ class SymbolNode:
                 elif self.children[1].to_str() == '-1':
                     return c0 + '.last'
                 else:
-                    return c0 + '[' + self.children[1].to_str() + ']'
+                    return (c0 + '['
+                        + '(len)'*(self.children[1].symbol.id == '-' and len(self.children[1].children) == 1) # hacky implementation of ‘this rule’[https://docs.python.org/3/reference/simple_stmts.html]:‘the subscript must yield an integer. If it is negative, the sequence's length is added to it.’
+                        + self.children[1].to_str() + ']')
 
         elif self.symbol.id == '{': # }
             if len(self.children) == 0:

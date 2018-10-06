@@ -232,6 +232,7 @@ F find_ending_sq_bracket(str, =i, start = 0)
 
 
 s : str
+s[-2]
 s[:-1]
 s[1:]
 s[:1:]
@@ -241,6 +242,7 @@ s[3:10:2]
 s[3:10:]
 ===
 String s
+s[(len)-2]
 s[0 .< (len)-1]
 s[1..]
 s[0.<1]

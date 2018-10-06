@@ -696,8 +696,7 @@ class ASTSwitch(ASTNodeWithExpression):
 
     def walk_children(self, f):
         for case in self.cases:
-            for child in case.children:
-                f(child)
+            f(case)
 
     def to_str(self, indent):
         r = ' ' * (indent*3) + 'S ' + self.expression.to_str() + "\n"
@@ -1505,10 +1504,7 @@ def parse(tokens_, source_):
     check_for_and_or(p)
 
     def transformations(node):
-        if type(node) == ASTSwitch:
-            for case in node.cases:
-                transformations(case)
-        elif isinstance(node, ASTNodeWithChildren):
+        if isinstance(node, ASTNodeWithChildren):
             index = 0
             while index < len(node.children):
                 child = node.children[index]
@@ -1574,8 +1570,9 @@ def parse(tokens_, source_):
                         if found:
                             child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2])
 
-                transformations(child)
                 index += 1
+
+        node.walk_children(transformations)
     transformations(p)
 
     return p

@@ -1030,8 +1030,8 @@ def led(self, left):
             sn.scope = scope
         elif sn.scope.parent == prev_scope: # for nested list comprehensions
             sn.scope.parent = scope
-        else:
-            assert(sn.scope.parent.parent == prev_scope) # this `sn.scope` was already processed (and since `scope.parent = prev_scope` and `sn.scope.parent = scope` then `sn.scope.parent.parent` should be equals to `prev_scope`)
+        else: # this `sn.scope` was already processed
+            assert(sn.scope.parent == scope)
         for child in sn.children:
             if child != None:
                 set_scope_recursive(child)

@@ -54,7 +54,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'filter'):
             return ''
 
         s = self
@@ -293,6 +293,9 @@ class SymbolNode:
                 elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
                     assert(len(self.children) == 5)
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[3].to_str()
+                elif func_name in ('map', 'filter'): # replace `map(function, iterable)` with `iterable.map(function)`
+                    assert(len(self.children) == 5)
+                    return self.children[3].to_str() + '.' + func_name + '(' + self.children[1].to_str() + ')'
                 elif func_name == 'super': # replace `super()` with `T.base`
                     assert(len(self.children) == 1)
                     return 'T.base'
@@ -1022,12 +1025,17 @@ def led(self, left):
     prev_scope = scope
     scope = for_scope = Scope([])
     scope.parent = prev_scope
-    def set_scope_recursive(sn, scope):
-        sn.scope = scope
+    def set_scope_recursive(sn):
+        if sn.scope == prev_scope:
+            sn.scope = scope
+        elif sn.scope.parent == prev_scope: # for nested list comprehensions
+            sn.scope.parent = scope
+        else:
+            assert(sn.scope.parent.parent == prev_scope) # this `sn.scope` was already processed (and since `scope.parent = prev_scope` and `sn.scope.parent = scope` then `sn.scope.parent.parent` should be equals to `prev_scope`)
         for child in sn.children:
             if child != None:
-                set_scope_recursive(child, scope)
-    set_scope_recursive(left, scope)
+                set_scope_recursive(child)
+    set_scope_recursive(left)
     tokensn.scope = scope
     scope.add_var(token.value(source))
 

@@ -1,8 +1,11 @@
 ﻿try:
     from python_to_11l.tokenizer import Token
+    import python_to_11l.tokenizer as tokenizer
 except ImportError:
     from tokenizer import Token
+    import tokenizer
 from typing import List, Tuple, Dict, Callable
+import os
 
 class Scope:
     parent : 'Scope'
@@ -72,6 +75,8 @@ class Scope:
         while True:
             if name in s.vars:
                 if s.parent == None: # variable is declared in the global scope
+                    if s.vars[name].type == '(Module)':
+                        return ':::'
                     return ':' if capture_level > 0 else ''
                 else:
                     return capture_level*'@'
@@ -431,9 +436,14 @@ class SymbolNode:
                         if i < len(self.children[0].children)-2:
                             res += '; '
                     return res + ' E ' + self.parent.children[3].to_str() + '}'
+
                 c1ts = self.children[1].token_str()
                 if self.children[0].token_str() == 'sys' and c1ts in ('argv', 'exit', 'stdin', 'stdout', 'stderr'):
                     return ':'*(c1ts != 'exit') + c1ts
+
+                if self.children[0].scope_prefix == ':::':
+                    return self.children[0].token_str() + ':' + self.children[1].to_str()
+
                 if self.children[0].to_str() == 'self':
                     parent = self
                     while parent.parent:
@@ -449,7 +459,9 @@ class SymbolNode:
                             break
                         ast_parent = ast_parent.parent
                     return ('@' if function_nesting == 2 else '') + '.' + self.children[1].to_str()
+
                 return self.children[0].to_str() + '.' + self.children[1].to_str()
+
             elif self.symbol.id == '+=' and self.children[1].symbol.id == '[' and self.children[1].is_list: # ]
                 return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
             elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
@@ -469,7 +481,9 @@ class SymbolNode:
             elif self.symbol.id == '+' and self.children[1].token.category == Token.Category.STRING_LITERAL and ((self.children[0].symbol.id == '+'
                                        and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL) # for `outfile.write(... + '<br /></span>' # ... \n + '<div class="spoiler_text" ...')`
                                         or self.children[0].token.category == Token.Category.STRING_LITERAL): # for `pre {margin: 0;}''' + # ... \n '''...`
-                return self.children[0].to_str() + '""' + self.children[1].to_str()
+                c0 = self.children[0].to_str()
+                c1 = self.children[1].to_str()
+                return c0 + {('"','"'):'‘’', ('"','‘'):'', ('’','‘'):'""', ('’','"'):''}[(c0[-1], c1[0])] + c1
             elif self.symbol.id == '+' and (self.children[0].token.category == Token.Category.STRING_LITERAL
                                          or self.children[1].token.category == Token.Category.STRING_LITERAL
                                          or (self.children[0].symbol.id == '+' and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL)):
@@ -1118,8 +1132,28 @@ def parse_internal(this_node):
                 while True:
                     if token.category != Token.Category.NAME:
                         raise Error('expected module name', token)
-                    node.modules.append(token.value(source))
-                    scope.add_var(token.value(source), True)
+                    module_name = token.value(source)
+                    node.modules.append(module_name)
+
+                    # Process module [transpile it if necessary]
+                    if module_name != 'sys':
+                        module_file_name = os.path.dirname(file_name) + '/' + module_name
+                        try:
+                            modulefstat = os.stat(module_file_name + '.py')
+                        except FileNotFoundError:
+                            raise Error('can not import module `' + module_name + '`: file `' + module_file_name + '.py` is not found', token)
+
+                        _11l_file_mtime = 0
+                        if os.path.isfile(module_file_name + '.11l'):
+                            _11l_file_mtime = os.stat(module_file_name + '.11l').st_mtime
+                        if _11l_file_mtime == 0 \
+                                or modulefstat.st_mtime       > _11l_file_mtime \
+                                or os.stat(__file__).st_mtime > _11l_file_mtime \
+                                or os.stat(os.path.dirname(__file__) + '/tokenizer.py').st_mtime > _11l_file_mtime:
+                            module_source = open(module_file_name + '.py', encoding = 'utf-8-sig').read()
+                            open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py'))
+
+                    scope.add_var(module_name, True, '(Module)')
                     next_token()
                     if token.value(source) != ',':
                         break
@@ -1474,8 +1508,24 @@ def parse_internal(this_node):
 
     return
 
-def parse(tokens_, source_):
-    global tokens, source, tokeni, token, scope
+tokens    = []
+source    = ''
+tokeni    = -1
+token     = Token(0, 0, Token.Category.STATEMENT_SEPARATOR)
+scope     = Scope(None)
+tokensn   = SymbolNode(token)
+file_name = ''
+
+def parse_and_to_str(tokens_, source_, file_name_):
+    if len(tokens_) == 0: return ASTProgram()
+    global tokens, source, tokeni, token, scope, tokensn, file_name
+    prev_tokens    = tokens
+    prev_source    = source
+    prev_tokeni    = tokeni
+    prev_token     = token
+    prev_scope     = scope
+    prev_tokensn   = tokensn
+    prev_file_name = file_name
     tokens = tokens_ + [Token(len(source_), len(source_), Token.Category.STATEMENT_SEPARATOR)]
     source = source_
     tokeni = -1
@@ -1483,9 +1533,9 @@ def parse(tokens_, source_):
     scope = Scope(None)
     for pytype in python_types_to_11l:
         scope.add_var(pytype)
+    file_name = file_name_
     next_token()
     p = ASTProgram()
-    if len(tokens_) == 0: return p
     parse_internal(p)
 
     def check_for_and_or(node):
@@ -1502,8 +1552,8 @@ def parse(tokens_, source_):
                     end = e.children[1].children[1].rightmost()
                     midend = e.children[1].children[0].rightmost()
                     midstart = e.children[1].children[0].leftmost()
-                raise Error("relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\n`(" \
-                    + source[start:midend  ] + ')' + source[midend  :end] + "`\nor this way:\n`" \
+                raise Error("relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\n`("
+                    + source[start:midend  ] + ')' + source[midend  :end] + "`\nor this way:\n`"
                     + source[start:midstart] + '(' + source[midstart:end] + ')`', Token(start, end, Token.Category.OPERATOR_OR_DELIMITER))
             for child in e.children:
                 if child != None:
@@ -1585,4 +1635,14 @@ def parse(tokens_, source_):
         node.walk_children(transformations)
     transformations(p)
 
-    return p
+    s = p.to_str() # call `to_str()` moved here [from outside] because it accesses global variables `source` (via `token.value(source)`) and `tokens` (via `tokens[ti]`)
+
+    tokens    = prev_tokens
+    source    = prev_source
+    tokeni    = prev_tokeni
+    token     = prev_token
+    scope     = prev_scope
+    tokensn   = prev_tokensn
+    file_name = prev_file_name
+
+    return s

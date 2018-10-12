@@ -55,7 +55,7 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
             if "tokenizer" in file_name:
                 tokenizer.tokenize(test_source)
             else:
-                parse.parse(tokenizer.tokenize(test_source), test_source)
+                parse.parse_and_to_str(tokenizer.tokenize(test_source), test_source, file_name)
         except (tokenizer.Error, parse.Error) as e:
             was_error = True
             if error and 'Error: ' + e.message == error[0] and e.pos == error[1]:
@@ -97,7 +97,7 @@ for test in open(file_name, encoding="utf8").read().split("\n\n\n"):
     source, expected_translated_source = test.split("===\n")
     expected_translated_source += "\n"
     try:
-        translated_source = parse.parse(tokenizer.tokenize(source), source).to_str()
+        translated_source = parse.parse_and_to_str(tokenizer.tokenize(source), source, file_name)
     except parse.Error as e:
         next_line_pos = source.find("\n", e.pos)
         if next_line_pos == -1:

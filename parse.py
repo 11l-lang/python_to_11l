@@ -243,7 +243,7 @@ class SymbolNode:
                 if '\\' in s or ('‘' in s and not '’' in s) or (not '‘' in s and '’' in s):
                     s = s.replace("\n", "\\n\\\n").replace("\\\\n\\\n", "\\\n")
                     if s[0] == '"':
-                        return s if l == 1 else s[2:-2]
+                        return s if l == 1 else '"' + s[3:-3].replace('"', R'\"') + '"'
                     else:
                         return '"' + s[l:-l].replace('"', R'\"').replace(R"\'", "'") + '"'
                 else:

@@ -200,3 +200,7 @@ try:
 except Exception as:
                    ^Error: expected exception object name
     sys.exit(-1)
+
+
+import non_existing_module
+       ^Error: can not import module `non_existing_module`: file `tests/parser/non_existing_module.py` is not found

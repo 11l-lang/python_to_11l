@@ -15,6 +15,7 @@ class Scope:
             self.type = type
     vars : Dict[str, Var]
     nonlocals : set
+    globals   : set
     is_function : bool
 
     def __init__(self, func_args):
@@ -26,11 +27,12 @@ class Scope:
             self.is_function = False
             self.vars = {}
         self.nonlocals = set()
+        self.globals   = set()
 
     def add_var(self, name, error_if_already_defined = False, type = None, err_token = None):
         s = self
         while True:
-            if name in s.nonlocals:
+            if name in s.nonlocals or name in s.globals:
                 return False
             if s.is_function:
                 break
@@ -64,6 +66,8 @@ class Scope:
         while True:
             if name in s.nonlocals:
                 return '@'
+            if name in s.globals:
+                return ':'
             if s.is_function:
                 break
             s = s.parent
@@ -1325,12 +1329,16 @@ def parse_internal(this_node):
                 if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
-            elif token.value(source) == 'nonlocal':
+            elif token.value(source) in ('nonlocal', 'global'):
+                nonlocal_or_global = token.value(source)
                 next_token()
                 while True:
                     if token.category != Token.Category.NAME:
-                        raise Error('expected nonlocal variable name', token)
-                    scope.nonlocals.add(token.value(source))
+                        raise Error('expected ' + nonlocal_or_global + ' variable name', token)
+                    if nonlocal_or_global == 'nonlocal':
+                        scope.nonlocals.add(token.value(source))
+                    else:
+                        scope.globals.add(token.value(source))
                     next_token()
                     if token.value(source) == ',':
                         next_token()

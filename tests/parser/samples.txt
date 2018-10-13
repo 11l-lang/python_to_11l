@@ -403,6 +403,9 @@ def to_html(self, instr, outfile = None):
         nonlocal writepos
         outfile.write(instr[writepos:pos])
         writepos = npos
+        gpos = 1
+        global gpos
+        gpos = 2
     def write_to_i(add_str, skip_chars = 1):
         def write():
             write_to_pos(i, i+skip_chars)
@@ -415,6 +418,8 @@ F to_html(instr, outfile = N)
    F write_to_pos(pos, npos)
       @outfile.write(@instr[@writepos .< pos])
       @writepos = npos
+      A gpos = 1
+      :gpos = 2
    F write_to_i(add_str, skip_chars = 1)
       F write()
          @@write_to_pos(@@i, @@i + @skip_chars)

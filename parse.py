@@ -467,7 +467,7 @@ class SymbolNode:
             elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
                 return self.children[0].to_str() + '++'
             elif self.symbol.id == '-=' and self.children[1].token.value(source) == '1':
-                return '--' + self.children[0].to_str()
+                return '--' + self.children[0].to_str() if self.parent else self.children[0].to_str() + '--'
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'str':
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+' and self.children[1].symbol.id == '*' and self.children[0].token.category == Token.Category.STRING_LITERAL \
@@ -1607,6 +1607,7 @@ def parse_and_to_str(tokens_, source_, file_name_):
                 if index < len(node.children) - 1 and type(child) == ASTExpression and child.expression.symbol.id == '-=' and child.expression.children[1].token.value(source) == '1' \
                         and type(node.children[index+1]) == ASTIf and len(node.children[index+1].expression.children) == 2 \
                         and node.children[index+1].expression.children[0].token.value(source) == child.expression.children[0].token.value(source): # transform `nesting_level -= 1 \n if nesting_level == 0:` into `if --nesting_level == 0`
+                    child.expression.parent = node.children[index+1].expression#.children[0].parent
                     node.children[index+1].expression.children[0] = child.expression
                     node.children.pop(index)
                     continue

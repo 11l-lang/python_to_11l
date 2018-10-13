@@ -45,6 +45,7 @@ i : str int
         ^Error: expected end of statement
 
 
+# [
 t : Tuple[str int]
               ^Error: expected `,` or `]` in type's arguments list
 

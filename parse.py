@@ -1376,6 +1376,10 @@ def parse_internal(this_node):
                 scope = Scope(None)
                 scope.parent = prev_scope
                 node.exception_object_type = expected_name('exception object type name')
+                if token.value(source) == '.':
+                    next_token()
+                    node.exception_object_type += ':' + token.value(source)
+                    next_token()
                 if token.value(source) != ':':
                     advance('as')
                     if token.category != Token.Category.NAME:

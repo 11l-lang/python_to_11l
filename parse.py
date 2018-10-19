@@ -446,7 +446,10 @@ class SymbolNode:
                     return ':'*(c1ts != 'exit') + c1ts
 
                 if self.children[0].scope_prefix == ':::':
-                    return self.children[0].token_str() + ':' + self.children[1].to_str()
+                    r = self.children[0].token_str() + ':' + self.children[1].to_str()
+                    if r == 'tempfile:gettempdir':
+                        return 'fs:get_temp_dir'
+                    return r
 
                 if self.children[0].to_str() == 'self':
                     parent = self
@@ -1140,7 +1143,7 @@ def parse_internal(this_node):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name != 'sys':
+                    if module_name not in ('sys', 'tempfile'):
                         module_file_name = os.path.dirname(file_name) + '/' + module_name
                         try:
                             modulefstat = os.stat(module_file_name + '.py')

@@ -266,7 +266,7 @@ class SymbolNode:
                     if self.children[0].children[0].symbol.id == '{' and self.children[0].children[1].token.value(source) == 'get': # } # replace `{'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id)` with `(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})`
                         parenthesis = ('(', ')') if self.parent != None else ('', '')
                         return parenthesis[0] + self.children[0].to_str() + parenthesis[1]
-                    if self.children[0].children[1].token.value(source) == 'join': # replace `', '.join(arr)` with `arr.join(‘, ’)`
+                    if self.children[0].children[1].token.value(source) == 'join' and not (self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'os'): # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi'}.get(self.children[0].children[1].token.value(source), '')
@@ -447,9 +447,10 @@ class SymbolNode:
 
                 if self.children[0].scope_prefix == ':::':
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
-                    if r == 'tempfile:gettempdir':
-                        return 'fs:get_temp_dir'
-                    return r
+                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path'}.get(r, r)
+
+                if len(self.children[0].children) == 2 and self.children[0].children[0].scope_prefix == ':::' and self.children[0].children[0].token_str() != 'sys': # for `os.path.join()` [and also take into account `sys.argv.index()`]
+                    return self.children[0].to_str() + ':' + self.children[1].to_str()
 
                 if self.children[0].to_str() == 'self':
                     parent = self
@@ -1143,7 +1144,7 @@ def parse_internal(this_node):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile'):
+                    if module_name not in ('sys', 'tempfile', 'os'):
                         module_file_name = os.path.dirname(file_name) + '/' + module_name
                         try:
                             modulefstat = os.stat(module_file_name + '.py')

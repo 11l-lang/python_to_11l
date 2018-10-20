@@ -451,7 +451,7 @@ class SymbolNode:
 
                 if self.children[0].scope_prefix == ':::':
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
-                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:'}.get(r, r)
+                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir'}.get(r, r)
 
                 if len(self.children[0].children) == 2 and self.children[0].children[0].scope_prefix == ':::' and self.children[0].children[0].token_str() != 'sys': # for `os.path.join()` [and also take into account `sys.argv.index()`]
                     return self.children[0].to_str() + ':' + self.children[1].to_str()

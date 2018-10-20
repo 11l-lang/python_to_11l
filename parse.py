@@ -145,6 +145,10 @@ class SymbolNode:
         self.token_str_override = token_str_override
 
     def var_type(self):
+        if self.symbol.id == '.':
+            if self.children[0].token_str() == 'os' and self.children[1].token_str() == 'pathsep':
+                return 'str'
+            return None
         return self.scope.var_type(self.token.value(source))
 
     def append_child(self, child):
@@ -447,7 +451,7 @@ class SymbolNode:
 
                 if self.children[0].scope_prefix == ':::':
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
-                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path'}.get(r, r)
+                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep'}.get(r, r)
 
                 if len(self.children[0].children) == 2 and self.children[0].children[0].scope_prefix == ':::' and self.children[0].children[0].token_str() != 'sys': # for `os.path.join()` [and also take into account `sys.argv.index()`]
                     return self.children[0].to_str() + ':' + self.children[1].to_str()

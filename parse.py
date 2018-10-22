@@ -451,7 +451,7 @@ class SymbolNode:
 
                 if self.children[0].scope_prefix == ':::':
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
-                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir'}.get(r, r)
+                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk'}.get(r, r)
 
                 if len(self.children[0].children) == 2 and self.children[0].children[0].scope_prefix == ':::' and self.children[0].children[0].token_str() != 'sys': # for `os.path.join()` [and also take into account `sys.argv.index()`]
                     return self.children[0].to_str() + ':' + self.children[1].to_str()
@@ -741,8 +741,19 @@ class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
 
 class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
     loop_variables : List[str]
+    os_walk = False
+    dir_filter = None
 
     def to_str(self, indent):
+        if self.os_walk:
+            dir_filter = ''
+            if self.dir_filter != None:
+                dir_filter = ", dir_filter' " + self.dir_filter # (
+            return self.children_to_str(indent, 'L(_fname) ' + self.expression.to_str()[:-1] + dir_filter + ", files_only' 0B)\n"
+                + ' ' * ((indent+1)*3) + 'A ' + self.loop_variables[0] + " = fs:path:dir_name(_fname)\n"
+                + ' ' * ((indent+1)*3) + '[String] ' + self.loop_variables[1] + ', ' + self.loop_variables[2] + "\n"
+                + ' ' * ((indent+1)*3) + 'I fs:is_directory(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
+
         if len(self.loop_variables) == 1:
             return self.children_to_str(indent, 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str())
         else:
@@ -962,7 +973,10 @@ def led(self, left):
         next_token()
         if token.value(source) == ':':
             self.children.append(None)
+            next_token() # [
+        if token.value(source) == ']': # for `dirs[:] = ...`
             next_token()
+            return self
     self.append_child(expression())
     if token.value(source) == ':':
         self.slicing = True
@@ -1632,12 +1646,32 @@ def parse_and_to_str(tokens_, source_, file_name_):
                     node.children.pop(index)
                     continue
 
-                if type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add qualifier `=` to changing ones
+                if type(child) == ASTFor: # detect `for ... in os.walk(...)` and remove `dirs[:] = ...` statement
+                    if child.expression.symbol.id == '(' and child.expression.children[0].symbol.id == '.' \
+                            and child.expression.children[0].children[0].token_str() == 'os' \
+                            and child.expression.children[0].children[1].token_str() == 'walk': # )
+                        child.os_walk = True
+                        assert(len(child.loop_variables) == 3)
+                        c0 = child.children[0]
+                        if (type(c0) == ASTExprAssignment and c0.dest_expression.symbol.id == '[' # ]
+                                                          and len(c0.dest_expression.children) == 2
+                                                          and c0.dest_expression.children[1] == None
+                                                          and c0.dest_expression.children[0].token_str() == child.loop_variables[1]
+                                                          and c0.expression.symbol.id == '[' # ]
+                                                          and len(c0.expression.children) == 1
+                                                          and c0.expression.children[0].symbol.id == 'for'
+                                                          and len(c0.expression.children[0].children) == 4
+                                                          and c0.expression.children[0].children[1].to_str()
+                                                           == c0.expression.children[0].children[0].to_str()):
+                            child.dir_filter = c0.expression.children[0].children[1].to_str() + ' -> ' + c0.expression.children[0].children[3].to_str()
+                            child.children.pop(0)
+
+                elif type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add qualifier `=` to changing ones
                     for fargi in range(len(child.function_arguments)):
                         farg = child.function_arguments[fargi][0]
                         found = False
                         def detect_argument_modification(node):
-                            if type(node) == ASTExprAssignment and node.dest_expression.to_str() == farg:
+                            if type(node) == ASTExprAssignment and node.dest_expression.token_str() == farg:
                                 nonlocal found
                                 found = True
                                 return

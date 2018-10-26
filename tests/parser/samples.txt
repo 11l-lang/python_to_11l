@@ -532,3 +532,13 @@ def to_str(self, indent):
 ===
 F to_str(indent)
    R (‘ ’ * (indent * 3))‘’(.expression.to_str())"\n"
+
+
+while True:
+    if True: break
+    a = 0
+===
+L
+   I 1B
+      L.break
+   A a = 0

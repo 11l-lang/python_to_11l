@@ -161,7 +161,7 @@ i : int = 1
 
 
 i = j
-    ^Error: variable is not defined
+    ^Error: undefined identifier
 
 
 nonlocal i,
@@ -204,7 +204,7 @@ except Exception as:
 
 
 import non_existing_module
-       ^Error: can not import module `non_existing_module`: file `tests/parser/non_existing_module.py` is not found
+       ^Error: can not import module `non_existing_module`: file 'tests/parser/non_existing_module.py' is not found
 
 
 if True: if False: print(1)

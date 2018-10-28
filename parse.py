@@ -88,7 +88,7 @@ class Scope:
                 capture_level += 1
             s = s.parent
             if s == None:
-                raise Error('variable is not defined', token)
+                raise Error('undefined identifier', token)
 
     def var_type(self, name):
         s = self
@@ -1167,11 +1167,11 @@ def parse_internal(this_node, one_line_scope = False):
 
                     # Process module [transpile it if necessary]
                     if module_name not in ('sys', 'tempfile', 'os'):
-                        module_file_name = os.path.dirname(file_name) + '/' + module_name
+                        module_file_name = os.path.join(os.path.dirname(file_name), module_name).replace('\\', '/') # `os.path.join()` is needed for case when `os.path.dirname(file_name)` is empty string, `replace('\\', '/')` is needed for passing 'tests/parser/errors.txt'
                         try:
                             modulefstat = os.stat(module_file_name + '.py')
                         except FileNotFoundError:
-                            raise Error('can not import module `' + module_name + '`: file `' + module_file_name + '.py` is not found', token)
+                            raise Error('can not import module `' + module_name + "`: file '" + module_file_name + ".py' is not found", token)
 
                         _11l_file_mtime = 0
                         if os.path.isfile(module_file_name + '.11l'):

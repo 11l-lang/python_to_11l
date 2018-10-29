@@ -151,8 +151,8 @@ def tokenize(source, newline_chars = None, comments = None):
                 elif ch == ';':
                     category = Token.Category.STATEMENT_SEPARATOR
 
-            elif ch in ('"', "'") or (ch in 'rR' and source[i:i+1] in ('"', "'")):
-                if ch in 'rR':
+            elif ch in ('"', "'") or (ch in 'rRbB' and source[i:i+1] in ('"', "'")):
+                if ch in 'rRbB':
                     ends = source[i:i+3] if source[i:i+3] in ('"""', "'''") else source[i]
                 else:
                     i -= 1

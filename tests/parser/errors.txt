@@ -209,3 +209,11 @@ import non_existing_module
 
 if True: if False: print(1)
                  ^Error: unexpected `:` (only one `:` in one line is allowed)
+
+
+open("filename", newline = "\n")
+                 ^Error: `newline` argument is only supported in 'w' mode
+
+
+open("filename", 'w', newline = '')
+                                ^Error: the only allowed value for `newline` argument is `"\n"`

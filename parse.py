@@ -246,6 +246,8 @@ class SymbolNode:
             if s[0] in 'rR':
                 l = 3 if s[1:4] in ('"""', "'''") else 1
                 return balance_pq_string(s[1+l:-l])
+            elif s[0] in 'bB':
+                return s[1:] + '.code'
             else:
                 l = 3 if s[0:3] in ('"""', "'''") else 1
                 if '\\' in s or ('‘' in s and not '’' in s) or (not '‘' in s and '’' in s):
@@ -283,6 +285,14 @@ class SymbolNode:
                             if i < len(self.children)-2:
                                 res += ', '
                         return res + ')'
+                    if self.children[0].children[0].symbol.id == '(' and \
+                       self.children[0].children[0].children[0].token_str() == 'open' and \
+                   len(self.children[0].children[0].children) == 5 and \
+                       self.children[0].children[0].children[4] == None and \
+                       self.children[0].children[0].children[3].token_str() in ("'rb'", '"rb"') and \
+                       self.children[0].children[1].token_str() == 'read': # ) # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
+                        assert(self.children[0].children[0].children[2] == None)
+                        return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -291,6 +301,23 @@ class SymbolNode:
                     func_name = 'Int'
                 elif func_name == 'open':
                     func_name = 'File'
+                    mode = '‘r’'
+                    for i in range(1, len(self.children), 2):
+                        if self.children[i+1] == None:
+                            if i == 3:
+                                mode = self.children[i].to_str()
+                        else:
+                            arg_name = self.children[i].to_str()
+                            if arg_name == 'mode':
+                                mode = self.children[i+1].to_str()
+                            elif arg_name == 'newline':
+                                if mode not in ('‘w’', '"w"'):
+                                    raise Error("`newline` argument is only supported in 'w' mode", self.children[i].token)
+                                if self.children[i+1].to_str() != '"\\n"':
+                                    raise Error(R'the only allowed value for `newline` argument is `"\n"`', self.children[i+1].token)
+                                self.children.pop(i+1)
+                                self.children.pop(i)
+                                break
 
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)

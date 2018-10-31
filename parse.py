@@ -275,7 +275,7 @@ class SymbolNode:
                     if self.children[0].children[1].token.value(source) == 'join' and not (self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'os'): # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
-                    repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit'}.get(self.children[0].children[1].token.value(source), '')
+                    repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'timestamp':'unix_time'}.get(self.children[0].children[1].token.value(source), '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         #assert(len(self.children) == 3)
                         res = self.children[0].children[0].to_str() + '.' + repl + '('
@@ -293,6 +293,9 @@ class SymbolNode:
                        self.children[0].children[1].token_str() == 'read': # ) # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
                         assert(self.children[0].children[0].children[2] == None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
+                    if self.children[0].children[1].token.value(source) == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
+                        assert(len(self.children) == 1)
+                        return self.children[0].children[0].to_str() + '.seconds'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -482,8 +485,13 @@ class SymbolNode:
 
                 if self.children[0].symbol.id == '.' and self.children[0].children[0].scope_prefix == ':::':
                     if self.children[0].children[0].token_str() == 'datetime':
-                        if self.children[0].children[1].token_str() == 'datetime' and self.children[1].token_str() == 'now': # `datetime.datetime.now()` -> `time:()`
-                            return 'time:'
+                        if self.children[0].children[1].token_str() == 'datetime':
+                            if self.children[1].token_str() == 'now': # `datetime.datetime.now()` -> `time:()`
+                                return 'time:'
+                            if self.children[1].token_str() == 'fromtimestamp': # `datetime.datetime.fromtimestamp()` -> `time:from_unix_time()`
+                                return 'time:from_unix_time'
+                            if self.children[1].token_str() == 'strptime': # `datetime.datetime.strptime()` -> `time:strptime()`
+                                return 'time:strptime'
                         if self.children[0].children[1].token_str() == 'date' and self.children[1].token_str() == 'today': # `datetime.date.today()` -> `time:today()`
                             return 'time:today'
 

@@ -506,6 +506,9 @@ class SymbolNode:
                         ast_parent = ast_parent.parent
                     return ('@' if function_nesting == 2 else '') + '.' + self.children[1].to_str()
 
+                if c1ts == 'days':
+                    return self.children[0].to_str() + '.' + c1ts + '()'
+
                 return self.children[0].to_str() + '.' + self.children[1].to_str()
 
             elif self.symbol.id == '+=' and self.children[1].symbol.id == '[' and self.children[1].is_list: # ]

@@ -59,7 +59,7 @@ class Scope:
     def find(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'filter', 'round'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'filter', 'round', 'enumerate'):
             return ''
 
         s = self
@@ -199,7 +199,7 @@ class SymbolNode:
         if self.token.category == Token.Category.NAME:
             if self.scope_prefix == ':' and self.parent and self.parent.function_call: # global functions do not require prefix `:` because global functions are ok, but global variables are not so good and they should be marked with `:`
                 return self.token.value(source)
-            return self.scope_prefix + self.token.value(source)
+            return self.scope_prefix + self.token_str()
 
         if self.token.category == Token.Category.NUMERIC_LITERAL:
             n = self.token.value(source)
@@ -296,6 +296,9 @@ class SymbolNode:
                     if self.children[0].children[1].token.value(source) == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'
+                    if self.children[0].children[1].token.value(source) == 'readlines': # `f.readlines()` -> `f.read_lines(1B)`
+                        assert(len(self.children) == 1)
+                        return self.children[0].children[0].to_str() + ".read_lines(1B)"
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -1717,6 +1720,19 @@ def parse_and_to_str(tokens_, source_, file_name_):
                                                            == c0.expression.children[0].children[0].to_str()):
                             child.dir_filter = c0.expression.children[0].children[1].to_str() + ' -> ' + c0.expression.children[0].children[3].to_str()
                             child.children.pop(0)
+
+                    elif child.expression.symbol.id == '(' and child.expression.children[0].token_str() == 'enumerate': # )
+                        assert(len(child.loop_variables) == 2)
+                        set_index_node = ASTExprAssignment()
+                        set_index_node.set_dest_expression(SymbolNode(Token(0, 0, Token.Category.NAME), child.loop_variables[0]))
+                        child.loop_variables.pop(0)
+                        set_index_node.set_expression(SymbolNode(Token(0, 0, Token.Category.NAME), 'L.index' + (' + ' + child.expression.children[3].to_str() if len(child.expression.children) >= 5 else '')))
+                        set_index_node.add_var = True
+                        set_index_node.parent = child
+                        child.children.insert(0, set_index_node)
+                        child.expression.children[0].parent = child.expression.parent
+                        child.expression.children[0].ast_parent = child.expression.ast_parent
+                        child.expression = child.expression.children[1]
 
                 elif type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add qualifier `=` to changing ones
                     for fargi in range(len(child.function_arguments)):

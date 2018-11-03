@@ -217,3 +217,40 @@ open("filename", newline = "\n")
 
 open("filename", 'w', newline = '')
                                 ^Error: the only allowed value for `newline` argument is `"\n"`
+
+
+animals : List[Animal] = []
+          ^Error: class `Animal` is not defined
+
+
+Animal = 0
+animals : List[Animal] = []
+          ^Error: `Animal`: expected a class name (got variable)
+
+
+Animal = ''
+animals : List[Animal] = []
+          ^Error: `Animal`: expected a class name (got variable of type `str`)
+
+
+class Sheep(Animal):
+            ^Error: class `Animal` is not defined
+    def say(self):
+        print('baa')
+
+
+Animal = ''
+class Sheep(Animal):
+            ^Error: expected a class name
+    def say(self):
+        print('baa')
+
+
+class Animal:
+    def say(self):
+    ^Error: please specify return type of virtual function
+        raise NotImplementedError()
+
+class Sheep(Animal):
+    def say(self):
+        print('baa')

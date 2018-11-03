@@ -5,14 +5,17 @@ except ImportError:
     from tokenizer import Token
     import tokenizer
 from typing import List, Tuple, Dict, Callable
+from enum import IntEnum
 import os
 
 class Scope:
     parent : 'Scope'
     class Var:
         type : str
-        def __init__(self, type):
+        node : 'ASTNode'
+        def __init__(self, type, node):
             self.type = type
+            self.node = node
     vars : Dict[str, Var]
     nonlocals : set
     globals   : set
@@ -22,14 +25,14 @@ class Scope:
         self.parent = None
         if func_args != None:
             self.is_function = True
-            self.vars = dict(map(lambda x: (x, Scope.Var(None)), func_args))
+            self.vars = dict(map(lambda x: (x, Scope.Var(None, None)), func_args))
         else:
             self.is_function = False
             self.vars = {}
         self.nonlocals = set()
         self.globals   = set()
 
-    def add_var(self, name, error_if_already_defined = False, type = None, err_token = None):
+    def add_var(self, name, error_if_already_defined = False, type = None, err_token = None, node = None):
         s = self
         while True:
             if name in s.nonlocals or name in s.globals:
@@ -50,16 +53,16 @@ class Scope:
                 s = s.parent
                 if s == None:
                     break
-            self.vars[name] = Scope.Var(type)
+            self.vars[name] = Scope.Var(type, node)
             return True
         elif error_if_already_defined:
             raise Error('redefinition of already defined variable is not allowed', err_token if err_token != None else token)
         return False
 
-    def find(self, name, token):
+    def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'filter', 'round', 'enumerate'):
+        if name in ('isinstance', 'len', 'super', 'print', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'filter', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -90,14 +93,19 @@ class Scope:
             if s == None:
                 raise Error('undefined identifier', token)
 
-    def var_type(self, name):
+    def find(self, name):
         s = self
         while True:
-            if name in s.vars:
-                return s.vars[name].type
+            id = s.vars.get(name)
+            if id != None:
+                return id
             s = s.parent
             if s == None:
                 return None
+
+    def var_type(self, name):
+        id = self.find(name)
+        return id.type if id != None else None
 
 scope : Scope
 
@@ -694,11 +702,28 @@ class ASTTypeHint(ASTNode):
     var : str
     type : str
     type_args : List[str]
+    scope : Scope
+    type_token : Token
+
+    def __init__(self):
+        self.scope = scope
+
+    def trans_type(self, ty):
+        t = python_types_to_11l.get(ty)
+        if t != None:
+            return t
+        else:
+            id = self.scope.find(ty)
+            if id == None:
+                raise Error('class `' + ty + '` is not defined', self.type_token)
+            if id.type != '(Class)':
+                raise Error('`' + ty + '`: expected a class name (got variable' + (' of type `' + id.type + '`' if id.type != None else '') + ')', self.type_token)
+            return ty
 
     def to_str(self, indent):
         if self.type == 'Callable':
-            return ' ' * (indent*3) + '(' + ', '.join(python_types_to_11l[ty] for ty in self.type_args[0].split(',')) + ' -> ' + python_types_to_11l[self.type_args[1]] + ') ' + self.var + "\n"
-        return ' ' * (indent*3) + python_types_to_11l[self.type] + ('[' + ', '.join(python_types_to_11l[ty] for ty in self.type_args) + ']' if len(self.type_args) else '') + ' ' + self.var + "\n"
+            return ' ' * (indent*3) + '(' + ', '.join(self.trans_type(ty) for ty in self.type_args[0].split(',')) + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var + "\n"
+        return ' ' * (indent*3) + self.trans_type(self.type) + ('[' + ', '.join(self.trans_type(ty) for ty in self.type_args) + ']' if len(self.type_args) else '') + ' ' + self.var + "\n"
 
 class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
     def to_str(self, indent):
@@ -710,6 +735,12 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
     function_return_type : str = ''
     function_arguments : List[Tuple[str, SymbolNode, str]]# = []
     first_named_only_argument = None
+    class VirtualCategory(IntEnum):
+        NO = 0
+        NEW = 1
+        OVERRIDE = 2
+        ABSTRACT = 3
+    virtual_category = VirtualCategory.NO
 
     def __init__(self):
         super().__init__()
@@ -733,7 +764,11 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             fargs.insert(self.first_named_only_argument, "'")
         if len(self.function_arguments) and self.function_arguments[0][0] == 'self':
             fargs.pop(0)
-        return self.children_to_str(indent, 'F ' + (self.function_name if self.function_name != '__init__' else '')
+
+        if self.virtual_category == self.VirtualCategory.ABSTRACT:
+            return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + ", ".join(fargs) + ') -> ' + python_types_to_11l[self.function_return_type] + "\n"
+
+        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override')[self.virtual_category] + ' ' + (self.function_name if self.function_name != '__init__' else '')
             + '(' + ", ".join(fargs) + ')'
             + ('' if self.function_return_type == '' else ' -> ' + python_types_to_11l[self.function_return_type]))
 
@@ -842,6 +877,7 @@ class ASTExceptionCatch(ASTNodeWithChildren):
 
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
+    base_class_node : 'ASTClassDefinition' = None
     class_name : str
 
     def to_str(self, indent):
@@ -1308,13 +1344,38 @@ def parse_internal(this_node, one_line_scope = False):
                     n.parent = node         #     def __init__(self):
                     node.children.append(n) #         self.result = []
 
+                # Detect virtual functions and assign `virtual_category`
+                if type(this_node) == ASTClassDefinition:
+                    if this_node.base_class_node != None:
+                        for child in this_node.base_class_node.children:
+                            if type(child) == ASTFunctionDefinition and child.function_name == node.function_name:
+                                if child.virtual_category == ASTFunctionDefinition.VirtualCategory.NO:
+                                    if child.function_return_type == '':
+                                        raise Error('please specify return type of virtual function', tokens[child.tokeni])
+                                    if len(child.children) and type(child.children[0]) == ASTException and child.children[0].expression.symbol.id == '(' and child.children[0].expression.children[0].token.value(source) == 'NotImplementedError': # )
+                                        child.virtual_category = ASTFunctionDefinition.VirtualCategory.ABSTRACT
+                                    else:
+                                        child.virtual_category = ASTFunctionDefinition.VirtualCategory.NEW
+                                node.virtual_category = ASTFunctionDefinition.VirtualCategory.OVERRIDE
+                                if node.function_return_type == '': # specifying return type of overriden virtual functions is not necessary — it can be taken from original virtual function definition
+                                    node.function_return_type = child.function_return_type
+                                break
+
             elif token.value(source) == 'class':
                 node = ASTClassDefinition()
                 node.class_name = expected_name('class name')
-                scope.add_var(node.class_name, True)
+                scope.add_var(node.class_name, True, '(Class)', node = node)
 
                 if token.value(source) == '(':
                     node.base_class_name = expected_name('base class name')
+                    if node.base_class_name != 'Exception':
+                        base_class = scope.find(node.base_class_name)
+                        if base_class == None:
+                            raise Error('class `' + node.base_class_name + '` is not defined', tokens[tokeni-1])
+                        if base_class.type != '(Class)':
+                            raise Error('expected a class name', tokens[tokeni-1])
+                        assert(type(base_class.node) == ASTClassDefinition)
+                        node.base_class_node = base_class.node
                     expected(')')
 
                 new_scope(node)
@@ -1484,6 +1545,7 @@ def parse_internal(this_node, one_line_scope = False):
             var = token.value(source)
             next_token()
             type_ = expected_name('type name')
+            type_token = tokens[tokeni - 1]
             scope.add_var(var, True, type_, name_token)
             type_args = []
             if token.value(source) == '[':
@@ -1534,6 +1596,7 @@ def parse_internal(this_node, one_line_scope = False):
                 node = ASTTypeHint()
                 if not (token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
+            node.type_token = type_token
             node.var = var
             node.type = type_
             node.type_args = type_args
@@ -1574,7 +1637,7 @@ def parse_internal(this_node, one_line_scope = False):
         def check_vars_defined(sn : SymbolNode):
             if sn.token.category == Token.Category.NAME:
                 if not (sn.parent and sn.parent.token.value(source) == '.') or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
-                    sn.scope_prefix = sn.scope.find(sn.token.value(source), sn.token)
+                    sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token.value(source), sn.token)
             else:
                 if sn.function_call:
                     check_vars_defined(sn.children[0])

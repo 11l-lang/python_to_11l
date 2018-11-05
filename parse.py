@@ -498,6 +498,8 @@ class SymbolNode:
                     return ':'*(c1ts != 'exit') + c1ts
 
                 if self.children[0].scope_prefix == ':::':
+                    if self.children[0].token_str() == 'math':
+                        return self.children[1].to_str()
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir', 'time:sleep': 'sleep', 'datetime:datetime': 'time:', 'datetime:date': 'time:', 'datetime:timedelta': 'time:delta'}.get(r, r)
 
@@ -584,7 +586,7 @@ class SymbolNode:
             elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # )
                 return self.children[0].children[1].to_str() + '.empty'
             else:
-                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '^':'(+)'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
+                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '**':'^', '^':'(+)'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             c0 = self.children[0].to_str()
@@ -1257,7 +1259,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math'):
                         module_file_name = os.path.join(os.path.dirname(file_name), module_name).replace('\\', '/') # `os.path.join()` is needed for case when `os.path.dirname(file_name)` is empty string, `replace('\\', '/')` is needed for passing 'tests/parser/errors.txt'
                         try:
                             modulefstat = os.stat(module_file_name + '.py')

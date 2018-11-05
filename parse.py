@@ -283,15 +283,22 @@ class SymbolNode:
                     if self.children[0].children[1].token.value(source) == 'join' and not (self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'os'): # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
-                    repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'timestamp':'unix_time'}.get(self.children[0].children[1].token.value(source), '')
+                    repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim'}.get(self.children[0].children[1].token.value(source), '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         #assert(len(self.children) == 3)
                         res = self.children[0].children[0].to_str() + '.' + repl + '('
-                        for i in range(1, len(self.children), 2):
-                            assert(self.children[i+1] == None)
-                            res += self.children[i].to_str()
-                            if i < len(self.children)-2:
-                                res += ', '
+                        def is_char(child):
+                            ts = child.token_str()
+                            return child.token.category == Token.Category.STRING_LITERAL and (len(ts) == 3 or (ts[:2] == '"\\' and len(ts) == 4))
+                        if repl.endswith('trim') and not is_char(self.children[1]): # `"...".strip("\t ")` -> `"...".trim(Array[Char]("\t "))`
+                            assert(len(self.children) == 3)
+                            res += 'Array[Char](' + self.children[1].to_str() + ')'
+                        else:
+                            for i in range(1, len(self.children), 2):
+                                assert(self.children[i+1] == None)
+                                res += self.children[i].to_str()
+                                if i < len(self.children)-2:
+                                    res += ', '
                         return res + ')'
                     if self.children[0].children[0].symbol.id == '(' and \
                        self.children[0].children[0].children[0].token_str() == 'open' and \

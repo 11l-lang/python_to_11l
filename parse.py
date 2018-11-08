@@ -320,6 +320,8 @@ class SymbolNode:
                             c1_in_braces_if_needed = '(' + c1_in_braces_if_needed + ')'
                         if self.children[0].children[1].token_str() == 'split': # `re.split('pattern', 'string')` -> `‘string’.split(re:‘pattern’)`
                             return self.children[3].to_str() + '.split(re:' + c1_in_braces_if_needed + ')'
+                        if self.children[0].children[1].token_str() == 'sub': # `re.sub('pattern', 'repl', 'string')` -> `‘string’.replace(re:‘pattern’, ‘repl’)`
+                            return self.children[5].to_str() + '.replace(re:' + c1_in_braces_if_needed + ', ' + self.children[3].to_str() + ')'
                         return 're:' + c1_in_braces_if_needed + '.' + self.children[0].children[1].to_str() + '(' + self.children[3].to_str() + ')'
 
                 func_name = self.children[0].to_str()

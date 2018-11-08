@@ -315,8 +315,12 @@ class SymbolNode:
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + ".read_lines(1B)"
                     if self.children[0].children[0].token_str() == 're' and self.children[0].children[1].token_str() != 'compile': # `re.search('pattern', 'string')` -> `re:‘pattern’.search(‘string’)`
-                        braces = not self.children[1].token.category == Token.Category.STRING_LITERAL
-                        return 're:' + '('*braces + self.children[1].to_str() + ')'*braces + '.' + self.children[0].children[1].to_str() + '(' + self.children[3].to_str() + ')'
+                        c1_in_braces_if_needed = self.children[1].to_str()
+                        if self.children[1].token.category != Token.Category.STRING_LITERAL:
+                            c1_in_braces_if_needed = '(' + c1_in_braces_if_needed + ')'
+                        if self.children[0].children[1].token_str() == 'split': # `re.split('pattern', 'string')` -> `‘string’.split(re:‘pattern’)`
+                            return self.children[3].to_str() + '.split(re:' + c1_in_braces_if_needed + ')'
+                        return 're:' + c1_in_braces_if_needed + '.' + self.children[0].children[1].to_str() + '(' + self.children[3].to_str() + ')'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':

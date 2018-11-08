@@ -314,6 +314,9 @@ class SymbolNode:
                     if self.children[0].children[1].token.value(source) == 'readlines': # `f.readlines()` -> `f.read_lines(1B)`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + ".read_lines(1B)"
+                    if self.children[0].children[0].token_str() == 're' and self.children[0].children[1].token_str() != 'compile': # `re.search('pattern', 'string')` -> `re:‘pattern’.search(‘string’)`
+                        braces = not self.children[1].token.category == Token.Category.STRING_LITERAL
+                        return 're:' + '('*braces + self.children[1].to_str() + ')'*braces + '.' + self.children[0].children[1].to_str() + '(' + self.children[3].to_str() + ')'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -501,7 +504,7 @@ class SymbolNode:
                     if self.children[0].token_str() == 'math':
                         return self.children[1].to_str()
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
-                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir', 'time:sleep': 'sleep', 'datetime:datetime': 'time:', 'datetime:date': 'time:', 'datetime:timedelta': 'time:delta'}.get(r, r)
+                    return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir', 'time:sleep': 'sleep', 'datetime:datetime': 'time:', 'datetime:date': 'time:', 'datetime:timedelta': 'time:delta', 're:compile': 're:'}.get(r, r)
 
                 if self.children[0].symbol.id == '.' and self.children[0].children[0].scope_prefix == ':::':
                     if self.children[0].children[0].token_str() == 'datetime':
@@ -1259,7 +1262,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 're'):
                         module_file_name = os.path.join(os.path.dirname(file_name), module_name).replace('\\', '/') # `os.path.join()` is needed for case when `os.path.dirname(file_name)` is empty string, `replace('\\', '/')` is needed for passing 'tests/parser/errors.txt'
                         try:
                             modulefstat = os.stat(module_file_name + '.py')

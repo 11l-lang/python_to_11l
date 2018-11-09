@@ -6,7 +6,7 @@ except ImportError:
     import tokenizer
 from typing import List, Tuple, Dict, Callable
 from enum import IntEnum
-import os
+import os, re
 
 class Scope:
     parent : 'Scope'
@@ -321,7 +321,7 @@ class SymbolNode:
                         if self.children[0].children[1].token_str() == 'split': # `re.split('pattern', 'string')` -> `‘string’.split(re:‘pattern’)`
                             return self.children[3].to_str() + '.split(re:' + c1_in_braces_if_needed + ')'
                         if self.children[0].children[1].token_str() == 'sub': # `re.sub('pattern', 'repl', 'string')` -> `‘string’.replace(re:‘pattern’, ‘repl’)`
-                            return self.children[5].to_str() + '.replace(re:' + c1_in_braces_if_needed + ', ' + self.children[3].to_str() + ')'
+                            return self.children[5].to_str() + '.replace(re:' + c1_in_braces_if_needed + ', ' + re.sub(R'\\(\d{1,2})', R'$\1', self.children[3].to_str()) + ')'
                         if self.children[0].children[1].token_str() == 'match':
                             assert c1_in_braces_if_needed[0] != '(', 'only string literal patterns supported in `match()` for a while' # )
                             if c1_in_braces_if_needed[-2] == '$': # `re.match('pattern$', 'string')` -> `re:‘pattern’.match(‘string’)`

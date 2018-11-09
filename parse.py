@@ -329,7 +329,7 @@ class SymbolNode:
                             else: # `re.match('pattern', 'string')` -> `re:‘^pattern’.search(‘string’)`
                                 return 're:' + c1_in_braces_if_needed[0] + '^' + c1_in_braces_if_needed[1:] + '.search(' + self.children[3].to_str() + ')'
                         c0c1 = self.children[0].children[1].token_str()
-                        return 're:' + c1_in_braces_if_needed + '.' + {'fullmatch': 'match', 'findall': 'find_strings'}.get(c0c1, c0c1) + '(' + self.children[3].to_str() + ')'
+                        return 're:' + c1_in_braces_if_needed + '.' + {'fullmatch': 'match', 'findall': 'find_strings', 'finditer': 'find_matches'}.get(c0c1, c0c1) + '(' + self.children[3].to_str() + ')'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':

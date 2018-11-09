@@ -322,6 +322,14 @@ class SymbolNode:
                             return self.children[3].to_str() + '.split(re:' + c1_in_braces_if_needed + ')'
                         if self.children[0].children[1].token_str() == 'sub': # `re.sub('pattern', 'repl', 'string')` -> `‘string’.replace(re:‘pattern’, ‘repl’)`
                             return self.children[5].to_str() + '.replace(re:' + c1_in_braces_if_needed + ', ' + self.children[3].to_str() + ')'
+                        if self.children[0].children[1].token_str() == 'match':
+                            assert c1_in_braces_if_needed[0] != '(', 'only string literal patterns supported in `match()` for a while' # )
+                            if c1_in_braces_if_needed[-2] == '$': # `re.match('pattern$', 'string')` -> `re:‘pattern’.match(‘string’)`
+                                return 're:' + c1_in_braces_if_needed[:-2] + c1_in_braces_if_needed[-1] + '.match(' + self.children[3].to_str() + ')'
+                            else: # `re.match('pattern', 'string')` -> `re:‘^pattern’.search(‘string’)`
+                                return 're:' + c1_in_braces_if_needed[0] + '^' + c1_in_braces_if_needed[1:] + '.search(' + self.children[3].to_str() + ')'
+                        if self.children[0].children[1].token_str() == 'fullmatch':
+                            return 're:' + c1_in_braces_if_needed + '.match(' + self.children[3].to_str() + ')'
                         return 're:' + c1_in_braces_if_needed + '.' + self.children[0].children[1].to_str() + '(' + self.children[3].to_str() + ')'
 
                 func_name = self.children[0].to_str()

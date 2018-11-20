@@ -518,7 +518,9 @@ class SymbolNode:
 
                 if self.children[0].scope_prefix == ':::':
                     if self.children[0].token_str() == 'math':
-                        return self.children[1].to_str()
+                        c1 = self.children[1].to_str()
+                        if c1 == 'fabs': c1 = 'abs'
+                        return c1
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir',
                     'os:mkdir': 'fs:create_directory', 'os:makedirs': 'fs:create_directories', 'os:rename': 'fs:rename',

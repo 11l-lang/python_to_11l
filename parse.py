@@ -285,8 +285,11 @@ class SymbolNode:
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim'}.get(self.children[0].children[1].token.value(source), '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
+                        c00 = self.children[0].children[0].to_str()
+                        if repl == 'uppercase' and c00.endswith('[2..]') and self.children[0].children[0].children[0].symbol.id == '(' and self.children[0].children[0].children[0].children[0].token_str() == 'hex': # ) # `hex(x)[2:].upper()` -> `hex(x)`
+                            return 'hex(' + self.children[0].children[0].children[0].children[1].to_str() + ')'
                         #assert(len(self.children) == 3)
-                        res = self.children[0].children[0].to_str() + '.' + repl + '('
+                        res = c00 + '.' + repl + '('
                         def is_char(child):
                             ts = child.token_str()
                             return child.token.category == Token.Category.STRING_LITERAL and (len(ts) == 3 or (ts[:2] == '"\\' and len(ts) == 4))

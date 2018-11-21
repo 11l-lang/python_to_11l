@@ -62,7 +62,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'filter', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'filter', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -339,6 +339,9 @@ class SymbolNode:
                     func_name = 'String'
                 elif func_name == 'int':
                     func_name = 'Int'
+                elif func_name == 'list': # `list(map(...))` -> `map(...)`
+                    assert(len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'map') # )
+                    return self.children[1].to_str()
                 elif func_name == 'open':
                     func_name = 'File'
                     mode = '‘r’'
@@ -375,7 +378,8 @@ class SymbolNode:
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[3].to_str()
                 elif func_name in ('map', 'filter'): # replace `map(function, iterable)` with `iterable.map(function)`
                     assert(len(self.children) == 5)
-                    return self.children[3].to_str() + '.' + func_name + '(' + self.children[1].to_str() + ')'
+                    b = self.children[3].symbol.id == 'if'
+                    return '('*b + self.children[3].to_str() + ')'*b + '.' + func_name + '(' + self.children[1].to_str() + ')'
                 elif func_name == 'super': # replace `super()` with `T.base`
                     assert(len(self.children) == 1)
                     return 'T.base'
@@ -730,6 +734,18 @@ class ASTAssert(ASTNodeWithExpression):
 
 python_types_to_11l = {'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
 
+def trans_type(ty, scope, type_token):
+    t = python_types_to_11l.get(ty)
+    if t != None:
+        return t
+    else:
+        id = scope.find(ty)
+        if id == None:
+            raise Error('class `' + ty + '` is not defined', type_token)
+        if id.type != '(Class)':
+            raise Error('`' + ty + '`: expected a class name (got variable' + (' of type `' + id.type + '`' if id.type != None else '') + ')', type_token)
+        return ty
+
 class ASTTypeHint(ASTNode):
     var : str
     type : str
@@ -741,26 +757,22 @@ class ASTTypeHint(ASTNode):
         self.scope = scope
 
     def trans_type(self, ty):
-        t = python_types_to_11l.get(ty)
-        if t != None:
-            return t
-        else:
-            id = self.scope.find(ty)
-            if id == None:
-                raise Error('class `' + ty + '` is not defined', self.type_token)
-            if id.type != '(Class)':
-                raise Error('`' + ty + '`: expected a class name (got variable' + (' of type `' + id.type + '`' if id.type != None else '') + ')', self.type_token)
-            return ty
+        return trans_type(ty, self.scope, self.type_token)
+
+    def to_str_(self, indent, nullable = False):
+        if self.type == 'Callable':
+            return ' ' * (indent*3) + '(' + ', '.join(self.trans_type(ty) for ty in self.type_args[0].split(',')) + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
+        return ' ' * (indent*3) + self.trans_type(self.type) + ('[' + ', '.join(self.trans_type(ty) for ty in self.type_args) + ']' if len(self.type_args) else '') + '?'*nullable + ' ' + self.var
 
     def to_str(self, indent):
-        if self.type == 'Callable':
-            return ' ' * (indent*3) + '(' + ', '.join(self.trans_type(ty) for ty in self.type_args[0].split(',')) + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var + "\n"
-        return ' ' * (indent*3) + self.trans_type(self.type) + ('[' + ', '.join(self.trans_type(ty) for ty in self.type_args) + ']' if len(self.type_args) else '') + ' ' + self.var + "\n"
+        return self.to_str_(indent) + "\n"
 
 class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
     def to_str(self, indent):
         expression_str = self.expression.to_str()
-        return super().to_str(indent)[:-1] + (' = ' + expression_str if expression_str not in ('[]', 'Dict()') else '') + "\n"
+        if expression_str == 'N':
+            return super().to_str_(indent, True) + "\n"
+        return super().to_str_(indent) + (' = ' + expression_str if expression_str not in ('[]', 'Dict()') else '') + "\n"
 
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
@@ -773,10 +785,12 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         OVERRIDE = 2
         ABSTRACT = 3
     virtual_category = VirtualCategory.NO
+    scope : Scope
 
     def __init__(self):
         super().__init__()
         self.function_arguments = []
+        self.scope = scope
 
     def to_str(self, indent):
         fargs = []
@@ -786,7 +800,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             if arg[1] != None:
                 default_value = arg[1].to_str()
             if arg[2] != '':
-                farg += python_types_to_11l[arg[2]]
+                farg += trans_type(arg[2], self.scope, tokens[self.tokeni])
                 if default_value == 'N':
                     farg += '?'
                 farg += ' '
@@ -1348,7 +1362,8 @@ def parse_internal(this_node, one_line_scope = False):
                     type_ = ''
                     if token.value(source) == ':': # this is a type hint
                         next_token()
-                        type_ = expression().to_str()
+                        expr = expression()
+                        type_ = expr.to_str() if expr.token.category != Token.Category.STRING_LITERAL else expr.to_str()[1:-1]
                     if token.value(source) == '=':
                         next_token()
                         default = expression()
@@ -1576,8 +1591,12 @@ def parse_internal(this_node, one_line_scope = False):
             name_token = token
             var = token.value(source)
             next_token()
-            type_ = expected_name('type name')
-            type_token = tokens[tokeni - 1]
+            advance(':')
+            if token.category not in (Token.Category.NAME, Token.Category.STRING_LITERAL):
+                raise Error('expected type name', token)
+            type_ = token.value(source) if token.category == Token.Category.NAME else token.value(source)[1:-1]
+            type_token = token
+            next_token()
             scope.add_var(var, True, type_, name_token)
             type_args = []
             if token.value(source) == '[':

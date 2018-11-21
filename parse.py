@@ -1381,8 +1381,11 @@ def parse_internal(this_node, one_line_scope = False):
                 next_token()
                 if token.value(source) == '->':
                     next_token()
-                    node.function_return_type = token.value(source)
-                    next_token()
+                    if token.value(source) == 'None':
+                        node.function_return_type = 'None'
+                        next_token()
+                    else:
+                        node.function_return_type = expression().to_str()
 
                 new_scope(node, map(lambda arg: arg[0], node.function_arguments))
 

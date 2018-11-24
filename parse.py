@@ -336,6 +336,13 @@ class SymbolNode:
                                 return 're:' + c1_in_braces_if_needed[0] + '^' + c1_in_braces_if_needed[1:] + '.search(' + self.children[3].to_str() + ')'
                         c0c1 = self.children[0].children[1].token_str()
                         return 're:' + c1_in_braces_if_needed + '.' + {'fullmatch': 'match', 'findall': 'find_strings', 'finditer': 'find_matches'}.get(c0c1, c0c1) + '(' + self.children[3].to_str() + ')'
+                    if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'defaultdict': # `collections.defaultdict(KeyType) # ValueType` -> `DefaultDict[KeyType, ValueType]()`
+                        assert(len(self.children) == 3)
+                        if source[self.children[1].token.end + 2] != '#':
+                            raise Error('to use defaultdict the type of dict values must be specified in the comment', self.children[0].children[1].token)
+                        sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
+                        return 'DefaultDict[' + trans_type(self.children[1].to_str(), self.scope, self.children[1].token) + ', ' \
+                            + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -1304,7 +1311,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 're', 'random'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 're', 'random', 'collections'):
                         module_file_name = os.path.join(os.path.dirname(file_name), module_name).replace('\\', '/') # `os.path.join()` is needed for case when `os.path.dirname(file_name)` is empty string, `replace('\\', '/')` is needed for passing 'tests/parser/errors.txt'
                         try:
                             modulefstat = os.stat(module_file_name + '.py')

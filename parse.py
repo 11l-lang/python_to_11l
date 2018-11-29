@@ -62,7 +62,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'filter', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'filter', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -352,6 +352,8 @@ class SymbolNode:
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     assert(len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'map') # )
                     return self.children[1].to_str()
+                elif func_name == 'dict':
+                    func_name = 'Dict'
                 elif func_name == 'open':
                     func_name = 'File'
                     mode = '‘r’'
@@ -754,6 +756,10 @@ def trans_type(ty, scope, type_token):
     if t != None:
         return t
     else:
+        p = ty.find('[') # ]
+        if p != -1:
+            return trans_type(ty[:p], scope, type_token) + '[' + trans_type(ty[p+1:-1], scope, type_token) + ']'
+
         id = scope.find(ty)
         if id == None:
             raise Error('class `' + ty + '` is not defined', type_token)
@@ -815,10 +821,13 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             if arg[1] != None:
                 default_value = arg[1].to_str()
             if arg[2] != '':
-                farg += trans_type(arg[2], self.scope, tokens[self.tokeni])
+                ty = trans_type(arg[2], self.scope, tokens[self.tokeni])
+                farg += ty
                 if default_value == 'N':
                     farg += '?'
                 farg += ' '
+                if ty.startswith('Array['): # ]
+                    farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append(farg)
         if self.first_named_only_argument != None:

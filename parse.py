@@ -895,9 +895,15 @@ class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
         return self.children_to_str(indent, 'L' if self.expression.token.category == Token.Category.CONSTANT and self.expression.token.value(source) == 'True' else 'L ' + self.expression.to_str())
 
 class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
+    was_no_break : ASTNodeWithChildren = None
     loop_variables : List[str]
     os_walk = False
     dir_filter = None
+
+    def walk_children(self, f):
+        super().walk_children(f)
+        if self.was_no_break != None:
+            self.was_no_break.walk_children(f)
 
     def to_str(self, indent):
         if self.os_walk:
@@ -910,12 +916,17 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
                 + ' ' * ((indent+1)*3) + 'I fs:is_directory(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
 
         if len(self.loop_variables) == 1:
-            return self.children_to_str(indent, 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str())
+            r = self.children_to_str(indent, 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str())
         else:
             r = 'L(' + ''.join(self.loop_variables) + ') ' + self.expression.to_str()
             for index, loop_var in enumerate(self.loop_variables):
                 r += "\n" + ' ' * ((indent+1)*3) + 'A ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
-            return self.children_to_str(indent, r)
+            r = self.children_to_str(indent, r)
+
+        if self.was_no_break != None:
+            r += self.was_no_break.children_to_str(indent + 1, 'L.was_no_break')
+
+        return r
 
 class ASTContinue(ASTNode):
     def to_str(self, indent):
@@ -1517,6 +1528,12 @@ def parse_internal(this_node, one_line_scope = False):
                 node.set_expression(expression())
                 new_scope(node)
                 scope = prev_scope
+
+                if token != None and token.value(source) == 'else':
+                    node.was_no_break = ASTNodeWithChildren()
+                    node.was_no_break.parent = node
+                    next_token()
+                    new_scope(node.was_no_break)
 
             elif token.value(source) == 'continue':
                 node = ASTContinue()

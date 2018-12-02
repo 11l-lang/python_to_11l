@@ -286,6 +286,8 @@ class SymbolNode:
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
                     if c01 == 'split' and len(self.children) == 5 and not (self.children[0].children[0].token_str() == 're'): # split() second argument [limit] in 11l is similar to JavaScript, Ruby and PHP, but not Python
                         return self.children[0].to_str() + '(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'
+                    if c01 == 'split' and len(self.children) == 1:
+                        return self.children[0].to_str() + '((‘ ’, "\\t", "\\r", "\\n"), group_delimiters\' 1B)'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim'}.get(c01, '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         c00 = self.children[0].children[0].to_str()

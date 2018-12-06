@@ -1628,7 +1628,7 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             next_token()
             node.set_expression(expression())
-            node.add_var = scope.add_var(name_token.value(source), False, 'str' if node.expression.token.category == Token.Category.STRING_LITERAL else None, name_token)
+            node.add_var = scope.add_var(name_token.value(source), False, 'str' if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str') else None, name_token)
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()

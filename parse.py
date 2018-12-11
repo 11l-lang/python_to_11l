@@ -62,7 +62,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'filter', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'sorted', 'filter', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -338,13 +338,13 @@ class SymbolNode:
                                 return 're:' + c1_in_braces_if_needed[0] + '^' + c1_in_braces_if_needed[1:] + '.search(' + self.children[3].to_str() + ')'
                         c0c1 = self.children[0].children[1].token_str()
                         return 're:' + c1_in_braces_if_needed + '.' + {'fullmatch': 'match', 'findall': 'find_strings', 'finditer': 'find_matches'}.get(c0c1, c0c1) + '(' + self.children[3].to_str() + ')'
-                    if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'defaultdict': # `collections.defaultdict(KeyType) # ValueType` -> `DefaultDict[KeyType, ValueType]()`
+                    if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'defaultdict': # `collections.defaultdict(ValueType) # KeyType` -> `DefaultDict[KeyType, ValueType]()`
                         assert(len(self.children) == 3)
                         if source[self.children[1].token.end + 2] != '#':
                             raise Error('to use defaultdict the type of dict values must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
-                        return 'DefaultDict[' + trans_type(self.children[1].to_str(), self.scope, self.children[1].token) + ', ' \
-                            + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
+                        return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
+                                              + trans_type(self.children[1].to_str(), self.scope, self.children[1].token) + ']()'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -751,7 +751,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
+python_types_to_11l = {'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
 
 def trans_type(ty, scope, type_token):
     t = python_types_to_11l.get(ty)
@@ -792,6 +792,10 @@ class ASTTypeHint(ASTNode):
 
 class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
     def to_str(self, indent):
+        if self.type == 'DefaultDict':
+            assert(self.expression.function_call and self.expression.children[0].to_str() == 'collections:defaultdict')
+            return super().to_str(indent)
+
         expression_str = self.expression.to_str()
         if expression_str == 'N':
             return super().to_str_(indent, True) + "\n"

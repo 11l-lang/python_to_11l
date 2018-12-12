@@ -62,7 +62,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'sorted', 'filter', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'abs', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'sorted', 'filter', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -341,7 +341,7 @@ class SymbolNode:
                     if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'defaultdict': # `collections.defaultdict(ValueType) # KeyType` -> `DefaultDict[KeyType, ValueType]()`
                         assert(len(self.children) == 3)
                         if source[self.children[1].token.end + 2] != '#':
-                            raise Error('to use defaultdict the type of dict values must be specified in the comment', self.children[0].children[1].token)
+                            raise Error('to use defaultdict the type of dict keys must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
                         return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
                                               + trans_type(self.children[1].to_str(), self.scope, self.children[1].token) + ']()'

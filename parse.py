@@ -568,6 +568,8 @@ class SymbolNode:
                     function_nesting = 0
                     while type(ast_parent) != ASTProgram:
                         if type(ast_parent) == ASTFunctionDefinition:
+                            if len(ast_parent.function_arguments) >= 1 and ast_parent.function_arguments[0][0] == 'self' and type(ast_parent.parent) != ASTClassDefinition:
+                                return 'self.' + self.children[1].to_str()
                             function_nesting += 1
                             if function_nesting == 2:
                                 break
@@ -754,6 +756,9 @@ class ASTAssert(ASTNodeWithExpression):
 python_types_to_11l = {'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
 
 def trans_type(ty, scope, type_token):
+    if ty[0] in '\'"':
+        assert(ty[-1] == ty[0])
+        ty = ty[1:-1]
     t = python_types_to_11l.get(ty)
     if t != None:
         return t
@@ -785,6 +790,9 @@ class ASTTypeHint(ASTNode):
     def to_str_(self, indent, nullable = False):
         if self.type == 'Callable':
             return ' ' * (indent*3) + '(' + ', '.join(self.trans_type(ty) for ty in self.type_args[0].split(',')) + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
+        elif self.type == 'Optional':
+            assert(len(self.type_args) == 1)
+            return ' ' * (indent*3) + self.trans_type(self.type_args[0]) + '? ' + self.var
         return ' ' * (indent*3) + self.trans_type(self.type) + ('[' + ', '.join(self.trans_type(ty) for ty in self.type_args) + ']' if len(self.type_args) else '') + '?'*nullable + ' ' + self.var
 
     def to_str(self, indent):
@@ -838,7 +846,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             fargs.append(farg)
         if self.first_named_only_argument != None:
             fargs.insert(self.first_named_only_argument, "'")
-        if len(self.function_arguments) and self.function_arguments[0][0] == 'self':
+        if len(self.function_arguments) and self.function_arguments[0][0] == 'self' and type(self.parent) == ASTClassDefinition:
             fargs.pop(0)
 
         if self.virtual_category == self.VirtualCategory.ABSTRACT:

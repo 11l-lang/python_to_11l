@@ -112,7 +112,7 @@ for test in open(file_name, encoding="utf8").read().split("\n\n\n"):
         print("Exception in file '" + file_name + "' in test:\n" + test)
         raise e
     if translated_source != expected_translated_source:
-        print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source)
+        print("Mismatch for test:\n" + source + "Output:\n" + translated_source + "\nExpected output:\n" + expected_translated_source + "[in file '" + file_name + "']")
         kdiff3(translated_source, expected_translated_source)
         exit(1)
     else:

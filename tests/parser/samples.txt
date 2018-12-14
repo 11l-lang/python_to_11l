@@ -76,25 +76,27 @@ T Circle(Shape)
    Int radious
 
 
-def to_html(self, instr):
-    def get_newline_chars():
-        newline_chars = []
-        i = 0
-        while i < len(instr):
-            if instr[i] == "\r" or (instr[i] == "\n" and instr[i - 1:i] != "\r"):
-                newline_chars += [i]
-            i += 1
-        return newline_chars
+class Converter:
+    def to_html(self, instr):
+        def get_newline_chars():
+            newline_chars = []
+            i = 0
+            while i < len(instr):
+                if instr[i] == "\r" or (instr[i] == "\n" and instr[i - 1:i] != "\r"):
+                    newline_chars += [i]
+                i += 1
+            return newline_chars
 ===
-F to_html(instr)
-   F get_newline_chars()
-      A newline_chars = []
-      A i = 0
-      L i < @instr.len
-         I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
-            newline_chars [+]= i
-         i++
-      R newline_chars
+T Converter
+   F to_html(instr)
+      F get_newline_chars()
+         A newline_chars = []
+         A i = 0
+         L i < @instr.len
+            I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
+               newline_chars [+]= i
+            i++
+         R newline_chars
 
 
 ---
@@ -128,9 +130,10 @@ else:
     prev_indentation_level = 0
 def f(): # test for error when instead of `s = self \n while not s.is_function:` was `s = self.parent \n while s != None and not s.is_function:`
     prev_indentation_level = 0
-def children_to_str_detect_single_stmt(self, indent, r):
-    if len(self.children) > 1 or len(self.children) == 0:
-        return self.children_to_str(indent, r)
+class ASTNodeWithChildren:
+    def children_to_str_detect_single_stmt(self, indent, r):
+        if len(self.children) > 1 or len(self.children) == 0:
+            return self.children_to_str(indent, r)
 [1, 2]
 ===
 Array[Int] indentation_levels
@@ -141,9 +144,10 @@ E
    prev_indentation_level = 0
 F f()
    A prev_indentation_level = 0
-F children_to_str_detect_single_stmt(indent, r)
-   I .children.len > 1 | .children.empty
-      R .children_to_str(indent, r)
+T ASTNodeWithChildren
+   F children_to_str_detect_single_stmt(indent, r)
+      I .children.len > 1 | .children.empty
+         R .children_to_str(indent, r)
 [1, 2]
 
 
@@ -252,11 +256,13 @@ s[(3.<10).step(2)]
 s[3.<10]
 
 
-def to_str(self, indent):
-    return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
+class ASTAssignmentWithTypeHint:
+    def to_str(self, indent):
+        return super().to_str(indent)[:-1] + ' = ' + self.expression.to_str() + "\n"
 ===
-F to_str(indent)
-   R T.base.to_str(indent)[0 .< (len)-1]‘ = ’(.expression.to_str())"\n"
+T ASTAssignmentWithTypeHint
+   F to_str(indent)
+      R T.base.to_str(indent)[0 .< (len)-1]‘ = ’(.expression.to_str())"\n"
 
 
 def html_escapeq(str):
@@ -396,35 +402,37 @@ R !x
 R !(x)
 
 
-def to_html(self, instr, outfile = None):
-    i = 0
-    writepos = 0
-    def write_to_pos(pos, npos):
-        nonlocal writepos
-        outfile.write(instr[writepos:pos])
-        writepos = npos
-        gpos = 1
-        global gpos
-        gpos = 2
-    def write_to_i(add_str, skip_chars = 1):
-        def write():
-            write_to_pos(i, i+skip_chars)
-        write()
-        outfile.write(add_str)
+class Converter:
+    def to_html(self, instr, outfile = None):
+        i = 0
+        writepos = 0
+        def write_to_pos(pos, npos):
+            nonlocal writepos
+            outfile.write(instr[writepos:pos])
+            writepos = npos
+            gpos = 1
+            global gpos
+            gpos = 2
+        def write_to_i(add_str, skip_chars = 1):
+            def write():
+                write_to_pos(i, i+skip_chars)
+            write()
+            outfile.write(add_str)
 ===
-F to_html(instr, outfile = N)
-   A i = 0
-   A writepos = 0
-   F write_to_pos(pos, npos)
-      @outfile.write(@instr[@writepos .< pos])
-      @writepos = npos
-      A gpos = 1
-      :gpos = 2
-   F write_to_i(add_str, skip_chars = 1)
-      F write()
-         @@write_to_pos(@@i, @@i + @skip_chars)
-      write()
-      @outfile.write(add_str)
+T Converter
+   F to_html(instr, outfile = N)
+      A i = 0
+      A writepos = 0
+      F write_to_pos(pos, npos)
+         @outfile.write(@instr[@writepos .< pos])
+         @writepos = npos
+         A gpos = 1
+         :gpos = 2
+      F write_to_i(add_str, skip_chars = 1)
+         F write()
+            @@write_to_pos(@@i, @@i + @skip_chars)
+         write()
+         @outfile.write(add_str)
 
 
 token = None
@@ -527,11 +535,13 @@ A indent = 0
 A r = .newlines()‘’(‘ ’ * (indent * 3))‘F ’(I .function_name != ‘__init__’ {.function_name} E ‘’)‘(’(I .function_arguments.empty | .function_arguments[0] != ‘self’ {.function_arguments} E .function_arguments[1..]).join(‘, ’)")\n"
 
 
-def to_str(self, indent):
-    return ' ' * (indent*3) + self.expression.to_str() + "\n"
+class ASTExpression:
+    def to_str(self, indent):
+        return ' ' * (indent*3) + self.expression.to_str() + "\n"
 ===
-F to_str(indent)
-   R (‘ ’ * (indent * 3))‘’(.expression.to_str())"\n"
+T ASTExpression
+   F to_str(indent)
+      R (‘ ’ * (indent * 3))‘’(.expression.to_str())"\n"
 
 
 while True:

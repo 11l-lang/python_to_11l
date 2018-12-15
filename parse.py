@@ -1869,6 +1869,7 @@ def parse_and_to_str(tokens_, source_, file_name_):
                         node.children.pop(index)
                         node.children.pop(index)
                         node.children.insert(index, switch_node)
+                        switch_node.parent = node
                         continue # to update child = node.children[index]
 
                 if index < len(node.children) - 1 and type(child) == ASTExpression and child.expression.symbol.id == '-=' and child.expression.children[1].token.value(source) == '1' \

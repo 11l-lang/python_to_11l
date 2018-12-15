@@ -753,7 +753,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
 
 def trans_type(ty, scope, type_token):
     if ty[0] in '\'"':
@@ -1435,6 +1435,9 @@ def parse_internal(this_node, one_line_scope = False):
                         next_token()
                     else:
                         node.function_return_type = expression().to_str()
+
+                if source[token.end:token.end+7] == ' # -> &':
+                    node.function_return_type += '&'
 
                 new_scope(node, map(lambda arg: arg[0], node.function_arguments))
 

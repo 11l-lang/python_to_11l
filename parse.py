@@ -780,6 +780,7 @@ class ASTTypeHint(ASTNode):
     type_args : List[str]
     scope : Scope
     type_token : Token
+    is_reference = False
 
     def __init__(self):
         self.scope = scope
@@ -793,7 +794,7 @@ class ASTTypeHint(ASTNode):
         elif self.type == 'Optional':
             assert(len(self.type_args) == 1)
             return ' ' * (indent*3) + self.trans_type(self.type_args[0]) + '? ' + self.var
-        return ' ' * (indent*3) + self.trans_type(self.type) + ('[' + ', '.join(self.trans_type(ty) for ty in self.type_args) + ']' if len(self.type_args) else '') + '?'*nullable + ' ' + self.var
+        return ' ' * (indent*3) + self.trans_type(self.type) + ('[' + ', '.join(self.trans_type(ty) for ty in self.type_args) + ']' if len(self.type_args) else '') + '?'*nullable + '&'*self.is_reference + ' ' + self.var
 
     def to_str(self, indent):
         return self.to_str_(indent) + "\n"
@@ -1706,6 +1707,8 @@ def parse_internal(this_node, one_line_scope = False):
                 node.set_expression(expression())
             else:
                 node = ASTTypeHint()
+                if source[type_token.end:type_token.end+4] == ' # &':
+                    node.is_reference = True
                 if not (token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
             node.type_token = type_token

@@ -855,7 +855,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
 
         return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override')[self.virtual_category] + ' ' + (self.function_name if self.function_name != '__init__' else '')
             + '(' + ", ".join(fargs) + ')'
-            + ('' if self.function_return_type == '' else ' -> ' + python_types_to_11l[self.function_return_type]))
+            + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
     else_or_elif : ASTNode = None

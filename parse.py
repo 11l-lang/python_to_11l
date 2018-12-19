@@ -935,12 +935,14 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
                 + ' ' * ((indent+1)*3) + 'I fs:is_directory(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
 
         if len(self.loop_variables) == 1:
-            r = self.children_to_str(indent, 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str())
+            r = 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str()
+        elif self.expression.symbol.id == '(' and len(self.expression.children) == 1 and self.expression.children[0].symbol.id == '.' and len(self.expression.children[0].children) == 2 and self.expression.children[0].children[1].token_str() == 'items': # )
+            r = 'L(' + ', '.join(self.loop_variables) + ') ' + self.expression.children[0].children[0].to_str()
         else:
             r = 'L(' + ''.join(self.loop_variables) + ') ' + self.expression.to_str()
             for index, loop_var in enumerate(self.loop_variables):
                 r += "\n" + ' ' * ((indent+1)*3) + 'A ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
-            r = self.children_to_str(indent, r)
+        r = self.children_to_str(indent, r)
 
         if self.was_no_break != None:
             r += self.was_no_break.children_to_str(indent + 1, 'L.was_no_break')

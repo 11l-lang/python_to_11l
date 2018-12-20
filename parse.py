@@ -351,6 +351,8 @@ class SymbolNode:
                     func_name = 'String'
                 elif func_name == 'int':
                     func_name = 'Int'
+                elif func_name == 'float':
+                    func_name = 'Float'
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     assert(len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'map') # )
                     return self.children[1].to_str()

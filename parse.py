@@ -498,7 +498,7 @@ class SymbolNode:
             return r + ' -> ' + self.children[-1].to_str()
 
         elif self.symbol.id == 'for':
-            res = self.children[2].to_str()
+            res = self.children[2].children[0].children[0].to_str() if self.children[2].symbol.id == '(' and len(self.children[2].children) == 1 and self.children[2].children[0].symbol.id == '.' and len(self.children[2].children[0].children) == 2 and self.children[2].children[0].children[1].token_str() == 'items' else self.children[2].to_str() # )
             if len(self.children) == 4:
                 res += '.filter(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
             if self.children[1].to_str() != self.children[0].to_str():

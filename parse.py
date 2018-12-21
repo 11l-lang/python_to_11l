@@ -740,7 +740,7 @@ class ASTExprAssignment(ASTNodeWithExpression):
         self.dest_expression.ast_parent = self
 
     def to_str(self, indent):
-        return ' ' * (indent*3) + ('A ' if self.add_var else '') + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+        return ' ' * (indent*3) + ('A ' if self.add_var and type(self.parent) != ASTClassDefinition else '') + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
     def walk_expressions(self, f):
         f(self.dest_expression)

@@ -345,6 +345,8 @@ class SymbolNode:
                         sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
                         return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
                                               + trans_type(self.children[1].to_str(), self.scope, self.children[1].token) + ']()'
+                    if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'shuffle':
+                        return 'random:shuffle(&' + self.children[1].to_str() + ')'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':

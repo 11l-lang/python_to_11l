@@ -643,6 +643,53 @@ class SymbolNode:
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' <.< ' if range_need_space(self.children[0].children[0], self.children[1]) else '<.<') + self.children[1].to_str()
             elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # )
                 return self.children[0].children[1].to_str() + '.empty'
+            elif self.symbol.id == '%' and self.children[0].token.category == Token.Category.STRING_LITERAL:
+                assert(self.children[1].symbol.id == '(')#self.children[1].tuple)
+                fmtstr = self.children[0].to_str()
+                nfmtstr = ''
+                i = 0
+                while i < len(fmtstr):
+                    fmtchr = fmtstr[i+1:i+2]
+                    if fmtstr[i] == '%':
+                        if fmtchr == '%':
+                            nfmtstr += '%'
+                            i += 2
+                        elif fmtchr == 'g':
+                            nfmtstr += '#.'
+                            i += 2
+                        else:
+                            nfmtstr += '#'
+                            before_period = 0
+                            after_period = 6
+                            i += 1
+                            while i < len(fmtstr) and fmtstr[i].isdigit():
+                                before_period = before_period*10 + ord(fmtstr[i]) - ord('0')
+                                i += 1
+                            if fmtstr[i:i+1] == '.':
+                                i += 1
+                                after_period = 0
+                                while i < len(fmtstr) and fmtstr[i].isdigit():
+                                    after_period = after_period*10 + ord(fmtstr[i]) - ord('0')
+                                    i += 1
+                            if fmtstr[i:i+1] == 'd':
+                                if before_period != 0:
+                                    nfmtstr += str(before_period)
+                                nfmtstr += '.0'
+                            elif fmtstr[i:i+1] == 's':
+                                if before_period != 0:
+                                    nfmtstr += str(before_period)
+                            elif fmtstr[i:i+1] == 'f':
+                                if before_period != 0:
+                                    nfmtstr += str(before_period - after_period - 1)
+                                nfmtstr += '.' + str(after_period)
+                            else:
+                                raise ValueError('unsupported format character `' + fmtstr[i:i+1] + '`')
+                            i += 1
+                        continue
+
+                    nfmtstr += fmtstr[i]
+                    i += 1
+                return nfmtstr + '.format' + self.children[1].to_str()
             else:
                 return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '//=':'I/=', '**':'^', '^':'(+)'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:

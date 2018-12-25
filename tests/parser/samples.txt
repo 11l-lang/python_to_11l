@@ -14,7 +14,7 @@ t : Tuple[str, int]
 ===
 String message
 Int pos = 0
-Array[String] type_args
+[String] type_args
 Tuple[String, Int] t
 
 
@@ -136,7 +136,7 @@ class ASTNodeWithChildren:
             return self.children_to_str(indent, r)
 [1, 2]
 ===
-Array[Int] indentation_levels
+[Int] indentation_levels
 A prev_indentation_level = I !indentation_levels.empty {indentation_levels.last} E 0
 I !indentation_levels.empty
    prev_indentation_level = indentation_levels.last

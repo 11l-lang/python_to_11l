@@ -810,7 +810,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'Array', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'Array[String]'}
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'[String]'}
 
 def trans_type(ty, scope, type_token):
     if ty[0] in '\'"':
@@ -898,7 +898,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 if default_value == 'N':
                     farg += '?'
                 farg += ' '
-                if ty.startswith('Array['): # ]
+                if ty.startswith(('Array[', '[')): # ]]
                     farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append(farg)

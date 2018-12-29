@@ -3,7 +3,7 @@ def sum(x, y):
     return r
 ===
 F sum(x, y)
-   A r = x + y
+   V r = x + y
    R r
 
 
@@ -90,8 +90,8 @@ class Converter:
 T Converter
    F to_html(instr)
       F get_newline_chars()
-         A newline_chars = []
-         A i = 0
+         V newline_chars = []
+         V i = 0
          L i < @instr.len
             I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
                newline_chars [+]= i
@@ -103,7 +103,7 @@ T Converter
 ===
 F to_html(instr)
    F get_newline_chars()
-      A i = 0
+      V i = 0
       L i < @instr.len
          I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
             R [+]= i
@@ -113,7 +113,7 @@ F to_html(instr)
 arr = []
 arr += [1, 2]
 ===
-A arr = []
+V arr = []
 arr [+]= [1, 2]
 
 
@@ -137,13 +137,13 @@ class ASTNodeWithChildren:
 [1, 2]
 ===
 [Int] indentation_levels
-A prev_indentation_level = I !indentation_levels.empty {indentation_levels.last} E 0
+V prev_indentation_level = I !indentation_levels.empty {indentation_levels.last} E 0
 I !indentation_levels.empty
    prev_indentation_level = indentation_levels.last
 E
    prev_indentation_level = 0
 F f()
-   A prev_indentation_level = 0
+   V prev_indentation_level = 0
 T ASTNodeWithChildren
    F children_to_str_detect_single_stmt(indent, r)
       I .children.len > 1 | .children.empty
@@ -216,9 +216,9 @@ F exit_with_error(message, pos)
 {
 }
 F find_ending_sq_bracket(str, =i, start = 0)
-   A starti = i
+   V starti = i
    assert(str[i] == ‘[’)
-   A nesting_level = 0
+   V nesting_level = 0
    L
       S str[i]
          ‘[’
@@ -273,7 +273,7 @@ tag += html_escapeq()
 ===
 F html_escapeq(str)
    R str.replace(‘&’, ‘&amp;’).replace(‘"’, ‘&quot;’)
-A link = ‘http://...’
+V link = ‘http://...’
 String tag = ‘<a href="’link‘"’
 tag ‘’= html_escapeq()
 
@@ -283,9 +283,9 @@ str2 = '2'
 # str = str1 + str2 # rarely needed, so write this:
 s = str1 + '' + str2
 ===
-A str1 = ‘1’
-A str2 = ‘2’
-A s = str1‘’str2
+V str1 = ‘1’
+V str2 = ‘2’
+V s = str1‘’str2
 
 
 a : bool
@@ -322,14 +322,14 @@ if True:
 c = 1
 l = lambda x: x < c
 ===
-A l = () -> N
+V l = () -> N
 l = x -> x[0]
 l = self -> self
 l = (x, y, reverse = 0B) -> I reverse {y < x} E x < y
 I 1B
-   A c = 1
+   V c = 1
    l = x -> x < @c
-A c = 1
+V c = 1
 l = x -> x < :c
 
 
@@ -377,9 +377,9 @@ return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C'}.get(sel
 String source
 F prev_char()
    R "\0"
-A tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
+V tag = S prev_char() {‘*’ {‘b’}; ‘_’ {‘u’}; ‘-’ {‘s’}; ‘~’ {‘i’}}
 R S .token.value(source) {‘None’ {‘N’}; ‘False’ {‘0B’}; ‘True’ {‘1B’}}
-A python_types_to_11l = [‘int’ = ‘Int’, ‘str’ = ‘String’, ‘List’ = ‘Array’, ‘Tuple’ = ‘Tuple’]
+V python_types_to_11l = [‘int’ = ‘Int’, ‘str’ = ‘String’, ‘List’ = ‘Array’, ‘Tuple’ = ‘Tuple’]
 R .children[0].to_str()‘ ’(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})‘ ’(.children[1].to_str())
 
 
@@ -421,12 +421,12 @@ class Converter:
 ===
 T Converter
    F to_html(instr, outfile = N)
-      A i = 0
-      A writepos = 0
+      V i = 0
+      V writepos = 0
       F write_to_pos(pos, npos)
          @outfile.write(@instr[@writepos .< pos])
          @writepos = npos
-         A gpos = 1
+         V gpos = 1
          :gpos = 2
       F write_to_i(add_str, skip_chars = 1)
          F write()
@@ -439,8 +439,8 @@ token = None
 err_token = None
 err_token if err_token != None else token
 ===
-A token = N
-A err_token = N
+V token = N
+V err_token = N
 err_token ? token
 
 
@@ -494,9 +494,9 @@ while j > 4:
     number_with_separators = "'" + n[j-4:j] + number_with_separators
     j -= 4
 ===
-A n = ‘123’
-A number_with_separators = ‘’
-A j = n.len
+V n = ‘123’
+V number_with_separators = ‘’
+V j = n.len
 L j > 4
    number_with_separators = ‘'’n[j - 4 .< j]‘’number_with_separators
    j -= 4
@@ -522,7 +522,7 @@ print(‘Earn cool rewards by using the 'Check' button!’)
 arr = []
 ', '.join(arr)
 ===
-A arr = []
+V arr = []
 arr.join(‘, ’)
 
 
@@ -531,8 +531,8 @@ indent = 0
 r = self.newlines() + ' ' * (indent*3) + 'F ' + (self.function_name if self.function_name != '__init__' else '') \
     + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ")\n"
 ===
-A indent = 0
-A r = .newlines()‘’(‘ ’ * (indent * 3))‘F ’(I .function_name != ‘__init__’ {.function_name} E ‘’)‘(’(I .function_arguments.empty | .function_arguments[0] != ‘self’ {.function_arguments} E .function_arguments[1..]).join(‘, ’)")\n"
+V indent = 0
+V r = .newlines()‘’(‘ ’ * (indent * 3))‘F ’(I .function_name != ‘__init__’ {.function_name} E ‘’)‘(’(I .function_arguments.empty | .function_arguments[0] != ‘self’ {.function_arguments} E .function_arguments[1..]).join(‘, ’)")\n"
 
 
 class ASTExpression:
@@ -551,4 +551,4 @@ while True:
 L
    I 1B
       L.break
-   A a = 0
+   V a = 0

@@ -168,7 +168,7 @@ nonlocal i,
             ^Error: expected nonlocal variable name
 
 
-A l = lambda: None
+V l = lambda: None
   ^Error: expected end of statement
 
 

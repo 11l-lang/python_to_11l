@@ -789,7 +789,7 @@ class ASTExprAssignment(ASTNodeWithExpression):
         self.dest_expression.ast_parent = self
 
     def to_str(self, indent):
-        return ' ' * (indent*3) + ('A ' if self.add_var and type(self.parent) != ASTClassDefinition else '') + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+        return ' ' * (indent*3) + ('V ' if self.add_var and type(self.parent) != ASTClassDefinition else '') + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
     def walk_expressions(self, f):
         f(self.dest_expression)
@@ -981,7 +981,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
             if self.dir_filter != None:
                 dir_filter = ", dir_filter' " + self.dir_filter # (
             return self.children_to_str(indent, 'L(_fname) ' + self.expression.to_str()[:-1] + dir_filter + ", files_only' 0B)\n"
-                + ' ' * ((indent+1)*3) + 'A ' + self.loop_variables[0] + " = fs:path:dir_name(_fname)\n"
+                + ' ' * ((indent+1)*3) + 'V ' + self.loop_variables[0] + " = fs:path:dir_name(_fname)\n"
                 + ' ' * ((indent+1)*3) + '[String] ' + self.loop_variables[1] + ', ' + self.loop_variables[2] + "\n"
                 + ' ' * ((indent+1)*3) + 'I fs:is_directory(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
 
@@ -992,7 +992,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
         else:
             r = 'L(' + ''.join(self.loop_variables) + ') ' + self.expression.to_str()
             for index, loop_var in enumerate(self.loop_variables):
-                r += "\n" + ' ' * ((indent+1)*3) + 'A ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
+                r += "\n" + ' ' * ((indent+1)*3) + 'V ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
         r = self.children_to_str(indent, r)
 
         if self.was_no_break != None:

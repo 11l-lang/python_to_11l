@@ -662,6 +662,9 @@ class SymbolNode:
                             before_period = 0
                             after_period = 6
                             i += 1
+                            if fmtstr[i] == '-': # left align
+                                nfmtstr += '<'
+                                i += 1
                             while i < len(fmtstr) and fmtstr[i].isdigit():
                                 before_period = before_period*10 + ord(fmtstr[i]) - ord('0')
                                 i += 1
@@ -671,7 +674,7 @@ class SymbolNode:
                                 while i < len(fmtstr) and fmtstr[i].isdigit():
                                     after_period = after_period*10 + ord(fmtstr[i]) - ord('0')
                                     i += 1
-                            if fmtstr[i:i+1] == 'd':
+                            if fmtstr[i:i+1] in ('d', 'i'):
                                 if before_period != 0:
                                     nfmtstr += str(before_period)
                                 nfmtstr += '.0'

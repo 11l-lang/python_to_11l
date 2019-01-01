@@ -661,6 +661,7 @@ class SymbolNode:
                             nfmtstr += '#'
                             before_period = 0
                             after_period = 6
+                            period_pos = 0
                             i += 1
                             if fmtstr[i] == '-': # left align
                                 nfmtstr += '<'
@@ -669,6 +670,7 @@ class SymbolNode:
                                 before_period = before_period*10 + ord(fmtstr[i]) - ord('0')
                                 i += 1
                             if fmtstr[i:i+1] == '.':
+                                period_pos = i
                                 i += 1
                                 after_period = 0
                                 while i < len(fmtstr) and fmtstr[i].isdigit():
@@ -685,8 +687,13 @@ class SymbolNode:
                                 if before_period != 0:
                                     nfmtstr += str(before_period - after_period - 1)
                                 nfmtstr += '.' + str(after_period)
+                            elif fmtstr[i:i+1] == 'g':
+                                nfmtstr += str(before_period)
+                                if period_pos != 0:
+                                    raise Error('precision in %g conversion type is not supported', Token(self.children[0].token.start + period_pos, self.children[0].token.start + i, Token.Category.STRING_LITERAL))
                             else:
-                                raise ValueError('unsupported format character `' + fmtstr[i:i+1] + '`')
+                                tpos = self.children[0].token.start + i
+                                raise Error('unsupported format character `' + fmtstr[i:i+1] + '`', Token(tpos, tpos, Token.Category.STRING_LITERAL))
                             i += 1
                         continue
 

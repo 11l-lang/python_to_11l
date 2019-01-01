@@ -254,3 +254,11 @@ class Animal:
 class Sheep(Animal):
     def say(self):
         print('baa')
+
+
+print('Number: %4.1g' % (1.1))
+                 ^Error: precision in %g conversion type is not supported
+
+
+print('%n' % (1))
+        ^Error: unsupported format character `n`

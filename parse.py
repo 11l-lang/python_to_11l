@@ -1984,22 +1984,24 @@ def parse_and_to_str(tokens_, source_, file_name_):
                         child.expression = child.expression.children[1]
 
                 elif type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add qualifier `=` to changing ones
-                    for fargi in range(len(child.function_arguments)):
-                        farg = child.function_arguments[fargi][0]
-                        found = False
-                        def detect_argument_modification(node):
-                            if type(node) == ASTExprAssignment and node.dest_expression.token_str() == farg:
+                    if len(child.function_arguments):
+                        fargs = [farg[0] for farg in child.function_arguments]
+                        found = set()
+                        def detect_arguments_modification(node):
+                            if type(node) == ASTExprAssignment and node.dest_expression.token_str() in fargs:
                                 nonlocal found
-                                found = True
-                                return
+                                found.add(node.dest_expression.token_str())
+                                if len(fargs) == 1:
+                                    return
                             def f(e : SymbolNode):
-                                if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=') and e.children[0].token_str() == farg: # +=, -=, *=, /=, etc.
+                                if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=') and e.children[0].token_str() in fargs: # +=, -=, *=, /=, etc.
                                     nonlocal found
-                                    found = True
+                                    found.add(e.children[0].token_str())
                             node.walk_expressions(f)
-                            node.walk_children(detect_argument_modification)
-                        detect_argument_modification(child)
-                        if found:
+                            node.walk_children(detect_arguments_modification)
+                        detect_arguments_modification(child)
+                        for farg in found:
+                            fargi = fargs.index(farg)
                             child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2])
 
                 index += 1

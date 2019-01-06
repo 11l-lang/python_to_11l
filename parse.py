@@ -834,6 +834,9 @@ def trans_type(ty, scope, type_token):
         p = ty.find('[') # ]
         if p != -1:
             return trans_type(ty[:p], scope, type_token) + '[' + trans_type(ty[p+1:-1], scope, type_token) + ']'
+        p = ty.find(',')
+        if p != -1:
+            return trans_type(ty[:p], scope, type_token) + ', ' + trans_type(ty[p+1:].lstrip(), scope, type_token)
 
         id = scope.find(ty)
         if id == None:
@@ -1758,6 +1761,9 @@ def parse_internal(this_node, one_line_scope = False):
                                 nesting_level -= 1
                                 if nesting_level == 0:
                                     break
+                            elif token.value(source) == ',':
+                                type_arg += ' '
+                                next_token()
                             else:
                                 assert(token.category == Token.Category.NAME)
                                 next_token()

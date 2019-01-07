@@ -1914,17 +1914,15 @@ def parse_and_to_str(tokens_, source_, file_name_):
                 if index < len(node.children) - 1 and type(child) == ASTExprAssignment and child.dest_expression.token.category == Token.Category.NAME and type(node.children[index+1]) == ASTIf and node.children[index+1].else_or_elif: # transform if-elif-else chain into switch
                     if_node = node.children[index+1]
                     var_name = child.dest_expression.token.value(source)
-                    was_break = False
+                    transformation_possible = True
                     while True:
-                        if type(if_node) == ASTElse:
-                            break
                         if not (if_node.expression.symbol.id == '==' and if_node.expression.children[0].token.category == Token.Category.NAME and if_node.expression.children[0].token.value(source) == var_name):
-                            was_break = True
+                            transformation_possible = False
                             break
                         if_node = if_node.else_or_elif
-                        if if_node == None:
+                        if if_node == None or type(if_node) == ASTElse:
                             break
-                    if not was_break:
+                    if transformation_possible:
                         switch_node = ASTSwitch()
                         switch_node.set_expression(child.expression)
                         if_node = node.children[index+1]

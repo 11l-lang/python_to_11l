@@ -1922,9 +1922,42 @@ def parse_and_to_str(tokens_, source_, file_name_):
                         if_node = if_node.else_or_elif
                         if if_node == None or type(if_node) == ASTElse:
                             break
+
                     if transformation_possible:
+                        tid = child.dest_expression.scope.find(var_name)
+                        assert(tid != None)
+                        found_reference_to_var_name = False
+                        def find_reference_to_var_name(node):
+                            def f(e : SymbolNode):
+                                if e.token.category == Token.Category.NAME and e.token_str() == var_name and id(e.scope.find(var_name)) == id(tid):
+                                    nonlocal found_reference_to_var_name
+                                    found_reference_to_var_name = True
+                                    return
+                                for child in e.children:
+                                    if child != None:
+                                        f(child)
+                            node.walk_expressions(f)
+                            node.walk_children(find_reference_to_var_name)
+                        if_node = node.children[index+1]
+                        while True:
+                            if_node.walk_children(find_reference_to_var_name) # looking for switch variable inside switch statements
+                            if found_reference_to_var_name:
+                                break
+                            if type(if_node) == ASTElse:
+                                break
+                            if_node = if_node.else_or_elif
+                            if if_node == None:
+                                break
+                        if not found_reference_to_var_name:
+                            i = index + 2
+                            while i < len(node.children):
+                                find_reference_to_var_name(node.children[i]) # looking for switch variable after switch
+                                if found_reference_to_var_name:
+                                    break
+                                i += 1
+
                         switch_node = ASTSwitch()
-                        switch_node.set_expression(child.expression)
+                        switch_node.set_expression(child.dest_expression if found_reference_to_var_name else child.expression)
                         if_node = node.children[index+1]
                         while True:
                             case = ASTSwitch.Case()
@@ -1940,7 +1973,10 @@ def parse_and_to_str(tokens_, source_, file_name_):
                             if_node = if_node.else_or_elif
                             if if_node == None:
                                 break
-                        node.children.pop(index)
+                        if found_reference_to_var_name:
+                            index += 1
+                        else:
+                            node.children.pop(index)
                         node.children.pop(index)
                         node.children.insert(index, switch_node)
                         switch_node.parent = node

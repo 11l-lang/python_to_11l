@@ -62,7 +62,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'abs', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'sorted', 'filter', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'abs', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -398,6 +398,12 @@ class SymbolNode:
                     assert(len(self.children) == 5)
                     b = self.children[3].symbol.id == 'if'
                     return '('*b + self.children[3].to_str() + ')'*b + '.' + func_name + '(' + self.children[1].to_str() + ')'
+                elif func_name == 'reduce':
+                    if len(self.children) == 5: # replace `reduce(function, iterable)` with `iterable.reduce(function)`
+                        return self.children[3].to_str() + '.reduce(' + self.children[1].to_str() + ')'
+                    else: # replace `reduce(function, iterable, initial)` with `iterable.reduce(initial, function)`
+                        assert(len(self.children) == 7)
+                        return self.children[3].to_str() + '.reduce(' + self.children[5].to_str() + ', ' + self.children[1].to_str() + ')'
                 elif func_name == 'super': # replace `super()` with `T.base`
                     assert(len(self.children) == 1)
                     return 'T.base'
@@ -1447,7 +1453,8 @@ def parse_internal(this_node, one_line_scope = False):
 
             elif token.value(source) == 'from':
                 next_token()
-                advance('typing')
+                assert(token.value(source) in ('typing', 'functools'))
+                next_token()
                 advance('import')
                 while True:
                     if token.category != Token.Category.NAME:

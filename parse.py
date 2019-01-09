@@ -508,11 +508,11 @@ class SymbolNode:
         elif self.symbol.id == 'for':
             if self.children[2].token_str() == 'for': # this is a multiloop
                 if self.children[2].children[2].token_str() == 'for': # this is a multiloop3
-                    filtered = False
+                    filtered = len(self.children[2].children[2].children) == 4
                     res = 'multiloop' + '_filtered'*filtered + '(' + self.children[2].children[0].to_str() + ', ' + self.children[2].children[2].children[0].to_str() + ', ' + self.children[2].children[2].children[2].to_str()
                     fparams = ', (' + self.children[1].token_str() + ', ' + self.children[2].children[1].token_str() + ', ' + self.children[2].children[2].children[1].token_str() + ') -> '
                     if filtered:
-                        res += fparams + self.children[2].children[3].to_str()
+                        res += fparams + self.children[2].children[2].children[3].to_str()
                     res += fparams + self.children[0].to_str() + ')'
                     return res
 
@@ -1379,15 +1379,18 @@ def led(self, left):
                 if child != None:
                     set_scope_recursive(child)
         set_scope_recursive(self.children[2].children[0])
-        if len(self.children[2].children) == 4:
-            def set_for_scope_recursive(sn):
-                sn.scope = for_scope
-                for child in sn.children:
-                    if child != None:
-                        set_for_scope_recursive(child)
-            set_for_scope_recursive(self.children[2].children[3])
+        def set_for_scope_recursive(sn):
+            sn.scope = for_scope
+            for child in sn.children:
+                if child != None:
+                    set_for_scope_recursive(child)
         if self.children[2].children[2].token_str() == 'for': # this is a multiloop3
             for_scope.add_var(self.children[2].children[2].children[1].token_str())
+            if len(self.children[2].children[2].children) == 4:
+                set_for_scope_recursive(self.children[2].children[2].children[3])
+        else:
+            if len(self.children[2].children) == 4:
+                set_for_scope_recursive(self.children[2].children[3])
 
     return self
 symbol('for', 20).led = led

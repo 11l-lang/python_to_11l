@@ -507,6 +507,15 @@ class SymbolNode:
 
         elif self.symbol.id == 'for':
             if self.children[2].token_str() == 'for': # this is a multiloop
+                if self.children[2].children[2].token_str() == 'for': # this is a multiloop3
+                    filtered = False
+                    res = 'multiloop' + '_filtered'*filtered + '(' + self.children[2].children[0].to_str() + ', ' + self.children[2].children[2].children[0].to_str() + ', ' + self.children[2].children[2].children[2].to_str()
+                    fparams = ', (' + self.children[1].token_str() + ', ' + self.children[2].children[1].token_str() + ', ' + self.children[2].children[2].children[1].token_str() + ') -> '
+                    if filtered:
+                        res += fparams + self.children[2].children[3].to_str()
+                    res += fparams + self.children[0].to_str() + ')'
+                    return res
+
                 filtered = len(self.children[2].children) == 4
                 res = 'multiloop' + '_filtered'*filtered + '(' + self.children[2].children[0].to_str() + ', ' + self.children[2].children[2].to_str()
                 fparams = ', (' + self.children[1].token_str() + ', ' + self.children[2].children[1].token_str() + ') -> '
@@ -514,6 +523,7 @@ class SymbolNode:
                     res += fparams + self.children[2].children[3].to_str()
                 res += fparams + self.children[0].to_str() + ')'
                 return res
+
             res = self.children[2].children[0].children[0].to_str() if self.children[2].symbol.id == '(' and len(self.children[2].children) == 1 and self.children[2].children[0].symbol.id == '.' and len(self.children[2].children[0].children) == 2 and self.children[2].children[0].children[1].token_str() == 'items' else self.children[2].to_str() # )
             if len(self.children) == 4:
                 res += '.filter(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
@@ -1376,6 +1386,8 @@ def led(self, left):
                     if child != None:
                         set_for_scope_recursive(child)
             set_for_scope_recursive(self.children[2].children[3])
+        if self.children[2].children[2].token_str() == 'for': # this is a multiloop3
+            for_scope.add_var(self.children[2].children[2].children[1].token_str())
 
     return self
 symbol('for', 20).led = led

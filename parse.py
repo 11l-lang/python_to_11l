@@ -1074,6 +1074,18 @@ class ASTClassDefinition(ASTNodeWithChildren):
     class_name : str
 
     def to_str(self, indent):
+        if self.base_class_name == 'IntEnum':
+            r = ' ' * (indent*3) + 'T.enum ' + self.class_name + "\n"
+            current_index = 0
+            for c in self.children:
+                assert(type(c) == ASTExprAssignment and c.expression.token.category == Token.Category.NUMERIC_LITERAL)
+                r += ' ' * ((indent+1)*3) + c.dest_expression.to_str()
+                if current_index != int(c.expression.token_str()):
+                    current_index = int(c.expression.token_str())
+                    r += ' = ' + c.expression.token_str()
+                current_index += 1
+                r += "\n"
+            return r
         return self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name != 'Exception' else ''))
 
 class ASTPass(ASTNode):
@@ -1492,7 +1504,7 @@ def parse_internal(this_node, one_line_scope = False):
 
             elif token.value(source) == 'from':
                 next_token()
-                assert(token.value(source) in ('typing', 'functools'))
+                assert(token.value(source) in ('typing', 'functools', 'enum'))
                 next_token()
                 advance('import')
                 while True:
@@ -1922,6 +1934,7 @@ def parse_and_to_str(tokens_, source_, file_name_):
     scope = Scope(None)
     for pytype in python_types_to_11l:
         scope.add_var(pytype)
+    scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
     file_name = file_name_
     next_token()
     p = ASTProgram()

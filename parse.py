@@ -798,6 +798,8 @@ class ASTNodeWithExpression(ASTNode):
         f(self.expression)
 
 class ASTProgram(ASTNodeWithChildren):
+    imported_modules : List[str] = None
+
     def to_str(self):
         r = ''
         for c in self.children:
@@ -1467,17 +1469,27 @@ def parse_internal(this_node, one_line_scope = False):
             global scope
 
             if token.value(source) == 'import':
+                assert(type(this_node) == ASTProgram)
                 node = ASTImport()
                 next_token()
                 while True:
                     if token.category != Token.Category.NAME:
                         raise Error('expected module name', token)
                     module_name = token.value(source)
+                    while peek_token().value(source) == '.':
+                        next_token()
+                        next_token()
+                        if token.category != Token.Category.NAME:
+                            raise Error('expected module name', token)
+                        module_name += '.' + token.value(source)
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
                     if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 're', 'random', 'collections'):
-                        module_file_name = os.path.join(os.path.dirname(file_name), module_name).replace('\\', '/') # `os.path.join()` is needed for case when `os.path.dirname(file_name)` is empty string, `replace('\\', '/')` is needed for passing 'tests/parser/errors.txt'
+                        if this_node.imported_modules != None:
+                            this_node.imported_modules.append(module_name)
+
+                        module_file_name = os.path.join(os.path.dirname(file_name), module_name.replace('.', '/')).replace('\\', '/') # `os.path.join()` is needed for case when `os.path.dirname(file_name)` is empty string, `replace('\\', '/')` is needed for passing 'tests/parser/errors.txt'
                         try:
                             modulefstat = os.stat(module_file_name + '.py')
                         except FileNotFoundError:
@@ -1486,13 +1498,24 @@ def parse_internal(this_node, one_line_scope = False):
                         _11l_file_mtime = 0
                         if os.path.isfile(module_file_name + '.11l'):
                             _11l_file_mtime = os.stat(module_file_name + '.11l').st_mtime
-                        if _11l_file_mtime == 0 \
+                        modified = _11l_file_mtime == 0 \
                                 or modulefstat.st_mtime       > _11l_file_mtime \
                                 or os.stat(__file__).st_mtime > _11l_file_mtime \
-                                or os.stat(os.path.dirname(__file__) + '/tokenizer.py').st_mtime > _11l_file_mtime:
+                                or os.stat(os.path.dirname(__file__) + '/tokenizer.py').st_mtime > _11l_file_mtime \
+                                or not os.path.isfile(module_file_name + '.py_imported_modules')
+                        if not modified: # check for dependent modules modifications
+                            for m in open(module_file_name + '.py_imported_modules', encoding = 'utf-8-sig').read().split():
+                                if os.stat(os.path.join(os.path.dirname(module_file_name), m.replace('.', '/') + '.py')).st_mtime > _11l_file_mtime:
+                                    modified = True
+                                    break
+                        if modified:
                             module_source = open(module_file_name + '.py', encoding = 'utf-8-sig').read()
-                            open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py'))
+                            imported_modules = []
+                            open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py', imported_modules))
+                            open(module_file_name + '.py_imported_modules', 'w', encoding = 'utf-8', newline = "\n").write("\n".join(imported_modules))
 
+                    if '.' in module_name:
+                        scope.add_var(module_name.split('.')[0], True, '(Module)')
                     scope.add_var(module_name, True, '(Module)')
                     next_token()
                     if token.value(source) != ',':
@@ -1917,7 +1940,7 @@ scope     = Scope(None)
 tokensn   = SymbolNode(token)
 file_name = ''
 
-def parse_and_to_str(tokens_, source_, file_name_):
+def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     if len(tokens_) == 0: return ASTProgram()
     global tokens, source, tokeni, token, scope, tokensn, file_name
     prev_tokens    = tokens
@@ -1938,6 +1961,7 @@ def parse_and_to_str(tokens_, source_, file_name_):
     file_name = file_name_
     next_token()
     p = ASTProgram()
+    p.imported_modules = imported_modules
     parse_internal(p)
 
     def check_for_and_or(node):

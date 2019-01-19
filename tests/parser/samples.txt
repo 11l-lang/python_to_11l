@@ -552,3 +552,10 @@ L
    I 1B
       L.break
    V a = 0
+
+
+import test_deep_imports
+print()
+===
+//import test_deep_imports
+print()

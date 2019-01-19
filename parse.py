@@ -1504,7 +1504,8 @@ def parse_internal(this_node, one_line_scope = False):
                                 or os.stat(os.path.dirname(__file__) + '/tokenizer.py').st_mtime > _11l_file_mtime \
                                 or not os.path.isfile(module_file_name + '.py_imported_modules')
                         if not modified: # check for dependent modules modifications
-                            for m in open(module_file_name + '.py_imported_modules', encoding = 'utf-8-sig').read().split():
+                            py_imported_modules = open(module_file_name + '.py_imported_modules', encoding = 'utf-8-sig').read().split()
+                            for m in py_imported_modules:
                                 if os.stat(os.path.join(os.path.dirname(module_file_name), m.replace('.', '/') + '.py')).st_mtime > _11l_file_mtime:
                                     modified = True
                                     break
@@ -1513,6 +1514,11 @@ def parse_internal(this_node, one_line_scope = False):
                             imported_modules = []
                             open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py', imported_modules))
                             open(module_file_name + '.py_imported_modules', 'w', encoding = 'utf-8', newline = "\n").write("\n".join(imported_modules))
+                            if this_node.imported_modules != None:
+                                this_node.imported_modules.extend(imported_modules)
+                        else:
+                            if this_node.imported_modules != None:
+                                this_node.imported_modules.extend(py_imported_modules)
 
                     if '.' in module_name:
                         scope.add_var(module_name.split('.')[0], True, '(Module)')
@@ -1941,7 +1947,7 @@ tokensn   = SymbolNode(token)
 file_name = ''
 
 def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
-    if len(tokens_) == 0: return ASTProgram()
+    if len(tokens_) == 0: return ASTProgram().to_str()
     global tokens, source, tokeni, token, scope, tokensn, file_name
     prev_tokens    = tokens
     prev_source    = source

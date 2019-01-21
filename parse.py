@@ -420,9 +420,13 @@ class SymbolNode:
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
                             return '(' + self.children[1].to_str() + rangestr + self.children[3].to_str() + ').step(' + self.children[5].to_str() + ')'
                 else:
+                    tid = self.scope.find(func_name)
+                    f_node = tid.node if tid != None and type(tid.node) == ASTFunctionDefinition else None
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] == None:
+                            if f_node != None and f_node.function_arguments[i//2][2].startswith('List['): # ]
+                                res += '&'
                             res += self.children[i].to_str()
                         else:
                             res += self.children[i].to_str() + "' " + self.children[i+1].to_str()
@@ -1551,7 +1555,7 @@ def parse_internal(this_node, one_line_scope = False):
             elif token.value(source) == 'def':
                 node = ASTFunctionDefinition()
                 node.function_name = expected_name('function name')
-                scope.add_var(node.function_name, True)
+                scope.add_var(node.function_name, True, node = node)
 
                 if token.value(source) != '(': # )
                     raise Error('expected `(` after function name', token) # )(

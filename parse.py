@@ -6,16 +6,30 @@ except ImportError:
     import tokenizer
 from typing import List, Tuple, Dict, Callable
 from enum import IntEnum
-import os, re
+import os, re, thindf
 
 class Scope:
     parent : 'Scope'
     class Var:
         type : str
         node : 'ASTNode'
+
         def __init__(self, type, node):
+            assert(type != None)
             self.type = type
             self.node = node
+
+        def serialize_to_dict(self):
+            node = None
+            if type(self.node) == ASTFunctionDefinition:
+                node = self.node.serialize_to_dict()
+            return {'type': self.type, 'node': node}
+
+        def deserialize_from_dict(self, d):
+            if d['node'] != None:
+                self.node = ASTFunctionDefinition()
+                self.node.deserialize_from_dict(d['node'])
+
     vars : Dict[str, Var]
     nonlocals : set
     globals   : set
@@ -25,14 +39,28 @@ class Scope:
         self.parent = None
         if func_args != None:
             self.is_function = True
-            self.vars = dict(map(lambda x: (x, Scope.Var(None, None)), func_args))
+            self.vars = dict(map(lambda x: (x, Scope.Var('', None)), func_args))
         else:
             self.is_function = False
             self.vars = {}
         self.nonlocals = set()
         self.globals   = set()
 
-    def add_var(self, name, error_if_already_defined = False, type = None, err_token = None, node = None):
+    def serialize_to_dict(self, imported_modules):
+        ids_dict = {'Imported modules': imported_modules}
+        for name, id in self.vars.items():
+            if name not in python_types_to_11l and not id.type.startswith('('): # )
+                ids_dict[name] = id.serialize_to_dict()
+        return ids_dict
+
+    def deserialize_from_dict(self, d):
+        for name, id_dict in d.items():
+            if name != 'Imported modules':
+                id = Scope.Var(id_dict['type'], None)
+                id.deserialize_from_dict(id_dict)
+                self.vars[name] = id
+
+    def add_var(self, name, error_if_already_defined = False, type = '', err_token = None, node = None):
         s = self
         while True:
             if name in s.nonlocals or name in s.globals:
@@ -896,7 +924,7 @@ def trans_type(ty, scope, type_token):
         if id == None:
             raise Error('class `' + ty + '` is not defined', type_token)
         if id.type != '(Class)':
-            raise Error('`' + ty + '`: expected a class name (got variable' + (' of type `' + id.type + '`' if id.type != None else '') + ')', type_token)
+            raise Error('`' + ty + '`: expected a class name (got variable' + (' of type `' + id.type + '`' if id.type != '' else '') + ')', type_token)
         return ty
 
 class ASTTypeHint(ASTNode):
@@ -952,6 +980,12 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         super().__init__()
         self.function_arguments = []
         self.scope = scope
+
+    def serialize_to_dict(self):
+        return {'function_arguments': ['; '.join(arg) for arg in self.function_arguments]}
+
+    def deserialize_from_dict(self, d):
+        self.function_arguments = [arg.split('; ') for arg in d['function_arguments']]
 
     def to_str(self, indent):
         fargs = []
@@ -1528,9 +1562,10 @@ def parse_internal(this_node, one_line_scope = False):
                                 or modulefstat.st_mtime       > _11l_file_mtime \
                                 or os.stat(__file__).st_mtime > _11l_file_mtime \
                                 or os.stat(os.path.dirname(__file__) + '/tokenizer.py').st_mtime > _11l_file_mtime \
-                                or not os.path.isfile(module_file_name + '.py_imported_modules')
+                                or not os.path.isfile(module_file_name + '.py_global_scope')
                         if not modified: # check for dependent modules modifications
-                            py_imported_modules = open(module_file_name + '.py_imported_modules', encoding = 'utf-8-sig').read().split()
+                            py_global_scope = thindf.parse(open(module_file_name + '.py_global_scope', encoding = 'utf-8-sig').read())
+                            py_imported_modules = py_global_scope['Imported modules']
                             for m in py_imported_modules:
                                 if os.stat(os.path.join(os.path.dirname(module_file_name), m.replace('.', '/') + '.py')).st_mtime > _11l_file_mtime:
                                     modified = True
@@ -1542,11 +1577,14 @@ def parse_internal(this_node, one_line_scope = False):
                             s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py', imported_modules)
                             modules[module_name] = Module(scope)
                             open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
-                            open(module_file_name + '.py_imported_modules', 'w', encoding = 'utf-8', newline = "\n").write("\n".join(imported_modules))
+                            open(module_file_name + '.py_global_scope', 'w', encoding = 'utf-8', newline = "\n").write(thindf.to_thindf(scope.serialize_to_dict(imported_modules)))
                             scope = prev_scope
                             if this_node.imported_modules != None:
                                 this_node.imported_modules.extend(imported_modules)
                         else:
+                            module_scope = Scope(None)
+                            module_scope.deserialize_from_dict(py_global_scope)
+                            modules[module_name] = Module(module_scope)
                             if this_node.imported_modules != None:
                                 this_node.imported_modules.extend(py_imported_modules)
 
@@ -1858,7 +1896,7 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             next_token()
             node.set_expression(expression())
-            node.add_var = scope.add_var(name_token.value(source), False, 'str' if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str') else None, name_token)
+            node.add_var = scope.add_var(name_token.value(source), False, 'str' if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str') else '', name_token)
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()

@@ -1,0 +1,4 @@
+Imported modules = [
+    test_deep_imports2
+    test_deep_imports3
+]

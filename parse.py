@@ -109,6 +109,14 @@ class Scope:
 
 scope : Scope
 
+class Module:
+    scope : Scope
+
+    def __init__(self, scope):
+        self.scope = scope
+
+modules : Dict[str, Module] = {}
+
 class SymbolBase:
     id : str
     lbp : int
@@ -420,7 +428,15 @@ class SymbolNode:
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
                             return '(' + self.children[1].to_str() + rangestr + self.children[3].to_str() + ').step(' + self.children[5].to_str() + ')'
                 else:
-                    tid = self.scope.find(func_name)
+                    if ':' in func_name:
+                        colon_pos = func_name.rfind(':')
+                        module_name = func_name[:colon_pos].replace(':', '.')
+                        if module_name in modules:
+                            tid = modules[module_name].scope.find(func_name[colon_pos+1:])
+                        else:
+                            tid = None
+                    else:
+                        tid = self.scope.find(func_name)
                     f_node = tid.node if tid != None and type(tid.node) == ASTFunctionDefinition else None
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
@@ -429,7 +445,15 @@ class SymbolNode:
                                 res += '&'
                             res += self.children[i].to_str()
                         else:
-                            res += self.children[i].to_str() + "' " + self.children[i+1].to_str()
+                            ci_str = self.children[i].to_str()
+                            res += ci_str + "' "
+                            if f_node != None:
+                                for farg in f_node.function_arguments:
+                                    if farg[0] == ci_str:
+                                        if farg[2].startswith('List['): # ]
+                                            res += '&'
+                                        break
+                            res += self.children[i+1].to_str()
                         if i < len(self.children)-2:
                             res += ', '
                     return res + ')'
@@ -1514,9 +1538,12 @@ def parse_internal(this_node, one_line_scope = False):
                         if modified:
                             module_source = open(module_file_name + '.py', encoding = 'utf-8-sig').read()
                             imported_modules = []
+                            prev_scope = scope
                             s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py', imported_modules)
+                            modules[module_name] = Module(scope)
                             open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
                             open(module_file_name + '.py_imported_modules', 'w', encoding = 'utf-8', newline = "\n").write("\n".join(imported_modules))
+                            scope = prev_scope
                             if this_node.imported_modules != None:
                                 this_node.imported_modules.extend(imported_modules)
                         else:
@@ -1980,7 +2007,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     prev_source    = source
     prev_tokeni    = tokeni
     prev_token     = token
-    prev_scope     = scope
+#   prev_scope     = scope
     prev_tokensn   = tokensn
     prev_file_name = file_name
     tokens = tokens_ + [Token(len(source_), len(source_), Token.Category.STATEMENT_SEPARATOR)]
@@ -2171,7 +2198,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     source    = prev_source
     tokeni    = prev_tokeni
     token     = prev_token
-    scope     = prev_scope
+#   scope     = prev_scope
     tokensn   = prev_tokensn
     file_name = prev_file_name
 

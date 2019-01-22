@@ -205,8 +205,8 @@ class SymbolNode:
         #     prev_token_end = c.token.end
         # return r
         if self.token.category == Token.Category.NAME:
-            if self.scope_prefix == ':' and self.parent and self.parent.function_call: # global functions do not require prefix `:` because global functions are ok, but global variables are not so good and they should be marked with `:`
-                return self.token.value(source)
+            if self.scope_prefix == ':' and ((self.parent and self.parent.function_call) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper())): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
+                return self.token_str()
             return self.scope_prefix + self.token_str()
 
         if self.token.category == Token.Category.NUMERIC_LITERAL:
@@ -914,7 +914,7 @@ class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
     function_return_type : str = ''
-    function_arguments : List[Tuple[str, SymbolNode, str]]# = []
+    function_arguments : List[Tuple[str, str, str]]# = [] # (arg_name, default_value, type_name)
     first_named_only_argument = None
     class VirtualCategory(IntEnum):
         NO = 0
@@ -933,9 +933,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         fargs = []
         for arg in self.function_arguments:
             farg = ''
-            default_value = ''
-            if arg[1] != None:
-                default_value = arg[1].to_str()
+            default_value = arg[1]
             if arg[2] != '':
                 ty = trans_type(arg[2], self.scope, tokens[self.tokeni])
                 farg += ty
@@ -1516,7 +1514,8 @@ def parse_internal(this_node, one_line_scope = False):
                         if modified:
                             module_source = open(module_file_name + '.py', encoding = 'utf-8-sig').read()
                             imported_modules = []
-                            open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py', imported_modules))
+                            s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py', imported_modules)
+                            open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
                             open(module_file_name + '.py_imported_modules', 'w', encoding = 'utf-8', newline = "\n").write("\n".join(imported_modules))
                             if this_node.imported_modules != None:
                                 this_node.imported_modules.extend(imported_modules)
@@ -1576,16 +1575,40 @@ def parse_internal(this_node, one_line_scope = False):
                     type_ = ''
                     if token.value(source) == ':': # this is a type hint
                         next_token()
-                        expr = expression()
-                        type_ = expr.to_str() if expr.token.category != Token.Category.STRING_LITERAL else expr.to_str()[1:-1]
+                        if token.category == Token.Category.STRING_LITERAL:
+                            type_ = token.value(source)[1:-1]
+                            next_token()
+                        else:
+                            type_ = token.value(source)
+                            next_token()
+                            if token.value(source) == '[': # ]
+                                nesting_level = 0
+                                while True:
+                                    type_ += token.value(source)
+                                    if token.value(source) == '[':
+                                        next_token()
+                                        nesting_level += 1
+                                    elif token.value(source) == ']':
+                                        next_token()
+                                        nesting_level -= 1
+                                        if nesting_level == 0:
+                                            break
+                                    elif token.value(source) == ',':
+                                        type_ += ' '
+                                        next_token()
+                                    else:
+                                        if token.category != Token.Category.NAME:
+                                            raise Error('expected subtype name', token)
+                                        next_token()
+
                     if token.value(source) == '=':
                         next_token()
-                        default = expression()
+                        default = expression().to_str()
                         was_default_argument = True
                     else:
                         if was_default_argument and node.first_named_only_argument == None:
                             raise Error('non-default argument follows default argument', tokens[tokeni-1])
-                        default = None
+                        default = ''
                     node.function_arguments.append((func_arg_name, default, type_)) # ((
                     if token.value(source) not in ',)':
                         raise Error('expected `,` or `)` in function\'s arguments list', token)

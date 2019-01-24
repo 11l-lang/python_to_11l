@@ -903,7 +903,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 != None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'[String]'}
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'Char':'Char', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'[String]'}
 
 def trans_type(ty, scope, type_token):
     if ty[0] in '\'"':
@@ -1905,6 +1905,8 @@ def parse_internal(this_node, one_line_scope = False):
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
+            if node.dest_expression.token_str() == 'Char' and node.expression.token_str() == 'str': # skip `Char = str` statement
+                continue
 
         elif token.category == Token.Category.NAME and peek_token().value(source) == ':': # this is type hint
             name_token = token
@@ -1994,7 +1996,7 @@ def parse_internal(this_node, one_line_scope = False):
             if token != None and token.value(source) == '=':
                 node = ASTExprAssignment()
                 if node_expression.token.category == Token.Category.NAME:
-                    node.add_var = scope.add_var(node_expression.token.value(source))
+                    assert(False) #node.add_var = scope.add_var(node_expression.token.value(source))
                 node.set_dest_expression(node_expression)
                 next_token()
                 node.set_expression(expression())

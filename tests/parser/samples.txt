@@ -280,7 +280,7 @@ tag ‘’= html_escapeq()
 
 str1 = '1'
 str2 = '2'
-# str = str1 + str2 # rarely needed, so write this:
+# s = str1 + str2 # this is rarely needed {and, for example, `if c1 + c2 == "/\\"` can be rewritten as `if (c1, c2) == ('/', "\\")`, which is more efficient}, so write this:
 s = str1 + '' + str2
 ===
 V str1 = ‘1’

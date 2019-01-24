@@ -1,4 +1,5 @@
-﻿from enum import IntEnum
+﻿from typing import List, Tuple
+from enum import IntEnum
 
 keywords = [ # https://docs.python.org/3/reference/lexical_analysis.html#keywords
             'False',      'await',      'else',       'import',     'pass',
@@ -24,6 +25,10 @@ delimiters = [ # https://docs.python.org/3/reference/lexical_analysis.html#delim
 operators_and_delimiters = sorted(operators + delimiters, key = lambda x: len(x), reverse = True)
 
 class Error(Exception):
+    message : str
+    pos : int
+    end : int
+
     def __init__(self, message, pos):
         self.message = message
         self.pos = pos
@@ -41,6 +46,10 @@ class Token:
         DEDENT = 7
         STATEMENT_SEPARATOR = 8
 
+    start : int
+    end : int
+    category : Category
+
     def __init__(self, start, end, category):
         self.start = start
         self.end = end
@@ -55,10 +64,10 @@ class Token:
     def to_str(self, source):
         return 'Token('+str(self.category)+', "'+self.value(source)+'")'
 
-def tokenize(source, newline_chars = None, comments = None):
-    tokens = []
-    indentation_levels = []
-    nesting_elements = [] # parentheses, square brackets or curly braces
+def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int, int]] = None):
+    tokens : List[Token] = []
+    indentation_levels : List[int] = []
+    nesting_elements : List[Tuple[str, int]] = [] # parentheses, square brackets or curly braces
 
     begin_of_line = True
     expected_an_indented_block = False
@@ -130,7 +139,7 @@ def tokenize(source, newline_chars = None, comments = None):
         else:
             expected_an_indented_block = ch == ':'
 
-            operator_or_delimiter = None
+            operator_or_delimiter = ''
             for op in operators_and_delimiters:
                 if source[i:i+len(op)] == op:
                     operator_or_delimiter = op
@@ -138,8 +147,9 @@ def tokenize(source, newline_chars = None, comments = None):
 
             lexem_start = i
             i += 1
+            category : Token.Category
 
-            if operator_or_delimiter:
+            if operator_or_delimiter != '':
                 i = lexem_start + len(operator_or_delimiter)
                 category = Token.Category.OPERATOR_OR_DELIMITER
                 if ch in '([{':
@@ -152,6 +162,7 @@ def tokenize(source, newline_chars = None, comments = None):
                     category = Token.Category.STATEMENT_SEPARATOR
 
             elif ch in ('"', "'") or (ch in 'rRbB' and source[i:i+1] in ('"', "'")):
+                ends : str
                 if ch in 'rRbB':
                     ends = source[i:i+3] if source[i:i+3] in ('"""', "'''") else source[i]
                 else:
@@ -189,7 +200,7 @@ def tokenize(source, newline_chars = None, comments = None):
                 if ch in '-+':
                     assert(False) # considering sign as a part of numeric literal is a bad idea — expressions like `j-3` are cease to parse correctly
                     #sign = ch
-                    ch = source[i:i+1]
+                    ch = source[i+1]
                 else:
                     i -= 1
                 is_hex = ch == '0' and source[i+1:i+2] in ('x', 'X')

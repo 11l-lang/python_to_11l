@@ -913,6 +913,9 @@ def trans_type(ty, scope, type_token):
     if t != None:
         return t
     else:
+        if '.' in ty: # for `category : Token.Category`
+            return ty # [-TODO: generalize-]
+
         p = ty.find('[') # ]
         if p != -1:
             return trans_type(ty[:p], scope, type_token) + '[' + trans_type(ty[p+1:-1], scope, type_token) + ']'
@@ -1915,6 +1918,8 @@ def parse_internal(this_node, one_line_scope = False):
             type_ = token.value(source) if token.category == Token.Category.NAME else token.value(source)[1:-1]
             type_token = token
             next_token()
+            while token.value(source) == '.': # for `category : Token.Category`
+                type_ += '.' + expected_name('type name')
             scope.add_var(var, True, type_, name_token)
             type_args = []
             if token.value(source) == '[':

@@ -712,7 +712,7 @@ class SymbolNode:
                 return '(' + self.children[0].to_str() + ')‘’' + ('(' + c1 + ')' if c1[0] == '.' else c1)
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + '‘’' + self.children[1].to_str()
-            elif self.symbol.id == '+' and (self.children[0].is_list or self.children[1].is_list):
+            elif self.symbol.id == '+' and (self.children[0].is_list or self.children[1].is_list or self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):
                 return self.children[0].to_str() + ' [+] ' + self.children[1].to_str()
             elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `'0' <= ch <= '9'` with `ch C ‘0’..‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' .. ' if range_need_space(self.children[0].children[0], self.children[1]) else '..') + self.children[1].to_str()
@@ -1346,14 +1346,13 @@ symbol('[').led = led
 
 def nud(self):
     self.is_list = True
-    if token.value(source) != ']':
-        while True: # [[
-            if token.value(source) == ']':
-                break
-            self.append_child(expression())
-            if token.value(source) != ',':
-                break
-            advance(',')
+    while True: # [
+        if token.value(source) == ']':
+            break
+        self.append_child(expression())
+        if token.value(source) != ',':
+            break
+        advance(',')
     advance(']')
     return self
 symbol('[').nud = nud # ]
@@ -1896,7 +1895,12 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             next_token()
             node.set_expression(expression())
-            node.add_var = scope.add_var(name_token.value(source), False, 'str' if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str') else '', name_token)
+            type_name = ''
+            if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str'):
+                type_name = 'str'
+            elif node.expression.is_list:
+                type_name = 'List'
+            node.add_var = scope.add_var(name_token.value(source), False, type_name, name_token)
             assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()

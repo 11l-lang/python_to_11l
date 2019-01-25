@@ -598,6 +598,8 @@ class SymbolNode:
                 return self.children[0].to_str() + ' !C ' + self.children[1].to_str()
 
         elif self.symbol.id == 'is':
+            if self.children[1].token_str() == 'None':
+                return self.children[0].to_str() + (' != ' if self.is_not else ' == ') + 'N'
             return '&' + self.children[0].to_str() + (' != ' if self.is_not else ' == ') + '&' + self.children[1].to_str()
 
         if len(self.children) == 1:

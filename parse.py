@@ -178,6 +178,7 @@ class SymbolNode:
     is_list : bool = False
     slicing : bool = False
     is_not  : bool = False
+    skip_find_and_get_prefix = False
     scope_prefix : str = ''
     scope : Scope
     token_str_override : str
@@ -724,8 +725,11 @@ class SymbolNode:
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' <. ' if range_need_space(self.children[0].children[0], self.children[1]) else '<.') + self.children[1].to_str()
             elif self.symbol.id == '<'  and self.children[0].symbol.id == '<' : # replace `'0' <= ch <= '9'` with `ch C ‘0’<.<‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' <.< ' if range_need_space(self.children[0].children[0], self.children[1]) else '<.<') + self.children[1].to_str()
-            elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # )
+            elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # ) # replace `len(arr) == 0` with `arr.empty`
                 return self.children[0].children[1].to_str() + '.empty'
+            elif self.symbol.id in ('==', '!=') and self.children[1].symbol.id == '.' and len(self.children[1].children) == 2 and self.children[1].children[1].token_str().isupper(): # replace `token.category == Token.Category.NAME` with `token.category == NAME`
+                #self.skip_find_and_get_prefix = True # this is not needed here because in AST there is still `Token.Category.NAME`, not just `NAME`
+                return self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].children[1].token_str()
             elif self.symbol.id == '%' and self.children[0].token.category == Token.Category.STRING_LITERAL:
                 assert(self.children[1].symbol.id == '(')#self.children[1].tuple)
                 fmtstr = self.children[0].to_str()
@@ -1900,6 +1904,10 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             next_token()
             node.set_expression(expression())
+            if node.expression.symbol.id == '.' and len(node.expression.children) == 2 and node.expression.children[1].token_str().isupper(): # replace `category = Token.Category.NAME` with `category = NAME`
+                node.set_expression(node.expression.children[1])
+                node.expression.parent = None
+                node.expression.skip_find_and_get_prefix = True # this can not be replaced with `isupper()` check before `find_and_get_prefix()` call because there will be conflict with uppercase [constant] variables, like `WIDTH` or `HEIGHT` (they[‘variables’] will not be checked, but they should)
             type_name = ''
             if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str'):
                 type_name = 'str'
@@ -2020,7 +2028,8 @@ def parse_internal(this_node, one_line_scope = False):
         def check_vars_defined(sn : SymbolNode):
             if sn.token.category == Token.Category.NAME:
                 if not (sn.parent and sn.parent.token.value(source) == '.') or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
-                    sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token.value(source), sn.token)
+                    if not sn.skip_find_and_get_prefix:
+                        sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token.value(source), sn.token)
             else:
                 if sn.function_call:
                     check_vars_defined(sn.children[0])

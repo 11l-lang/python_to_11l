@@ -1101,9 +1101,10 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
         elif self.expression.symbol.id == '(' and len(self.expression.children) == 1 and self.expression.children[0].symbol.id == '.' and len(self.expression.children[0].children) == 2 and self.expression.children[0].children[1].token_str() == 'items': # )
             r = 'L(' + ', '.join(self.loop_variables) + ') ' + self.expression.children[0].children[0].to_str()
         else:
-            r = 'L(' + ''.join(self.loop_variables) + ') ' + self.expression.to_str()
-            for index, loop_var in enumerate(self.loop_variables):
-                r += "\n" + ' ' * ((indent+1)*3) + 'V ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
+            r = 'L(' + ', '.join(self.loop_variables) + ') ' + self.expression.to_str()
+            # r = 'L(' + ''.join(self.loop_variables) + ') ' + self.expression.to_str()
+            # for index, loop_var in enumerate(self.loop_variables):
+            #     r += "\n" + ' ' * ((indent+1)*3) + 'V ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
         r = self.children_to_str(indent, r)
 
         if self.was_no_break != None:
@@ -2231,11 +2232,18 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                         fargs = [farg[0] for farg in child.function_arguments]
                         found = set()
                         def detect_arguments_modification(node):
-                            if type(node) == ASTExprAssignment and node.dest_expression.token_str() in fargs:
+                            if type(node) == ASTExprAssignment:
                                 nonlocal found
-                                found.add(node.dest_expression.token_str())
-                                if len(fargs) == 1:
-                                    return
+                                if node.dest_expression.token_str() in fargs:
+                                    found.add(node.dest_expression.token_str())
+                                    if len(fargs) == 1:
+                                        return
+                                elif node.dest_expression.tuple:
+                                    for t in node.dest_expression.children:
+                                        if t.token_str() in fargs:
+                                            found.add(t.token_str())
+                                            if len(fargs) == 1:
+                                                return
                             def f(e : SymbolNode):
                                 if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=') and e.children[0].token_str() in fargs: # +=, -=, *=, /=, etc.
                                     nonlocal found

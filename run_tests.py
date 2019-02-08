@@ -62,7 +62,7 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
                 print('OK (Error)')
                 continue
             else:
-                kdiff3('Error: ' + e.message, error[0] if error != None else '')
+                kdiff3('Error: ' + e.message, error[0] if error is not None else '')
                 next_line_pos = test_source.find("\n", e.pos)
                 if next_line_pos == -1:
                     next_line_pos = len(test_source)
@@ -76,7 +76,7 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
         except Exception as e:
             print("Exception in file '" + file_name + "' in test:\n" + test)
             raise e
-        if error != None and not was_error:
+        if error is not None and not was_error:
             print("There should be error in test:\n" + test)
             exit(1)
         print('OK')

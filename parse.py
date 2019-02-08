@@ -15,7 +15,7 @@ class Scope:
         node : 'ASTNode'
 
         def __init__(self, type, node):
-            assert(type != None)
+            assert(type is not None)
             self.type = type
             self.node = node
 
@@ -26,7 +26,7 @@ class Scope:
             return {'type': self.type, 'node': node}
 
         def deserialize_from_dict(self, d):
-            if d['node'] != None:
+            if d['node'] is not None:
                 self.node = ASTFunctionDefinition()
                 self.node.deserialize_from_dict(d['node'])
 
@@ -37,7 +37,7 @@ class Scope:
 
     def __init__(self, func_args):
         self.parent = None
-        if func_args != None:
+        if func_args is not None:
             self.is_function = True
             self.vars = dict(map(lambda x: (x, Scope.Var('', None)), func_args))
         else:
@@ -68,7 +68,7 @@ class Scope:
             if s.is_function:
                 break
             s = s.parent
-            if s == None:
+            if s is None:
                 break
 
         if not (name in self.vars):
@@ -79,12 +79,12 @@ class Scope:
                 if s.is_function:
                     break
                 s = s.parent
-                if s == None:
+                if s is None:
                     break
             self.vars[name] = Scope.Var(type, node)
             return True
         elif error_if_already_defined:
-            raise Error('redefinition of already defined variable is not allowed', err_token if err_token != None else token)
+            raise Error('redefinition of already defined variable is not allowed', err_token if err_token is not None else token)
         return False
 
     def find_and_get_prefix(self, name, token):
@@ -102,14 +102,14 @@ class Scope:
             if s.is_function:
                 break
             s = s.parent
-            if s == None:
+            if s is None:
                 break
 
         capture_level = 0
         s = self
         while True:
             if name in s.vars:
-                if s.parent == None: # variable is declared in the global scope
+                if s.parent is None: # variable is declared in the global scope
                     if s.vars[name].type == '(Module)':
                         return ':::'
                     return ':' if capture_level > 0 else ''
@@ -118,22 +118,22 @@ class Scope:
             if s.is_function:
                 capture_level += 1
             s = s.parent
-            if s == None:
+            if s is None:
                 raise Error('undefined identifier', token)
 
     def find(self, name):
         s = self
         while True:
             id = s.vars.get(name)
-            if id != None:
+            if id is not None:
                 return id
             s = s.parent
-            if s == None:
+            if s is None:
                 return None
 
     def var_type(self, name):
         id = self.find(name)
-        return id.type if id != None else None
+        return id.type if id is not None else None
 
 scope : Scope
 
@@ -308,15 +308,15 @@ class SymbolNode:
             return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
 
         def range_need_space(child1, child2):
-            return not((child1 == None or child1.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL))
-                   and (child2 == None or child2.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL)))
+            return not((child1 is None or child1.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL))
+                   and (child2 is None or child2.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL)))
 
         if self.symbol.id == '(': # )
             if self.function_call:
                 if self.children[0].symbol.id == '.':
                     c01 = self.children[0].children[1].token.value(source)
                     if self.children[0].children[0].symbol.id == '{' and c01 == 'get': # } # replace `{'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id)` with `(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})`
-                        parenthesis = ('(', ')') if self.parent != None else ('', '')
+                        parenthesis = ('(', ')') if self.parent is not None else ('', '')
                         return parenthesis[0] + self.children[0].to_str() + parenthesis[1]
                     if c01 == 'join' and not (self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'os'): # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
@@ -340,7 +340,7 @@ class SymbolNode:
                             res += 'Array[Char](' + self.children[1].to_str() + ')'
                         else:
                             for i in range(1, len(self.children), 2):
-                                assert(self.children[i+1] == None)
+                                assert(self.children[i+1] is None)
                                 res += self.children[i].to_str()
                                 if i < len(self.children)-2:
                                     res += ', '
@@ -348,10 +348,10 @@ class SymbolNode:
                     if self.children[0].children[0].symbol.id == '(' and \
                        self.children[0].children[0].children[0].token_str() == 'open' and \
                    len(self.children[0].children[0].children) == 5 and \
-                       self.children[0].children[0].children[4] == None and \
+                       self.children[0].children[0].children[4] is None and \
                        self.children[0].children[0].children[3].token_str() in ("'rb'", '"rb"') and \
                        self.children[0].children[1].token_str() == 'read': # ) # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
-                        assert(self.children[0].children[0].children[2] == None)
+                        assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
                     if self.children[0].children[1].token.value(source) == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
@@ -401,7 +401,7 @@ class SymbolNode:
                     func_name = 'File'
                     mode = '‘r’'
                     for i in range(1, len(self.children), 2):
-                        if self.children[i+1] == None:
+                        if self.children[i+1] is None:
                             if i == 3:
                                 mode = self.children[i].to_str()
                         else:
@@ -419,7 +419,7 @@ class SymbolNode:
 
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
-                    if isinstance(self.ast_parent, ASTIf) if self.parent == None else self.parent.symbol.id == 'if':
+                    if isinstance(self.ast_parent, ASTIf) if self.parent is None else self.parent.symbol.id == 'if':
                         return '!' + self.children[1].to_str() + '.empty'
                     return self.children[1].to_str() + '.len'
                 elif func_name == 'ord': # replace `ord(ch)` with `ch.code`
@@ -446,7 +446,7 @@ class SymbolNode:
                     return 'T.base'
                 elif func_name == 'range':
                     assert(3 <= len(self.children) <= 7)
-                    parenthesis = ('(', ')') if self.parent != None else ('', '')
+                    parenthesis = ('(', ')') if self.parent is not None else ('', '')
                     if len(self.children) == 3: # replace `range(e)` with `(0 .< e)`
                         space = ' ' * range_need_space(self.children[1], None)
                         return parenthesis[0] + '0' + space + '.<' + space + self.children[1].to_str() + parenthesis[1]
@@ -466,17 +466,17 @@ class SymbolNode:
                             tid = None
                     else:
                         tid = self.scope.find(func_name)
-                    f_node = tid.node if tid != None and type(tid.node) == ASTFunctionDefinition else None
+                    f_node = tid.node if tid is not None and type(tid.node) == ASTFunctionDefinition else None
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
-                        if self.children[i+1] == None:
-                            if f_node != None and f_node.function_arguments[i//2][2].startswith('List['): # ]
+                        if self.children[i+1] is None:
+                            if f_node is not None and f_node.function_arguments[i//2][2].startswith('List['): # ]
                                 res += '&'
                             res += self.children[i].to_str()
                         else:
                             ci_str = self.children[i].to_str()
                             res += ci_str + "' "
-                            if f_node != None:
+                            if f_node is not None:
                                 for farg in f_node.function_arguments:
                                     if farg[0] == ci_str:
                                         if farg[2].startswith('List['): # ]
@@ -510,7 +510,7 @@ class SymbolNode:
                         res += ', '
                 return res + ']'
             elif self.children[0].symbol.id == '{': # }
-                parenthesis = ('(', ')') if self.parent != None else ('', '')
+                parenthesis = ('(', ')') if self.parent is not None else ('', '')
                 res = parenthesis[0] + 'S ' + self.children[1].to_str() + ' {'
                 for i in range(0, len(self.children[0].children), 2):
                     res += self.children[0].children[i].to_str() + ' {' + self.children[0].children[i+1].to_str() + '}'
@@ -522,7 +522,7 @@ class SymbolNode:
                 if self.slicing:
                     def for_negative_bound(c):
                         child = self.children[c]
-                        if child == None:
+                        if child is None:
                             return None
                         r = child.to_str()
                         if r[0] == '-': # hacky implementation of ‘this rule’[https://docs.python.org/3/reference/simple_stmts.html]:‘If either bound is negative, the sequence's length is added to it.’
@@ -531,7 +531,7 @@ class SymbolNode:
                     space = ' ' * range_need_space(self.children[1], self.children[2])
                     fnb2 = for_negative_bound(2)
                     s = (for_negative_bound(1) or '0') + space + '.' + ('<' + space + fnb2 if fnb2 else '.')
-                    if len(self.children) == 4 and self.children[3] != None:
+                    if len(self.children) == 4 and self.children[3] is not None:
                         s = '(' + s + ').step(' + self.children[3].to_str() + ')'
                     return c0 + '[' + s + ']'
                 elif self.children[1].to_str() == '-1':
@@ -555,7 +555,7 @@ class SymbolNode:
             r = '(' if len(self.children) != 3 else ''
             for i in range(0, len(self.children)-1, 2):
                 r += self.children[i].to_str()
-                if self.children[i+1] != None:
+                if self.children[i+1] is not None:
                     r += ' = ' + self.children[i+1].to_str()
                 if i < len(self.children)-3:
                     r += ', '
@@ -792,7 +792,7 @@ class SymbolNode:
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             c0 = self.children[0].to_str()
-            if self.children[1].symbol.id == '!=' and self.children[1].children[1].token.value(source) == 'None' and self.children[1].children[0].to_str() == c0: # replace `a if a != None else b` with `a ? b`
+            if self.children[1].symbol.id == '!=' and self.children[1].children[1].token.value(source) == 'None' and self.children[1].children[0].to_str() == c0: # replace `a if a is not None else b` with `a ? b`
                 return c0 + ' ? ' + self.children[2].to_str()
             return 'I ' + self.children[1].to_str() + ' {' + c0 + '} E ' + self.children[2].to_str()
 
@@ -903,10 +903,10 @@ class ASTAssert(ASTNodeWithExpression):
 
     def to_str(self, indent):
         return ' ' * (indent*3) + 'assert(' + (self.expression.children[0].to_str() if self.expression.symbol.id == '(' and not self.expression.tuple and not self.expression.function_call # )
-            else self.expression.to_str()) + (', ' + self.expression2.to_str() if self.expression2 != None else '') + ")\n"
+            else self.expression.to_str()) + (', ' + self.expression2.to_str() if self.expression2 is not None else '') + ")\n"
 
     def walk_expressions(self, f):
-        if self.expression2 != None: f(self.expression2)
+        if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'Char':'Char', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File', 'List[List[str]]':'Array[Array[String]]', 'List[str]':'[String]'}
@@ -916,7 +916,7 @@ def trans_type(ty, scope, type_token):
         assert(ty[-1] == ty[0])
         ty = ty[1:-1]
     t = python_types_to_11l.get(ty)
-    if t != None:
+    if t is not None:
         return t
     else:
         if '.' in ty: # for `category : Token.Category`
@@ -932,7 +932,7 @@ def trans_type(ty, scope, type_token):
             return trans_type(ty[:p], scope, type_token) + ', ' + trans_type(ty[p+1:].lstrip(' '), scope, type_token)
 
         id = scope.find(ty)
-        if id == None:
+        if id is None:
             raise Error('class `' + ty + '` is not defined', type_token)
         if id.type != '(Class)':
             raise Error('`' + ty + '`: expected a class name (got variable' + (' of type `' + id.type + '`' if id.type != '' else '') + ')', type_token)
@@ -1013,7 +1013,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                     farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append(farg)
-        if self.first_named_only_argument != None:
+        if self.first_named_only_argument is not None:
             fargs.insert(self.first_named_only_argument, "'")
         if len(self.function_arguments) and self.function_arguments[0][0] == 'self' and type(self.parent) == ASTClassDefinition:
             fargs.pop(0)
@@ -1030,11 +1030,11 @@ class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
 
     def walk_children(self, f):
         super().walk_children(f)
-        if self.else_or_elif != None:
+        if self.else_or_elif is not None:
             self.else_or_elif.walk_children(f)
 
     def to_str(self, indent):
-        return self.children_to_str(indent, 'I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
+        return self.children_to_str(indent, 'I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif is not None else '')
 
 class ASTElse(ASTNodeWithChildren):
     def to_str(self, indent):
@@ -1045,11 +1045,11 @@ class ASTElseIf(ASTNodeWithChildren, ASTNodeWithExpression):
 
     def walk_children(self, f):
         super().walk_children(f)
-        if self.else_or_elif != None:
+        if self.else_or_elif is not None:
             self.else_or_elif.walk_children(f)
 
     def to_str(self, indent):
-        return self.children_to_str(indent, 'E I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif != None else '')
+        return self.children_to_str(indent, 'E I ' + self.expression.to_str()) + (self.else_or_elif.to_str(indent) if self.else_or_elif is not None else '')
 
 class ASTSwitch(ASTNodeWithExpression):
     class Case(ASTNodeWithChildren, ASTNodeWithExpression):
@@ -1083,13 +1083,13 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
 
     def walk_children(self, f):
         super().walk_children(f)
-        if self.was_no_break != None:
+        if self.was_no_break is not None:
             self.was_no_break.walk_children(f)
 
     def to_str(self, indent):
         if self.os_walk:
             dir_filter = ''
-            if self.dir_filter != None:
+            if self.dir_filter is not None:
                 dir_filter = ", dir_filter' " + self.dir_filter # (
             return self.children_to_str(indent, 'L(_fname) ' + self.expression.to_str()[:-1] + dir_filter + ", files_only' 0B)\n"
                 + ' ' * ((indent+1)*3) + 'V ' + self.loop_variables[0] + " = fs:path:dir_name(_fname)\n"
@@ -1107,7 +1107,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
             #     r += "\n" + ' ' * ((indent+1)*3) + 'V ' + loop_var + ' = ' + ''.join(self.loop_variables) + '[' + str(index) + ']'
         r = self.children_to_str(indent, r)
 
-        if self.was_no_break != None:
+        if self.was_no_break is not None:
             r += self.was_no_break.children_to_str(indent + 1, 'L.was_no_break')
 
         return r
@@ -1122,10 +1122,10 @@ class ASTBreak(ASTNode):
 
 class ASTReturn(ASTNodeWithExpression):
     def to_str(self, indent):
-        return ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str() if self.expression != None else '') + "\n"
+        return ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str() if self.expression is not None else '') + "\n"
 
     def walk_expressions(self, f):
-        if self.expression != None: f(self.expression)
+        if self.expression is not None: f(self.expression)
 
 class ASTException(ASTNodeWithExpression):
     def to_str(self, indent):
@@ -1179,7 +1179,7 @@ class Error(Exception):
 
 def next_token():
     global token, tokeni, tokensn
-    if token == None and tokeni != -1:
+    if token is None and tokeni != -1:
         raise Error('no more tokens', Token(len(source), len(source), Token.Category.STATEMENT_SEPARATOR))
     tokeni += 1
     if tokeni == len(tokens):
@@ -1214,7 +1214,7 @@ def peek_token(how_much = 1):
 # This implementation is based on [http://svn.effbot.org/public/stuff/sandbox/topdown/tdop-4.py]
 def expression(rbp = 0):
     def check_tokensn():
-        if tokensn.symbol == None:
+        if tokensn.symbol is None:
             raise Error('no symbol corresponding to token `' + token.value(source) + '` (belonging to ' + str(token.category) +') found while parsing expression', token)
     check_tokensn()
     t = tokensn
@@ -1435,7 +1435,7 @@ def led(self, left):
         else: # this `sn.scope` was already processed
             assert(sn.scope.parent == scope)
         for child in sn.children:
-            if child != None:
+            if child is not None:
                 set_scope_recursive(child)
     set_scope_recursive(left)
     tokensn.scope = scope
@@ -1461,13 +1461,13 @@ def led(self, left):
         def set_scope_recursive(sn):
             sn.scope = scope
             for child in sn.children:
-                if child != None:
+                if child is not None:
                     set_scope_recursive(child)
         set_scope_recursive(self.children[2].children[0])
         def set_for_scope_recursive(sn):
             sn.scope = for_scope
             for child in sn.children:
-                if child != None:
+                if child is not None:
                     set_for_scope_recursive(child)
         if self.children[2].children[2].token_str() == 'for': # this is a multiloop3
             for_scope.add_var(self.children[2].children[2].children[1].token_str())
@@ -1519,7 +1519,7 @@ def parse_internal(this_node, one_line_scope = False):
         next_token()
         parse_internal(node)
         scope = prev_scope
-        if token != None:
+        if token is not None:
             tokensn.scope = scope
 
     def expected(ch):
@@ -1535,7 +1535,7 @@ def parse_internal(this_node, one_line_scope = False):
         next_token()
         return token_value
 
-    while token != None:
+    while token is not None:
         if token.category == Token.Category.KEYWORD:
             global scope
 
@@ -1557,7 +1557,7 @@ def parse_internal(this_node, one_line_scope = False):
 
                     # Process module [transpile it if necessary]
                     if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 're', 'random', 'collections'):
-                        if this_node.imported_modules != None:
+                        if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 
                         module_file_name = os.path.join(os.path.dirname(file_name), module_name.replace('.', '/')).replace('\\', '/') # `os.path.join()` is needed for case when `os.path.dirname(file_name)` is empty string, `replace('\\', '/')` is needed for passing 'tests/parser/errors.txt'
@@ -1590,13 +1590,13 @@ def parse_internal(this_node, one_line_scope = False):
                             open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
                             open(module_file_name + '.py_global_scope', 'w', encoding = 'utf-8', newline = "\n").write(thindf.to_thindf(scope.serialize_to_dict(imported_modules)))
                             scope = prev_scope
-                            if this_node.imported_modules != None:
+                            if this_node.imported_modules is not None:
                                 this_node.imported_modules.extend(imported_modules)
                         else:
                             module_scope = Scope(None)
                             module_scope.deserialize_from_dict(py_global_scope)
                             modules[module_name] = Module(module_scope)
-                            if this_node.imported_modules != None:
+                            if this_node.imported_modules is not None:
                                 this_node.imported_modules.extend(py_imported_modules)
 
                     if '.' in module_name:
@@ -1607,7 +1607,7 @@ def parse_internal(this_node, one_line_scope = False):
                         break
                     next_token()
 
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
             elif token.value(source) == 'from':
@@ -1623,7 +1623,7 @@ def parse_internal(this_node, one_line_scope = False):
                         break
                     next_token()
 
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
                 continue
 
@@ -1639,7 +1639,7 @@ def parse_internal(this_node, one_line_scope = False):
                 was_default_argument = False
                 while token.value(source) != ')':
                     if token.value(source) == '*':
-                        assert(node.first_named_only_argument == None)
+                        assert(node.first_named_only_argument is None)
                         node.first_named_only_argument = len(node.function_arguments)
                         next_token()
                         advance(',')
@@ -1682,7 +1682,7 @@ def parse_internal(this_node, one_line_scope = False):
                         default = expression().to_str()
                         was_default_argument = True
                     else:
-                        if was_default_argument and node.first_named_only_argument == None:
+                        if was_default_argument and node.first_named_only_argument is None:
                             raise Error('non-default argument follows default argument', tokens[tokeni-1])
                         default = ''
                     node.function_arguments.append((func_arg_name, default, type_)) # ((
@@ -1712,7 +1712,7 @@ def parse_internal(this_node, one_line_scope = False):
 
                 # Detect virtual functions and assign `virtual_category`
                 if type(this_node) == ASTClassDefinition:
-                    if this_node.base_class_node != None:
+                    if this_node.base_class_node is not None:
                         for child in this_node.base_class_node.children:
                             if type(child) == ASTFunctionDefinition and child.function_name == node.function_name:
                                 if child.virtual_category == ASTFunctionDefinition.VirtualCategory.NO:
@@ -1736,7 +1736,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.base_class_name = expected_name('base class name')
                     if node.base_class_name != 'Exception':
                         base_class = scope.find(node.base_class_name)
-                        if base_class == None:
+                        if base_class is None:
                             raise Error('class `' + node.base_class_name + '` is not defined', tokens[tokeni-1])
                         if base_class.type != '(Class)':
                             raise Error('expected a class name', tokens[tokeni-1])
@@ -1767,7 +1767,7 @@ def parse_internal(this_node, one_line_scope = False):
                     new_scope(node)
 
                     n = node
-                    while token != None and token.value(source) in ('elif', 'else'):
+                    while token is not None and token.value(source) in ('elif', 'else'):
                         if token.value(source) == 'elif':
                             n.else_or_elif = ASTElseIf()
                             n.else_or_elif.parent = n
@@ -1775,7 +1775,7 @@ def parse_internal(this_node, one_line_scope = False):
                             next_token()
                             n.set_expression(expression())
                             new_scope(n)
-                        if token != None and token.value(source) == 'else':
+                        if token is not None and token.value(source) == 'else':
                             n.else_or_elif = ASTElse()
                             n.else_or_elif.parent = n
                             next_token()
@@ -1808,7 +1808,7 @@ def parse_internal(this_node, one_line_scope = False):
                 new_scope(node)
                 scope = prev_scope
 
-                if token != None and token.value(source) == 'else':
+                if token is not None and token.value(source) == 'else':
                     node.was_no_break = ASTNodeWithChildren()
                     node.was_no_break.parent = node
                     next_token()
@@ -1817,13 +1817,13 @@ def parse_internal(this_node, one_line_scope = False):
             elif token.value(source) == 'continue':
                 node = ASTContinue()
                 next_token()
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
             elif token.value(source) == 'break':
                 node = ASTBreak()
                 next_token()
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
             elif token.value(source) == 'return':
@@ -1833,7 +1833,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.expression = None
                 else:
                     node.set_expression(expression())
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
             elif token.value(source) in ('nonlocal', 'global'):
@@ -1851,7 +1851,7 @@ def parse_internal(this_node, one_line_scope = False):
                         next_token()
                     else:
                         break
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
                 continue
 
@@ -1862,14 +1862,14 @@ def parse_internal(this_node, one_line_scope = False):
                 if token.value(source) == ',':
                     next_token()
                     node.set_expression2(expression())
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
             elif token.value(source) == 'raise':
                 node = ASTException()
                 next_token()
                 node.set_expression(expression())
-                if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
             elif token.value(source) == 'try':
@@ -1915,8 +1915,8 @@ def parse_internal(this_node, one_line_scope = False):
             elif node.expression.is_list:
                 type_name = 'List'
             node.add_var = scope.add_var(name_token.value(source), False, type_name, name_token)
-            assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
-            if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+            assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
+            if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
             if node.dest_expression.token_str() == 'Char' and node.expression.token_str() == 'str': # skip `Char = str` statement
                 continue
@@ -1978,7 +1978,7 @@ def parse_internal(this_node, one_line_scope = False):
                         next_token()
                 next_token()
 
-            if token != None and token.value(source) == '=':
+            if token is not None and token.value(source) == '=':
                 node = ASTAssignmentWithTypeHint()
                 next_token()
                 node.set_expression(expression())
@@ -1986,27 +1986,27 @@ def parse_internal(this_node, one_line_scope = False):
                 node = ASTTypeHint()
                 if source[type_token.end:type_token.end+4] == ' # &':
                     node.is_reference = True
-                if not (token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
+                if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
             node.type_token = type_token
             node.var = var
             node.type = type_
             node.type_args = type_args
 
-            assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
-            if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+            assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
+            if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
 
         elif token.category == Token.Category.DEDENT:
             next_token()
             if token.category == Token.Category.STATEMENT_SEPARATOR: # Token.Category.EOF
                 next_token()
-                assert(token == None)
+                assert(token is None)
             return
 
         else:
             node_expression = expression()
-            if token != None and token.value(source) == '=':
+            if token is not None and token.value(source) == '=':
                 node = ASTExprAssignment()
                 if node_expression.token.category == Token.Category.NAME:
                     assert(False) #node.add_var = scope.add_var(node_expression.token.value(source))
@@ -2016,10 +2016,10 @@ def parse_internal(this_node, one_line_scope = False):
             else:
                 node = ASTExpression()
                 node.set_expression(node_expression)
-                if not (token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
+                if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
-            assert(token == None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
-            if token != None and token.category == Token.Category.STATEMENT_SEPARATOR:
+            assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
+            if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
 
             if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self' and node.expression.token_str() == '[' and len(node.expression.children) == 0 # ] # skip `self.* = []` because `create_array({})` is meaningless
@@ -2035,13 +2035,13 @@ def parse_internal(this_node, one_line_scope = False):
                 if sn.function_call:
                     check_vars_defined(sn.children[0])
                     for i in range(1, len(sn.children), 2):
-                        if sn.children[i+1] == None:
+                        if sn.children[i+1] is None:
                             check_vars_defined(sn.children[i])
                         else:
                             check_vars_defined(sn.children[i+1]) # checking of named arguments (sn.children[i]) is skipped
                 else:
                     for child in sn.children:
-                        if child != None:
+                        if child is not None:
                             check_vars_defined(child)
         node.walk_expressions(check_vars_defined)
 
@@ -2103,7 +2103,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                     + source[start:midend  ] + ')' + source[midend  :end] + "`\nor this way:\n`"
                     + source[start:midstart] + '(' + source[midstart:end] + ')`', Token(start, end, Token.Category.OPERATOR_OR_DELIMITER))
             for child in e.children:
-                if child != None:
+                if child is not None:
                     f(child)
 
         node.walk_expressions(f)
@@ -2124,12 +2124,12 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                             transformation_possible = False
                             break
                         if_node = if_node.else_or_elif
-                        if if_node == None or type(if_node) == ASTElse:
+                        if if_node is None or type(if_node) == ASTElse:
                             break
 
                     if transformation_possible:
                         tid = child.dest_expression.scope.find(var_name)
-                        assert(tid != None)
+                        assert(tid is not None)
                         found_reference_to_var_name = False
                         def find_reference_to_var_name(node):
                             def f(e : SymbolNode):
@@ -2138,7 +2138,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                                     found_reference_to_var_name = True
                                     return
                                 for child in e.children:
-                                    if child != None:
+                                    if child is not None:
                                         f(child)
                             node.walk_expressions(f)
                             node.walk_children(find_reference_to_var_name)
@@ -2150,7 +2150,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                             if type(if_node) == ASTElse:
                                 break
                             if_node = if_node.else_or_elif
-                            if if_node == None:
+                            if if_node is None:
                                 break
                         if not found_reference_to_var_name:
                             i = index + 2
@@ -2175,7 +2175,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                             if type(if_node) == ASTElse:
                                 break
                             if_node = if_node.else_or_elif
-                            if if_node == None:
+                            if if_node is None:
                                 break
                         if found_reference_to_var_name:
                             index += 1
@@ -2203,7 +2203,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                         c0 = child.children[0]
                         if (type(c0) == ASTExprAssignment and c0.dest_expression.symbol.id == '[' # ]
                                                           and len(c0.dest_expression.children) == 2
-                                                          and c0.dest_expression.children[1] == None
+                                                          and c0.dest_expression.children[1] is None
                                                           and c0.dest_expression.children[0].token_str() == child.loop_variables[1]
                                                           and c0.expression.symbol.id == '[' # ]
                                                           and len(c0.expression.children) == 1

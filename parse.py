@@ -1918,7 +1918,8 @@ def parse_internal(this_node, one_line_scope = False):
             assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
-            if node.dest_expression.token_str() == 'Char' and node.expression.token_str() == 'str': # skip `Char = str` statement
+            if ((node.dest_expression.token_str() == 'Char'  and node.expression.token_str() == 'str')   # skip `Char = str` statement
+             or (node.dest_expression.token_str() == 'Int64' and node.expression.token_str() == 'int')): # skip `Int64 = int` statement
                 continue
 
         elif token.category == Token.Category.NAME and peek_token().value(source) == ':': # this is type hint

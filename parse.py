@@ -788,7 +788,7 @@ class SymbolNode:
                     i += 1
                 return nfmtstr + '.format' + self.children[1].to_str()
             else:
-                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '//=':'I/=', '**':'^', '^':'(+)'}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
+                return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '//=':'I/=', '**':'^', '**=':'^=', '^':'(+)', '^=':'(+)=', '|':'[|]', '|=':'[|]=', '&':'[&]', '&=':'[&]='}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             c0 = self.children[0].to_str()
@@ -909,7 +909,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'Char':'Char', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File'}
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'IO[str]': 'File'}
 
 def trans_type(ty, scope, type_token):
     if ty[0] in '\'"':
@@ -1274,7 +1274,7 @@ infix_r("**", 140)
 
 symbol(".", 150); symbol("[", 150); symbol("(", 150); symbol(")"); symbol("]")
 
-infix_r('+=', 10); infix_r('-=', 10); infix_r('*=', 10); infix_r('/=', 10); infix_r('//=', 10); infix_r('%=', 10); infix_r('>>=', 10); infix_r('<<=', 10); infix_r('**=', 10)
+infix_r('+=', 10); infix_r('-=', 10); infix_r('*=', 10); infix_r('/=', 10); infix_r('//=', 10); infix_r('%=', 10); infix_r('>>=', 10); infix_r('<<=', 10); infix_r('**=', 10); infix_r('|=', 10); infix_r('^=', 10); infix_r('&=', 10)
 
 symbol("(name)").nud = lambda self: self
 symbol("(literal)").nud = lambda self: self
@@ -1918,8 +1918,9 @@ def parse_internal(this_node, one_line_scope = False):
             assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
-            if ((node.dest_expression.token_str() == 'Char'  and node.expression.token_str() == 'str')   # skip `Char = str` statement
-             or (node.dest_expression.token_str() == 'Int64' and node.expression.token_str() == 'int')): # skip `Int64 = int` statement
+            if ((node.dest_expression.token_str() == 'Char'   and node.expression.token_str() == 'str')   # skip `Char = str` statement
+             or (node.dest_expression.token_str() == 'Int64'  and node.expression.token_str() == 'int')   # skip `Int64 = int` statement
+             or (node.dest_expression.token_str() == 'UInt32' and node.expression.token_str() == 'int')): # skip `UInt32 = int` statement
                 continue
 
         elif token.category == Token.Category.NAME and peek_token().value(source) == ':': # this is type hint

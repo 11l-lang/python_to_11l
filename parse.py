@@ -554,7 +554,7 @@ class SymbolNode:
         elif self.symbol.id == 'lambda':
             r = '(' if len(self.children) != 3 else ''
             for i in range(0, len(self.children)-1, 2):
-                r += self.children[i].to_str()
+                r += self.children[i].token_str()
                 if self.children[i+1] is not None:
                     r += ' = ' + self.children[i+1].to_str()
                 if i < len(self.children)-3:
@@ -658,6 +658,10 @@ class SymbolNode:
                     parent = self
                     while parent.parent:
                         parent = parent.parent
+                        if parent.symbol.id == 'lambda':
+                            if len(parent.children) >= 3 and parent.children[0].token_str() == 'self':
+                                return 'self.' + self.children[1].to_str()
+                            return '@.' + self.children[1].to_str()
                     ast_parent = parent.ast_parent
                     function_nesting = 0
                     while type(ast_parent) != ASTProgram:

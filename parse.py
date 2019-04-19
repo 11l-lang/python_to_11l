@@ -629,7 +629,7 @@ class SymbolNode:
                             return c1
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:sep': 'fs:path:sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir',
-                    'os:mkdir': 'fs:create_directory', 'os:makedirs': 'fs:create_directories', 'os:remove': 'fs:remove', 'os:rename': 'fs:rename',
+                    'os:mkdir': 'fs:create_dir', 'os:makedirs': 'fs:create_dirs', 'os:remove': 'fs:remove', 'os:rename': 'fs:rename',
                     'time:time': 'time:().unix_time', 'time:sleep': 'sleep', 'datetime:datetime': 'time:', 'datetime:date': 'time:', 'datetime:timedelta': 'time:delta', 're:compile': 're:',
                     'random:randrange': 'random:'}.get(r, r)
 
@@ -645,7 +645,7 @@ class SymbolNode:
                         if self.children[0].children[1].token_str() == 'date' and self.children[1].token_str() == 'today': # `datetime.date.today()` -> `time:today()`
                             return 'time:today'
                     if self.children[0].children[0].token_str() == 'os' and self.children[0].children[1].token_str() == 'path':
-                        r = {'pathsep':'os:env_path_sep', 'isdir':'fs:is_directory', 'isfile':'fs:is_file', 'islink':'fs:is_symlink',
+                        r = {'pathsep':'os:env_path_sep', 'isdir':'fs:is_dir', 'isfile':'fs:is_file', 'islink':'fs:is_symlink',
                              'dirname':'fs:path:dir_name', 'basename':'fs:path:base_name', 'abspath':'fs:path:absolute', 'relpath':'fs:path:relative',
                              'getsize':'fs:file_size', 'splitext':'fs:path:split_ext'}.get(self.children[1].token_str(), '')
                         if r != '':
@@ -1098,7 +1098,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
             return self.children_to_str(indent, 'L(_fname) ' + self.expression.to_str()[:-1] + dir_filter + ", files_only' 0B)\n"
                 + ' ' * ((indent+1)*3) + 'V ' + self.loop_variables[0] + " = fs:path:dir_name(_fname)\n"
                 + ' ' * ((indent+1)*3) + '[String] ' + self.loop_variables[1] + ', ' + self.loop_variables[2] + "\n"
-                + ' ' * ((indent+1)*3) + 'I fs:is_directory(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
+                + ' ' * ((indent+1)*3) + 'I fs:is_dir(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
 
         if len(self.loop_variables) == 1:
             r = 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str()

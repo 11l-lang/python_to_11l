@@ -419,7 +419,7 @@ class SymbolNode:
 
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
-                    if isinstance(self.ast_parent, ASTIf) if self.parent is None else self.parent.symbol.id == 'if':
+                    if isinstance(self.ast_parent, (ASTIf, ASTWhile)) if self.parent is None else self.parent.symbol.id == 'if':
                         return '!' + self.children[1].to_str() + '.empty'
                     return self.children[1].to_str() + '.len'
                 elif func_name == 'ord': # replace `ord(ch)` with `ch.code`

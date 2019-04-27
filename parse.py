@@ -296,6 +296,8 @@ class SymbolNode:
             else:
                 l = 3 if s[0:3] in ('"""', "'''") else 1
                 if '\\' in s or ('‘' in s and not '’' in s) or (not '‘' in s and '’' in s):
+                    if s == R'"\\"' or s == R"'\\'":
+                        return R'‘\’'
                     s = s.replace("\n", "\\n\\\n").replace("\\\\n\\\n", "\\\n")
                     if s[0] == '"':
                         return s if l == 1 else '"' + s[3:-3].replace('"', R'\"') + '"'

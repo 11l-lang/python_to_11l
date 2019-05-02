@@ -1018,17 +1018,25 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 if ty.startswith(('Array[', '[')): # ]]
                     farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
-            fargs.append(farg)
+            fargs.append((farg, arg[2] != ''))
         if self.first_named_only_argument is not None:
-            fargs.insert(self.first_named_only_argument, "'")
+            fargs.insert(self.first_named_only_argument, ("'", False))
         if len(self.function_arguments) and self.function_arguments[0][0] == 'self' and type(self.parent) == ASTClassDefinition:
             fargs.pop(0)
 
+        fargs_str = ''
+        if len(fargs):
+            fargs_str = fargs[0][0]
+            prev_type = fargs[0][1]
+            for farg in fargs[1:]:
+                fargs_str += ('; ' if prev_type and not farg[1] else ', ') + farg[0]
+                prev_type = farg[1]
+
         if self.virtual_category == self.VirtualCategory.ABSTRACT:
-            return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + ", ".join(fargs) + ') -> ' + python_types_to_11l[self.function_return_type] + "\n"
+            return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + python_types_to_11l[self.function_return_type] + "\n"
 
         return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override')[self.virtual_category] + ' ' + {'__init__':'', '__call__':'()'}.get(self.function_name, self.function_name)
-            + '(' + ", ".join(fargs) + ')'
+            + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):

@@ -559,3 +559,16 @@ print()
 ===
 //import test_deep_imports
 print()
+
+
+def f1(b : bool, *, pos = 0):
+   pass
+def f2(b : bool, *, pos : int = 0):
+   pass
+===
+F f1(Bool b; ', pos = 0)
+{
+}
+F f2(Bool b, ', Int pos = 0)
+{
+}

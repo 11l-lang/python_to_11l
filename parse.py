@@ -1020,7 +1020,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append((farg, arg[2] != ''))
         if self.first_named_only_argument is not None:
-            fargs.insert(self.first_named_only_argument, ("'", False))
+            fargs.insert(self.first_named_only_argument, ("'", fargs[self.first_named_only_argument][1]))
         if len(self.function_arguments) and self.function_arguments[0][0] == 'self' and type(self.parent) == ASTClassDefinition:
             fargs.pop(0)
 

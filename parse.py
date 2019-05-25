@@ -585,7 +585,7 @@ class SymbolNode:
 
             res = self.children[2].children[0].children[0].to_str() if self.children[2].symbol.id == '(' and len(self.children[2].children) == 1 and self.children[2].children[0].symbol.id == '.' and len(self.children[2].children[0].children) == 2 and self.children[2].children[0].children[1].token_str() == 'items' else self.children[2].to_str() # )
             if len(self.children) == 4:
-                res += '.filter(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
+                res += '.filter' + '2'*self.children[1].tuple + '(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
             if self.children[1].to_str() != self.children[0].to_str():
                 res += '.map(' + self.children[1].to_str() + ' -> ' + self.children[0].to_str() + ')'
             return res
@@ -776,6 +776,8 @@ class SymbolNode:
                             elif fmtstr[i:i+1] == 's':
                                 if before_period != 0:
                                     nfmtstr += str(before_period)
+                                else:
+                                    nfmtstr += '.'
                             elif fmtstr[i:i+1] == 'f':
                                 if before_period != 0:
                                     nfmtstr += str(before_period - after_period - 1)
@@ -1458,6 +1460,18 @@ def led(self, left):
     self.append_child(left)
     self.append_child(tokensn)
     next_token()
+
+    if token.value(source) == ',':
+        sn = SymbolNode(Token(token.start, token.start, Token.Category.OPERATOR_OR_DELIMITER))
+        sn.symbol = symbol_table['('] # )
+        sn.tuple = True
+        sn.append_child(self.children.pop())
+        self.append_child(sn)
+        next_token()
+        scope.add_var(token.value(source))
+        sn.append_child(tokensn)
+        next_token()
+
     scope = prev_scope
     advance('in')
     if_lbp = symbol('if').lbp

@@ -587,7 +587,7 @@ class SymbolNode:
             if len(self.children) == 4:
                 res += '.filter' + '2'*self.children[1].tuple + '(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
             if self.children[1].to_str() != self.children[0].to_str():
-                res += '.map(' + self.children[1].to_str() + ' -> ' + self.children[0].to_str() + ')'
+                res +=    '.map' + '2'*self.children[1].tuple + '(' + self.children[1].to_str() + ' -> ' + self.children[0].to_str() + ')'
             return res
 
         elif self.symbol.id == 'not':

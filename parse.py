@@ -1796,6 +1796,8 @@ def parse_internal(this_node, one_line_scope = False):
             elif token.value(source) == 'pass':
                 node = ASTPass()
                 next_token()
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
 
             elif token.value(source) == 'if':
                 if peek_token().value(source) == '__name__':

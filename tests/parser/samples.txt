@@ -572,3 +572,9 @@ F f1(Bool b; ', pos = 0)
 F f2(Bool b, ', Int pos = 0)
 {
 }
+
+
+def newtoncooling(time, temp): return -0.07 * (temp - 20)
+===
+F newtoncooling(time, temp)
+   R -0.07 * (temp - 20)

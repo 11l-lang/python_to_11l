@@ -1554,17 +1554,17 @@ def parse_internal(this_node, one_line_scope = False):
         if token.value(source) != ':':
             raise Error('expected `:`', Token(tokens[tokeni-1].end, tokens[tokeni-1].end, tokens[tokeni-1].category))
         next_token()
-        if token.category != Token.Category.INDENT: # handling of `if ...: break`
-            if one_line_scope:
-                raise Error('unexpected `:` (only one `:` in one line is allowed)', tokens[tokeni-1])
-            parse_internal(node, True)
-            return
         global scope
         prev_scope = scope
         scope = Scope(func_args)
         scope.parent = prev_scope
-        next_token()
-        parse_internal(node)
+        if token.category != Token.Category.INDENT: # handling of `if ...: break`, `def ...(...): return ...`, etc.
+            if one_line_scope:
+                raise Error('unexpected `:` (only one `:` in one line is allowed)', tokens[tokeni-1])
+            parse_internal(node, True)
+        else:
+            next_token()
+            parse_internal(node)
         scope = prev_scope
         if token is not None:
             tokensn.scope = scope

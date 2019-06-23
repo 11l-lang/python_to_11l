@@ -546,6 +546,13 @@ class SymbolNode:
         elif self.symbol.id == '{': # }
             if len(self.children) == 0:
                 return 'Dict()'
+
+            if self.children[-1].symbol.id == 'for':
+                assert(len(self.children) == 2)
+                c = self.children[1]
+                c2s = c.children[2].to_str()
+                return 'Dict(' + (c2s[1:-1] if c2s[0] == '(' else c2s) + ', ' + c.children[1].to_str() + ' -> (' + self.children[0].to_str() + ', ' + c.children[0].to_str() + '))' # )
+
             res = '['
             for i in range(0, len(self.children), 2):
                 res += self.children[i].to_str() + ' = ' + self.children[i+1].to_str()
@@ -1393,6 +1400,18 @@ def nud(self): # {{{
             self.append_child(expression())
             advance(':')
             self.append_child(expression())
+
+            if self.children[-1].symbol.id == 'for':
+                for_scope = self.children[-1].children[0].scope
+                def set_scope_recursive(sn):
+                    assert(sn.scope == scope)
+                    sn.scope = for_scope
+                    for child in sn.children:
+                        if child is not None:
+                            set_scope_recursive(child)
+                set_scope_recursive(self.children[0])
+                break
+
             if token.value(source) != ',':
                 break
             advance(',')

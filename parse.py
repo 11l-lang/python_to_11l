@@ -1968,6 +1968,7 @@ def parse_internal(this_node, one_line_scope = False):
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
             if ((node.dest_expression.token_str() == 'Char'   and node.expression.token_str() == 'str')   # skip `Char = str` statement
+             or (node.dest_expression.token_str() == 'Byte'   and node.expression.token_str() == 'int')   # skip `Byte = int` statement
              or (node.dest_expression.token_str() == 'Int64'  and node.expression.token_str() == 'int')   # skip `Int64 = int` statement
              or (node.dest_expression.token_str() == 'UInt32' and node.expression.token_str() == 'int')): # skip `UInt32 = int` statement
                 continue

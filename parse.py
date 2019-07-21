@@ -395,6 +395,8 @@ class SymbolNode:
                 elif func_name == 'float':
                     func_name = 'Float'
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
+                    if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
+                        return 'Array' + self.children[1].to_str()
                     assert(len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'map') # )
                     return self.children[1].to_str()
                 elif func_name == 'dict':

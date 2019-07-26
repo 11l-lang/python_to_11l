@@ -90,7 +90,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -380,7 +380,7 @@ class SymbolNode:
                     if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'defaultdict': # `collections.defaultdict(ValueType) # KeyType` -> `DefaultDict[KeyType, ValueType]()`
                         assert(len(self.children) == 3)
                         if source[self.children[1].token.end + 2] != '#':
-                            raise Error('to use defaultdict the type of dict keys must be specified in the comment', self.children[0].children[1].token)
+                            raise Error('to use `defaultdict` the type of dict keys must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
                         return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
                                               + trans_type(self.children[1].to_str(), self.scope, self.children[1].token) + ']()'
@@ -401,6 +401,12 @@ class SymbolNode:
                     return self.children[1].to_str()
                 elif func_name == 'dict':
                     func_name = 'Dict'
+                elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`
+                    assert(len(self.children) == 1)
+                    if source[self.token.end + 2] != '#':
+                        raise Error('to use `set` the type of set keys must be specified in the comment', self.children[0].token)
+                    sl = slice(self.token.end + 3, source.find("\n", self.token.end + 3))
+                    return 'Set[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
                 elif func_name == 'open':
                     func_name = 'File'
                     mode = '‘r’'

@@ -405,7 +405,13 @@ class SymbolNode:
                     func_name = 'Dict'
                 elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`
                     assert(len(self.children) == 1)
-                    if source[self.token.end + 2] != '#':
+                    if source[self.token.end + 2 : self.token.end + 3] != '#':
+                        # if self.parent == None and type(self.ast_parent) == ASTExprAssignment \
+                        #         and self.ast_parent.dest_expression.symbol.id == '.' \
+                        #         and self.ast_parent.dest_expression.children[0].token_str() == 'self' \
+                        #         and type(self.ast_parent.parent) == ASTFunctionDefinition \
+                        #         and self.ast_parent.parent.function_name == '__init__':
+                        #     return 'Set()'
                         raise Error('to use `set` the type of set keys must be specified in the comment', self.children[0].token)
                     sl = slice(self.token.end + 3, source.find("\n", self.token.end + 3))
                     return 'Set[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
@@ -2090,7 +2096,9 @@ def parse_internal(this_node, one_line_scope = False):
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
 
-            if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self' and node.expression.token_str() == '[' and len(node.expression.children) == 0 # ] # skip `self.* = []` because `create_array({})` is meaningless
+            if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self'
+                    and ((node.expression.symbol.id == '[' and len(node.expression.children) == 0) # ] # skip `self.* = []` because `create_array({})` is meaningless
+                      or (node.expression.symbol.id == '(' and len(node.expression.children) == 1 and node.expression.children[0].token_str() == 'set')) # ) # skip `self.* = set()`
                     and type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'): # only in constructors
                 continue
 

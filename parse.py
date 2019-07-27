@@ -674,6 +674,8 @@ class SymbolNode:
                 if self.children[0].to_str() == 'self':
                     parent = self
                     while parent.parent:
+                        if parent.parent.symbol.id == 'for' and id(parent.parent.children[0]) == id(parent):
+                            return '@.' + self.children[1].to_str()
                         parent = parent.parent
                         if parent.symbol.id == 'lambda':
                             if len(parent.children) >= 3 and parent.children[0].token_str() == 'self':

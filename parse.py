@@ -244,6 +244,8 @@ class SymbolNode:
         if self.token.category == Token.Category.NAME:
             if self.scope_prefix == ':' and ((self.parent and self.parent.function_call) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper())): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
                 return self.token_str()
+            if self.token_str() == 'self' and self.parent != None and self.parent.symbol.id != '.' and self.parent.symbol.id != 'lambda':
+                return '(.)'
             return self.scope_prefix + self.token_str()
 
         if self.token.category == Token.Category.NUMERIC_LITERAL:
@@ -647,7 +649,7 @@ class SymbolNode:
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:sep': 'fs:path:sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir',
                     'os:mkdir': 'fs:create_dir', 'os:makedirs': 'fs:create_dirs', 'os:remove': 'fs:remove_file', 'os:rmdir': 'fs:remove_dir', 'os:rename': 'fs:rename',
-                    'time:time': 'time:().unix_time', 'time:sleep': 'sleep', 'datetime:datetime': 'Time', 'datetime:date': 'Time', 'datetime:timedelta': 'TimeDelta', 're:compile': 're:',
+                    'time:time': 'Time().unix_time', 'time:sleep': 'sleep', 'datetime:datetime': 'Time', 'datetime:date': 'Time', 'datetime:timedelta': 'TimeDelta', 're:compile': 're:',
                     'random:randrange': 'random:'}.get(r, r)
 
                 if self.children[0].symbol.id == '.' and self.children[0].children[0].scope_prefix == ':::':
@@ -934,7 +936,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File'}
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'Byte':'Byte', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File'}
 
 def trans_type(ty, scope, type_token):
     if ty[0] in '\'"':
@@ -1002,6 +1004,7 @@ class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
 class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
     function_return_type : str = ''
+    is_const = False
     function_arguments : List[Tuple[str, str, str]]# = [] # (arg_name, default_value, type_name)
     first_named_only_argument = None
     class VirtualCategory(IntEnum):
@@ -1054,7 +1057,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         if self.virtual_category == self.VirtualCategory.ABSTRACT:
             return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + python_types_to_11l[self.function_return_type] + "\n"
 
-        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override')[self.virtual_category] + ' ' + {'__init__':'', '__call__':'()'}.get(self.function_name, self.function_name)
+        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override')[self.virtual_category] + '.const'*self.is_const + ' ' + {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<'}.get(self.function_name, self.function_name)
             + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 
@@ -1571,6 +1574,7 @@ def parse_internal(this_node, one_line_scope = False):
         if token.category != Token.Category.INDENT: # handling of `if ...: break`, `def ...(...): return ...`, etc.
             if one_line_scope:
                 raise Error('unexpected `:` (only one `:` in one line is allowed)', tokens[tokeni-1])
+            tokensn.scope = scope # for `if ...: new_var = ...` (though code `if ...: new_var = ...` has no real application, this line is needed for correct error message outputting)
             parse_internal(node, True)
         else:
             next_token()
@@ -1759,6 +1763,8 @@ def parse_internal(this_node, one_line_scope = False):
 
                 if source[token.end:token.end+7] == ' # -> &':
                     node.function_return_type += '&'
+                elif source[token.end:token.end+8] == ' # const':
+                    node.is_const = True
 
                 new_scope(node, map(lambda arg: arg[0], node.function_arguments))
 
@@ -2307,7 +2313,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                                             if len(fargs) == 1:
                                                 return
                             def f(e : SymbolNode):
-                                if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=') and e.children[0].token_str() in fargs: # +=, -=, *=, /=, etc.
+                                if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=', '<=', '>=') and e.children[0].token_str() in fargs: # +=, -=, *=, /=, etc.
                                     nonlocal found
                                     found.add(e.children[0].token_str())
                             node.walk_expressions(f)

@@ -1018,6 +1018,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         NEW = 1
         OVERRIDE = 2
         ABSTRACT = 3
+        ASSIGN = 4
     virtual_category = VirtualCategory.NO
     scope : Scope
 
@@ -1063,7 +1064,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         if self.virtual_category == self.VirtualCategory.ABSTRACT:
             return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + python_types_to_11l[self.function_return_type] + "\n"
 
-        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override')[self.virtual_category] + '.const'*self.is_const + ' ' + {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<'}.get(self.function_name, self.function_name)
+        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' + {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<'}.get(self.function_name, self.function_name)
             + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 
@@ -1791,7 +1792,7 @@ def parse_internal(this_node, one_line_scope = False):
                                         child.virtual_category = ASTFunctionDefinition.VirtualCategory.ABSTRACT
                                     else:
                                         child.virtual_category = ASTFunctionDefinition.VirtualCategory.NEW
-                                node.virtual_category = ASTFunctionDefinition.VirtualCategory.OVERRIDE
+                                node.virtual_category = ASTFunctionDefinition.VirtualCategory.ASSIGN if child.virtual_category == ASTFunctionDefinition.VirtualCategory.ABSTRACT else ASTFunctionDefinition.VirtualCategory.OVERRIDE
                                 if node.function_return_type == '': # specifying return type of overriden virtual functions is not necessary — it can be taken from original virtual function definition
                                     node.function_return_type = child.function_return_type
                                 break

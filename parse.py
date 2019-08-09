@@ -1183,7 +1183,8 @@ class ASTExceptionCatch(ASTNodeWithChildren):
     exception_object_name : str = ''
 
     def to_str(self, indent):
-        return self.children_to_str(indent, 'X.catch ' + self.exception_object_type + (' ' + self.exception_object_name if self.exception_object_name != '' else ''))
+        return self.children_to_str(indent, 'X.catch' + (' ' + self.exception_object_type if self.exception_object_type != '' else '')
+                                                      + (' ' + self.exception_object_name if self.exception_object_name != '' else ''))
 
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
@@ -1954,16 +1955,22 @@ def parse_internal(this_node, one_line_scope = False):
                 prev_scope = scope
                 scope = Scope(None)
                 scope.parent = prev_scope
-                node.exception_object_type = expected_name('exception object type name')
-                while token.value(source) == '.':
-                    node.exception_object_type += ':' + expected_name('type name')
-                if token.value(source) != ':':
-                    advance('as')
-                    if token.category != Token.Category.NAME:
-                        raise Error('expected exception object name', token)
-                    node.exception_object_name = token.value(source)
-                    scope.add_var(node.exception_object_name, True)
+
+                if peek_token().value(source) != ':':
+                    node.exception_object_type = expected_name('exception object type name')
+                    while token.value(source) == '.':
+                        node.exception_object_type += ':' + expected_name('type name')
+                    if token.value(source) != ':':
+                        advance('as')
+                        if token.category != Token.Category.NAME:
+                            raise Error('expected exception object name', token)
+                        node.exception_object_name = token.value(source)
+                        scope.add_var(node.exception_object_name, True)
+                        next_token()
+                else:
                     next_token()
+                    node.exception_object_type = ''
+
                 new_scope(node)
                 scope = prev_scope
 

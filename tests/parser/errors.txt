@@ -262,3 +262,7 @@ print('Number: %4.1g' % (1.1))
 
 print('%n' % (1))
         ^Error: unsupported format character `n`
+
+
+self.i : int = 0
+^Error: type annotation for `self.*` is permitted only inside `__init__`

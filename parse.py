@@ -1774,6 +1774,7 @@ def parse_internal(this_node, one_line_scope = False):
                 elif source[token.end:token.end+8] == ' # const':
                     node.is_const = True
 
+                node.parent = this_node
                 new_scope(node, map(lambda arg: arg[0], node.function_arguments))
 
                 if len(node.children) == 0: # needed for:
@@ -2003,7 +2004,15 @@ def parse_internal(this_node, one_line_scope = False):
              or (node.dest_expression.token_str() == 'UInt32' and node.expression.token_str() == 'int')): # skip `UInt32 = int` statement
                 continue
 
-        elif token.category == Token.Category.NAME and peek_token().value(source) == ':': # this is type hint
+        elif token.category == Token.Category.NAME and (peek_token().value(source) == ':' # this is type hint
+                  or (token.value(source) == 'self' and peek_token().value(source) == '.' and peek_token(2).category == Token.Category.NAME)
+                                                   and peek_token(3).value(source) == ':'):
+            is_self = peek_token().value(source) == '.'
+            if is_self:
+                if not (type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'):
+                    raise Error('type annotation for `self.*` is permitted only inside `__init__`', token)
+                next_token()
+                next_token()
             name_token = token
             var = token.value(source)
             next_token()
@@ -2015,7 +2024,10 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             while token.value(source) == '.': # for `category : Token.Category`
                 type_ += '.' + expected_name('type name')
-            scope.add_var(var, True, type_, name_token)
+            if is_self:
+                scope.parent.add_var(var, True, type_, name_token)
+            else:
+                scope.add_var(var, True, type_, name_token)
             type_args = []
             if token.value(source) == '[':
                 next_token()
@@ -2079,6 +2091,11 @@ def parse_internal(this_node, one_line_scope = False):
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
 
+            if is_self:
+                node.parent = this_node.parent
+                this_node.parent.children.append(node)
+                continue
+
         elif token.category == Token.Category.DEDENT:
             next_token()
             if token.category == Token.Category.STATEMENT_SEPARATOR: # Token.Category.EOF
@@ -2105,10 +2122,16 @@ def parse_internal(this_node, one_line_scope = False):
                 next_token()
 
             if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self'
-                    and ((node.expression.symbol.id == '[' and len(node.expression.children) == 0) # ] # skip `self.* = []` because `create_array({})` is meaningless
-                      or (node.expression.symbol.id == '(' and len(node.expression.children) == 1 and node.expression.children[0].token_str() == 'set')) # ) # skip `self.* = set()`
                     and type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'): # only in constructors
-                continue
+                if scope.parent.add_var(node_expression.children[1].token_str()):
+                    node.add_var = True
+                    node.set_dest_expression(node_expression.children[1])
+                    node.parent = this_node.parent
+                    this_node.parent.children.append(node)
+                    continue
+                elif ((node.expression.symbol.id == '[' and len(node.expression.children) == 0) # ] # skip `self.* = []` because `create_array({})` is meaningless
+                   or (node.expression.symbol.id == '(' and len(node.expression.children) == 1 and node.expression.children[0].token_str() == 'set')): # ) # skip `self.* = set()`
+                    continue
 
         def check_vars_defined(sn : SymbolNode):
             if sn.token.category == Token.Category.NAME:

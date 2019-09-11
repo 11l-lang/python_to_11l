@@ -1067,7 +1067,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         if self.virtual_category == self.VirtualCategory.ABSTRACT:
             return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + python_types_to_11l[self.function_return_type] + "\n"
 
-        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' + {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<'}.get(self.function_name, self.function_name)
+        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' + {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__str__':'String'}.get(self.function_name, self.function_name)
             + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 

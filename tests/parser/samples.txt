@@ -79,7 +79,7 @@ T Circle(Shape)
 class Converter:
     def to_html(self, instr):
         def get_newline_chars():
-            newline_chars = []
+            newline_chars : List[int] = []
             i = 0
             while i < len(instr):
                 if instr[i] == "\r" or (instr[i] == "\n" and instr[i - 1:i] != "\r"):
@@ -90,7 +90,7 @@ class Converter:
 T Converter
    F to_html(instr)
       F get_newline_chars()
-         V newline_chars = []
+         [Int] newline_chars
          V i = 0
          L i < @instr.len
             I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
@@ -110,10 +110,10 @@ F to_html(instr)
          i++
 
 
-arr = []
+arr : List[int] = []
 arr += [1, 2]
 ===
-V arr = []
+[Int] arr
 arr [+]= [1, 2]
 
 
@@ -519,10 +519,10 @@ print(‘Earn cool rewards by using the 'Check' button!’)
 
 
 
-arr = []
+arr : List[str] = []
 ', '.join(arr)
 ===
-V arr = []
+[String] arr
 arr.join(‘, ’)
 
 

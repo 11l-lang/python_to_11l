@@ -538,6 +538,9 @@ class SymbolNode:
             else:
                 c0 = self.children[0].to_str()
                 if self.slicing:
+                    if len(self.children) == 2: # `a = b[:]` -> `a = copy(b)`
+                        assert(self.children[1] is None)
+                        return 'copy(' + c0 + ')'
                     def for_negative_bound(c):
                         child = self.children[c]
                         if child is None:
@@ -1961,6 +1964,10 @@ def parse_internal(this_node, one_line_scope = False):
                     node.exception_object_type = expected_name('exception object type name')
                     while token.value(source) == '.':
                         node.exception_object_type += ':' + expected_name('type name')
+
+                    if node.exception_object_type.startswith('self:'):
+                        node.exception_object_type = '.' + node.exception_object_type[5:]
+
                     if token.value(source) != ':':
                         advance('as')
                         if token.category != Token.Category.NAME:
@@ -1985,6 +1992,8 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             next_token()
             node.set_expression(expression())
+            if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
+                raise Error('please specify type of empty list', Token(node.dest_expression.token.start, token.start, Token.Category.NAME))
             if node.expression.symbol.id == '.' and len(node.expression.children) == 2 and node.expression.children[1].token_str().isupper(): # replace `category = Token.Category.NAME` with `category = NAME`
                 node.set_expression(node.expression.children[1])
                 node.expression.parent = None

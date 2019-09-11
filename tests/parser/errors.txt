@@ -266,3 +266,7 @@ print('%n' % (1))
 
 self.i : int = 0
 ^Error: type annotation for `self.*` is permitted only inside `__init__`
+
+
+x_in_list = []
+^Error: please specify type of empty list

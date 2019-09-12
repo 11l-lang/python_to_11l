@@ -244,7 +244,7 @@ class SymbolNode:
         if self.token.category == Token.Category.NAME:
             if self.scope_prefix == ':' and ((self.parent and self.parent.function_call) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper())): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
                 return self.token_str()
-            if self.token_str() == 'self' and self.parent != None and self.parent.symbol.id != '.' and self.parent.symbol.id != 'lambda':
+            if self.token_str() == 'self' and self.parent is not None and self.parent.symbol.id != '.' and self.parent.symbol.id != 'lambda':
                 return '(.)'
             return self.scope_prefix + self.token_str()
 
@@ -406,7 +406,7 @@ class SymbolNode:
                 elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`
                     assert(len(self.children) == 1)
                     if source[self.token.end + 2 : self.token.end + 3] != '#':
-                        # if self.parent == None and type(self.ast_parent) == ASTExprAssignment \
+                        # if self.parent is None and type(self.ast_parent) == ASTExprAssignment \
                         #         and self.ast_parent.dest_expression.symbol.id == '.' \
                         #         and self.ast_parent.dest_expression.children[0].token_str() == 'self' \
                         #         and type(self.ast_parent.parent) == ASTFunctionDefinition \
@@ -828,7 +828,7 @@ class SymbolNode:
         elif len(self.children) == 3:
             assert(self.symbol.id == 'if')
             c0 = self.children[0].to_str()
-            if self.children[1].symbol.id == '!=' and self.children[1].children[1].token.value(source) == 'None' and self.children[1].children[0].to_str() == c0: # replace `a if a is not None else b` with `a ? b`
+            if self.children[1].symbol.id == 'is' and self.children[1].is_not and self.children[1].children[1].token.value(source) == 'None' and self.children[1].children[0].to_str() == c0: # replace `a if a is not None else b` with `a ? b`
                 return c0 + ' ? ' + self.children[2].to_str()
             return 'I ' + self.children[1].to_str() + ' {' + c0 + '} E ' + self.children[2].to_str()
 
@@ -2144,7 +2144,7 @@ def parse_internal(this_node, one_line_scope = False):
 
         def check_vars_defined(sn : SymbolNode):
             if sn.token.category == Token.Category.NAME:
-                if not (sn.parent and sn.parent.token.value(source) == '.') or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
+                if sn.parent is None or sn.parent.symbol.id != '.' or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
                     if not sn.skip_find_and_get_prefix:
                         sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token.value(source), sn.token)
             else:

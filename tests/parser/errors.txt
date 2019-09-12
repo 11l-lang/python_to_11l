@@ -113,37 +113,37 @@ or this way:\
 
 class ASTIf:
     pass
-if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None and self.parent.symbol.id == 'if':
+if (self.parent is None and isinstance(self.ast_parent, ASTIf)) or self.parent is not None and self.parent.symbol.id == 'if':
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
-`((self.parent == None and isinstance(self.ast_parent, ASTIf)) or self.parent != None) and self.parent.symbol.id == 'if'`\
+`((self.parent is None and isinstance(self.ast_parent, ASTIf)) or self.parent is not None) and self.parent.symbol.id == 'if'`\
 or this way:\
-`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if')`
+`(self.parent is None and isinstance(self.ast_parent, ASTIf)) or (self.parent is not None and self.parent.symbol.id == 'if')`
     return
 
 
 class ASTIf:
     pass
-if self.parent == None and isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'):
-                                                                                                                          ^Error: expected an indented block
+if self.parent is None and isinstance(self.ast_parent, ASTIf) or (self.parent is not None and self.parent.symbol.id == 'if'):
+                                                                                                                              ^Error: expected an indented block
 
 
 class ASTIf:
     pass
-if self.parent == None and isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'):
+if self.parent is None and isinstance(self.ast_parent, ASTIf) or (self.parent is not None and self.parent.symbol.id == 'if'):
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
-`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if')`\
+`(self.parent is None and isinstance(self.ast_parent, ASTIf)) or (self.parent is not None and self.parent.symbol.id == 'if')`\
 or this way:\
-`self.parent == None and (isinstance(self.ast_parent, ASTIf) or (self.parent != None and self.parent.symbol.id == 'if'))`
+`self.parent is None and (isinstance(self.ast_parent, ASTIf) or (self.parent is not None and self.parent.symbol.id == 'if'))`
     return
 
 
 class ASTIf:
     pass
-if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: 1) and lambda: 2:
+if (self.parent is None and isinstance(self.ast_parent, ASTIf)) or (lambda: 1) and lambda: 2:
    ^Error: relative precedence of operators `and` and `or` is undetermined; please add parentheses this way:\
-`((self.parent == None and isinstance(self.ast_parent, ASTIf)) or (lambda: 1)) and lambda: 2`\
+`((self.parent is None and isinstance(self.ast_parent, ASTIf)) or (lambda: 1)) and lambda: 2`\
 or this way:\
-`(self.parent == None and isinstance(self.ast_parent, ASTIf)) or ((lambda: 1) and lambda: 2)`
+`(self.parent is None and isinstance(self.ast_parent, ASTIf)) or ((lambda: 1) and lambda: 2)`
     return
 
 

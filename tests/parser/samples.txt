@@ -128,7 +128,7 @@ if len(indentation_levels):
     prev_indentation_level = indentation_levels[-1]
 else:
     prev_indentation_level = 0
-def f(): # test for error when instead of `s = self \n while not s.is_function:` was `s = self.parent \n while s != None and not s.is_function:`
+def f(): # test for error when instead of `s = self \n while not s.is_function:` was `s = self.parent \n while s is not None and not s.is_function:`
     prev_indentation_level = 0
 class ASTNodeWithChildren:
     def children_to_str_detect_single_stmt(self, indent, r):
@@ -296,7 +296,7 @@ if (a and b) or c:
         return
 class ASTIf:
     pass
-if (self.parent == None and isinstance(self.ast_parent, ASTIf)) or (self.parent != None and self.parent.symbol.id == 'if'):
+if (self.parent is None and isinstance(self.ast_parent, ASTIf)) or (self.parent is not None and self.parent.symbol.id == 'if'):
     return
 ===
 Bool a
@@ -437,7 +437,7 @@ T Converter
 
 token = None
 err_token = None
-err_token if err_token != None else token
+err_token if err_token is not None else token
 ===
 V token = N
 V err_token = N

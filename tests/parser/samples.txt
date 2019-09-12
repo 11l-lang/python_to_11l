@@ -578,3 +578,29 @@ def newtoncooling(time, temp): return -0.07 * (temp - 20)
 ===
 F newtoncooling(time, temp)
    R -0.07 * (temp - 20)
+
+
+def assign(values, s, d):
+    "Eliminate all the other values (except d) from values[s] and propagate."
+    global eliminate
+    if all([eliminate(values, s, d2) for d2 in values[s] if d2 != d]):
+        return values
+    else:
+        return None
+
+def eliminate(values, s, d):
+    "Eliminate d from values[s]; propagate when values or places <= 2."
+    if d not in values[s]:
+        return values ## Already eliminated
+===
+F assign(values, s, d)
+   ‘Eliminate all the other values (except d) from values[s] and propagate.’
+   I all(values[s].filter(d2 -> d2 != @d).map(d2 -> eliminate(@values, @s, d2)))
+      R values
+   E
+      R N
+
+F eliminate(values, s, d)
+   ‘Eliminate d from values[s]; propagate when values or places <= 2.’
+   I d !C values[s]
+      R values

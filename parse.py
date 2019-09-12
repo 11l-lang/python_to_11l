@@ -34,6 +34,7 @@ class Scope:
     nonlocals : set
     globals   : set
     is_function : bool
+    is_lambda_or_for = False
 
     def __init__(self, func_args):
         self.parent = None
@@ -99,7 +100,7 @@ class Scope:
                 return '@'
             if name in s.globals:
                 return ':'
-            if s.is_function:
+            if s.is_function and not s.is_lambda_or_for:
                 break
             s = s.parent
             if s is None:
@@ -1458,6 +1459,7 @@ def nud(self):
     global scope
     prev_scope = scope
     scope = Scope([])
+    scope.is_lambda_or_for = True
     scope.parent = prev_scope
     if token.value(source) != ':':
         while True:
@@ -1485,6 +1487,7 @@ def led(self, left):
     global scope
     prev_scope = scope
     scope = for_scope = Scope([])
+    scope.is_lambda_or_for = True
     scope.parent = prev_scope
     def set_scope_recursive(sn):
         if sn.scope == prev_scope:

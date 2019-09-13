@@ -340,7 +340,9 @@ class SymbolNode:
                         def is_char(child):
                             ts = child.token_str()
                             return child.token.category == Token.Category.STRING_LITERAL and (len(ts) == 3 or (ts[:2] == '"\\' and len(ts) == 4))
-                        if repl.endswith('trim') and not is_char(self.children[1]): # `"...".strip("\t ")` -> `"...".trim(Array[Char]("\t "))`
+                        if repl.endswith('trim') and len(self.children) == 1: # `strip()` -> `trim((‘ ’, "\t", "\r", "\n"))`
+                            res += '(‘ ’, "\\t", "\\r", "\\n")'
+                        elif repl.endswith('trim') and not is_char(self.children[1]): # `"...".strip("\t ")` -> `"...".trim(Array[Char]("\t "))`
                             assert(len(self.children) == 3)
                             res += 'Array[Char](' + self.children[1].to_str() + ')'
                         else:
@@ -438,7 +440,7 @@ class SymbolNode:
 
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
-                    if isinstance(self.ast_parent, (ASTIf, ASTWhile)) if self.parent is None else self.parent.symbol.id == 'if':
+                    if isinstance(self.ast_parent, (ASTIf, ASTWhile)) if self.parent is None else self.parent.symbol.id == 'if': # `if len(arr)` -> `I !arr.empty`
                         return '!' + self.children[1].to_str() + '.empty'
                     return self.children[1].to_str() + '.len'
                 elif func_name == 'ord': # replace `ord(ch)` with `ch.code`
@@ -489,7 +491,7 @@ class SymbolNode:
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
-                            if f_node is not None and f_node.function_arguments[i//2][2].startswith('List['): # ]
+                            if f_node is not None and f_node.function_arguments[i//2][2].startswith(('List[', 'Dict[')): # ]]
                                 res += '&'
                             res += self.children[i].to_str()
                         else:
@@ -498,7 +500,7 @@ class SymbolNode:
                             if f_node is not None:
                                 for farg in f_node.function_arguments:
                                     if farg[0] == ci_str:
-                                        if farg[2].startswith('List['): # ]
+                                        if farg[2].startswith(('List[', 'Dict[')): # ]]
                                             res += '&'
                                         break
                             res += self.children[i+1].to_str()
@@ -762,6 +764,8 @@ class SymbolNode:
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' <.< ' if range_need_space(self.children[0].children[0], self.children[1]) else '<.<') + self.children[1].to_str()
             elif self.symbol.id == '==' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # ) # replace `len(arr) == 0` with `arr.empty`
                 return self.children[0].children[1].to_str() + '.empty'
+            elif self.symbol.id == '!=' and self.children[0].symbol.id == '(' and self.children[0].children[0].to_str() == 'len' and self.children[1].token.value(source) == '0': # ) # replace `len(arr) != 0` with `!arr.empty`
+                return '!' + self.children[0].children[1].to_str() + '.empty'
             elif self.symbol.id in ('==', '!=') and self.children[1].symbol.id == '.' and len(self.children[1].children) == 2 and self.children[1].children[1].token_str().isupper(): # replace `token.category == Token.Category.NAME` with `token.category == NAME`
                 #self.skip_find_and_get_prefix = True # this is not needed here because in AST there is still `Token.Category.NAME`, not just `NAME`
                 return self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].children[1].token_str()
@@ -1048,7 +1052,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 if default_value == 'N':
                     farg += '?'
                 farg += ' '
-                if ty.startswith(('Array[', '[')): # ]]
+                if ty.startswith(('Array[', '[', 'Dict[')): # ]]]
                     farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append((farg, arg[2] != ''))
@@ -1712,6 +1716,31 @@ def parse_internal(this_node, one_line_scope = False):
 
                 next_token()
                 was_default_argument = False
+
+                def advance_type():
+                    type_ = token.value(source)
+                    next_token()
+                    if token.value(source) == '[': # ]
+                        nesting_level = 0
+                        while True:
+                            type_ += token.value(source)
+                            if token.value(source) == '[':
+                                next_token()
+                                nesting_level += 1
+                            elif token.value(source) == ']':
+                                next_token()
+                                nesting_level -= 1
+                                if nesting_level == 0:
+                                    break
+                            elif token.value(source) == ',':
+                                type_ += ' '
+                                next_token()
+                            else:
+                                if token.category != Token.Category.NAME:
+                                    raise Error('expected subtype name', token)
+                                next_token()
+                    return type_
+
                 while token.value(source) != ')':
                     if token.value(source) == '*':
                         assert(node.first_named_only_argument is None)
@@ -1730,27 +1759,7 @@ def parse_internal(this_node, one_line_scope = False):
                             type_ = token.value(source)[1:-1]
                             next_token()
                         else:
-                            type_ = token.value(source)
-                            next_token()
-                            if token.value(source) == '[': # ]
-                                nesting_level = 0
-                                while True:
-                                    type_ += token.value(source)
-                                    if token.value(source) == '[':
-                                        next_token()
-                                        nesting_level += 1
-                                    elif token.value(source) == ']':
-                                        next_token()
-                                        nesting_level -= 1
-                                        if nesting_level == 0:
-                                            break
-                                    elif token.value(source) == ',':
-                                        type_ += ' '
-                                        next_token()
-                                    else:
-                                        if token.category != Token.Category.NAME:
-                                            raise Error('expected subtype name', token)
-                                        next_token()
+                            type_ = advance_type()
 
                     if token.value(source) == '=':
                         next_token()
@@ -1773,7 +1782,7 @@ def parse_internal(this_node, one_line_scope = False):
                         node.function_return_type = 'None'
                         next_token()
                     else:
-                        node.function_return_type = expression().to_str()
+                        node.function_return_type = advance_type()
 
                 if source[token.end:token.end+7] == ' # -> &':
                     node.function_return_type += '&'

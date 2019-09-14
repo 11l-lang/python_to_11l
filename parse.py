@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'sum', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError'):
             return ''
 
         s = self
@@ -402,7 +402,7 @@ class SymbolNode:
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
                         return 'Array' + self.children[1].to_str()
-                    assert(len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'map') # )
+                    assert(len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() in ('map', 'product', 'zip')) # )
                     return self.children[1].to_str()
                 elif func_name == 'dict':
                     func_name = 'Dict'
@@ -437,6 +437,8 @@ class SymbolNode:
                                 self.children.pop(i+1)
                                 self.children.pop(i)
                                 break
+                elif func_name == 'product':
+                    func_name = 'cart_product'
 
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
@@ -1691,7 +1693,7 @@ def parse_internal(this_node, one_line_scope = False):
 
             elif token.value(source) == 'from':
                 next_token()
-                assert(token.value(source) in ('typing', 'functools', 'enum'))
+                assert(token.value(source) in ('typing', 'functools', 'itertools', 'enum'))
                 next_token()
                 advance('import')
                 while True:

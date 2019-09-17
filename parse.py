@@ -939,6 +939,7 @@ class ASTExpression(ASTNodeWithExpression):
 
 class ASTExprAssignment(ASTNodeWithExpression):
     add_vars : List[bool]
+    is_tuple_assign_expression = False
     dest_expression : SymbolNode
 
     # def __init__(self):
@@ -950,9 +951,9 @@ class ASTExprAssignment(ASTNodeWithExpression):
 
     def to_str(self, indent):
         if type(self.parent) == ASTClassDefinition:
-            assert(len(self.add_vars) == 1 and self.add_vars[0])
+            assert(len(self.add_vars) == 1 and self.add_vars[0] and not self.is_tuple_assign_expression)
             return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
-        if not any(self.add_vars):
+        if self.is_tuple_assign_expression or not any(self.add_vars):
             return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
         if all(self.add_vars):
             return ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
@@ -2192,7 +2193,9 @@ def parse_internal(this_node, one_line_scope = False):
                 if node_expression.tuple:
                     node.add_vars = []
                     for v in node_expression.children:
-                        assert(v.token.category == Token.Category.NAME)
+                        if v.token.category != Token.Category.NAME:
+                            node.is_tuple_assign_expression = True
+                            break
                         node.add_vars.append(scope.add_var(v.token_str()))
                 else:
                     node.add_vars = [False]

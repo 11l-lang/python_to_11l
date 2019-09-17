@@ -15,7 +15,7 @@ t : Tuple[str, int]
 String message
 Int pos = 0
 [String] type_args
-Tuple[String, Int] t
+(String, Int) t
 
 
 # Test for some class based on class Exception
@@ -70,7 +70,7 @@ class Circle(Shape):
     radious : int
 ===
 T Shape
-   Tuple[Int, Int] position
+   (Int, Int) position
 
 T Circle(Shape)
    Int radious
@@ -604,3 +604,14 @@ F eliminate(values, s, d)
    ‘Eliminate d from values[s]; propagate when values or places <= 2.’
    I d !C values[s]
       R values
+
+
+a : Tuple[int, int]
+b : Tuple[Tuple[int, int], int]
+c : Tuple[Tuple[int, Tuple[int, int]], int]
+scorelist : List[Tuple[float, Tuple[int, int]]] = []
+===
+(Int, Int) a
+((Int, Int), Int) b
+((Int, (Int, Int)), Int) c
+[(Float, (Int, Int))] scorelist

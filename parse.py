@@ -402,11 +402,16 @@ class SymbolNode:
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
                         return 'Array' + self.children[1].to_str()
-                    assert(len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() in ('map', 'product', 'zip')) # )
-                    return self.children[1].to_str()
+                    assert(len(self.children) == 3)
+                    if self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() in ('map', 'product', 'zip'): # )
+                        return self.children[1].to_str()
+                    else:
+                        return 'Array(' + self.children[1].to_str() + ')'
                 elif func_name == 'dict':
                     func_name = 'Dict'
                 elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`
+                    if len(self.children) == 3:
+                        return 'Set(' + self.children[1].to_str() + ')'
                     assert(len(self.children) == 1)
                     if source[self.token.end + 2 : self.token.end + 3] != '#':
                         # if self.parent is None and type(self.ast_parent) == ASTExprAssignment \
@@ -487,13 +492,23 @@ class SymbolNode:
                             tid = modules[module_name].scope.find(func_name[colon_pos+1:])
                         else:
                             tid = None
+                    elif func_name.startswith('.'):
+                        s = self.scope
+                        while True:
+                            if s.is_function and not s.is_lambda_or_for:
+                                tid = s.parent.vars.get(func_name[1:])
+                                break
+                            s = s.parent
+                            if s is None:
+                                tid = None
+                                break
                     else:
                         tid = self.scope.find(func_name)
                     f_node = tid.node if tid is not None and type(tid.node) == ASTFunctionDefinition else None
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
-                            if f_node is not None and f_node.function_arguments[i//2][2].startswith(('List[', 'Dict[')): # ]]
+                            if f_node is not None and f_node.function_arguments[i//2 + int(func_name.startswith('.'))][2].startswith(('List[', 'Dict[')): # ]]
                                 res += '&'
                             res += self.children[i].to_str()
                         else:
@@ -965,14 +980,36 @@ def trans_type(ty, scope, type_token):
         if '.' in ty: # for `category : Token.Category`
             return ty # [-TODO: generalize-]
 
-        p = ty.find('[') # ]
+        p = ty.find('[')
         if p != -1:
+            assert(ty[-1] == ']')
+            i = p + 1
+            s = i
+            nesting_level = 0
+            types = ''
+            while True:
+                if ty[i] == '[':
+                    nesting_level += 1
+                elif ty[i] == ']':
+                    if nesting_level == 0:
+                        assert(i == len(ty)-1)
+                        types += trans_type(ty[s:i], scope, type_token)
+                        break
+                    nesting_level -= 1
+                elif ty[i] == ',':
+                    if nesting_level == 0: # ignore inner commas
+                        types += trans_type(ty[s:i], scope, type_token) + ', '
+                        i += 1
+                        while ty[i] == ' ':
+                            i += 1
+                        s = i
+                        #continue # this is not necessary here
+                i += 1
             if ty.startswith('Tuple['): # ]
-                return '(' + trans_type(ty[p+1:-1], scope, type_token) + ')'
-            return trans_type(ty[:p], scope, type_token) + '[' + trans_type(ty[p+1:-1], scope, type_token) + ']'
-        p = ty.find(',')
-        if p != -1:
-            return trans_type(ty[:p], scope, type_token) + ', ' + trans_type(ty[p+1:].lstrip(' '), scope, type_token)
+                return '(' + types + ')'
+            return trans_type(ty[:p], scope, type_token) + '[' + types + ']'
+
+        assert(ty.find(',') == -1)
 
         id = scope.find(ty)
         if id is None:
@@ -1001,7 +1038,7 @@ class ASTTypeHint(ASTNode):
         elif self.type == 'Optional':
             assert(len(self.type_args) == 1)
             return ' ' * (indent*3) + self.trans_type(self.type_args[0]) + '? ' + self.var
-        return ' ' * (indent*3) + self.trans_type(self.type) + ('[' + ', '.join(self.trans_type(ty) for ty in self.type_args) + ']' if len(self.type_args) else '') + '?'*nullable + '&'*self.is_reference + ' ' + self.var
+        return ' ' * (indent*3) + self.trans_type(self.type + ('[' + ', '.join(self.type_args) + ']' if len(self.type_args) else '')) + '?'*nullable + '&'*self.is_reference + ' ' + self.var
 
     def to_str(self, indent):
         return self.to_str_(indent) + "\n"
@@ -2007,7 +2044,7 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             node.set_expression(expression())
             if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
-                raise Error('please specify type of empty list', Token(node.dest_expression.token.start, token.start, Token.Category.NAME))
+                raise Error('please specify type of empty list', Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME))
             if node.expression.symbol.id == '.' and len(node.expression.children) == 2 and node.expression.children[1].token_str().isupper(): # replace `category = Token.Category.NAME` with `category = NAME`
                 node.set_expression(node.expression.children[1])
                 node.expression.parent = None

@@ -938,15 +938,35 @@ class ASTExpression(ASTNodeWithExpression):
         return ' ' * (indent*3) + self.expression.to_str() + "\n"
 
 class ASTExprAssignment(ASTNodeWithExpression):
-    add_var : bool = False
+    add_vars : List[bool]
     dest_expression : SymbolNode
+
+    # def __init__(self):
+    #     self.add_vars = [] # this is not necessary
 
     def set_dest_expression(self, dest_expression):
         self.dest_expression = dest_expression
         self.dest_expression.ast_parent = self
 
     def to_str(self, indent):
-        return ' ' * (indent*3) + ('V ' if self.add_var and type(self.parent) != ASTClassDefinition else '') + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+        if type(self.parent) == ASTClassDefinition:
+            assert(len(self.add_vars) == 1 and self.add_vars[0])
+            return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+        if not any(self.add_vars):
+            return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+        if all(self.add_vars):
+            return ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+
+        assert(self.dest_expression.tuple and len(self.dest_expression.children) == len(self.add_vars))
+        r = ' ' * (indent*3) + '('
+        for i in range(len(self.add_vars)):
+            if self.add_vars[i]:
+                r += 'V '
+            assert(self.dest_expression.children[i].token.category == Token.Category.NAME)
+            r += self.dest_expression.children[i].token_str()
+            if i < len(self.add_vars)-1:
+                r += ', '
+        return r + ') = ' + self.expression.to_str() + "\n"
 
     def walk_expressions(self, f):
         f(self.dest_expression)
@@ -2054,7 +2074,7 @@ def parse_internal(this_node, one_line_scope = False):
                 type_name = 'str'
             elif node.expression.is_list:
                 type_name = 'List'
-            node.add_var = scope.add_var(name_token.value(source), False, type_name, name_token)
+            node.add_vars = [scope.add_var(name_token.value(source), False, type_name, name_token)]
             assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
@@ -2169,6 +2189,13 @@ def parse_internal(this_node, one_line_scope = False):
                 node = ASTExprAssignment()
                 if node_expression.token.category == Token.Category.NAME:
                     assert(False) #node.add_var = scope.add_var(node_expression.token.value(source))
+                if node_expression.tuple:
+                    node.add_vars = []
+                    for v in node_expression.children:
+                        assert(v.token.category == Token.Category.NAME)
+                        node.add_vars.append(scope.add_var(v.token_str()))
+                else:
+                    node.add_vars = [False]
                 node.set_dest_expression(node_expression)
                 next_token()
                 node.set_expression(expression())
@@ -2184,7 +2211,7 @@ def parse_internal(this_node, one_line_scope = False):
             if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self'
                     and type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'): # only in constructors
                 if scope.parent.add_var(node_expression.children[1].token_str()):
-                    node.add_var = True
+                    node.add_vars = [True]
                     node.set_dest_expression(node_expression.children[1])
                     node.parent = this_node.parent
                     this_node.parent.children.append(node)
@@ -2387,7 +2414,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                         set_index_node.set_dest_expression(SymbolNode(Token(0, 0, Token.Category.NAME), child.loop_variables[0]))
                         child.loop_variables.pop(0)
                         set_index_node.set_expression(SymbolNode(Token(0, 0, Token.Category.NAME), 'L.index' + (' + ' + child.expression.children[3].to_str() if len(child.expression.children) >= 5 else '')))
-                        set_index_node.add_var = True
+                        set_index_node.add_vars = [True]
                         set_index_node.parent = child
                         child.children.insert(0, set_index_node)
                         child.expression.children[0].parent = child.expression.parent

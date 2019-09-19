@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self
@@ -120,6 +120,8 @@ class Scope:
                 capture_level += 1
             s = s.parent
             if s is None:
+                if name in ('id',):
+                    return ''
                 raise Error('undefined identifier', token)
 
     def find(self, name):
@@ -226,6 +228,8 @@ class SymbolNode:
             return self.token.end
 
         if self.symbol.id in '([': # ])
+            if len(self.children) == 0:
+                return self.token.end + 1
             return (self.children[-1] or self.children[-2]).rightmost() + 1
 
         return self.children[-1].rightmost()
@@ -786,6 +790,8 @@ class SymbolNode:
             elif self.symbol.id in ('==', '!=') and self.children[1].symbol.id == '.' and len(self.children[1].children) == 2 and self.children[1].children[1].token_str().isupper(): # replace `token.category == Token.Category.NAME` with `token.category == NAME`
                 #self.skip_find_and_get_prefix = True # this is not needed here because in AST there is still `Token.Category.NAME`, not just `NAME`
                 return self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].children[1].token_str()
+            elif self.symbol.id in ('==', '!=') and self.children[0].function_call and self.children[0].children[0].token_str() == 'id' and self.children[1].function_call and self.children[1].children[0].token_str() == 'id': # replace `id(a) == id(b)` with `&a == &b`
+                return '&' + self.children[0].children[1].token_str() + ' ' + self.symbol.id + ' &' + self.children[1].children[1].token_str()
             elif self.symbol.id == '%' and self.children[0].token.category == Token.Category.STRING_LITERAL:
                 assert(self.children[1].symbol.id == '(')#self.children[1].tuple)
                 fmtstr = self.children[0].to_str()
@@ -2214,6 +2220,8 @@ def parse_internal(this_node, one_line_scope = False):
             if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self'
                     and type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'): # only in constructors
                 if scope.parent.add_var(node_expression.children[1].token_str()):
+                    if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
+                        raise Error('please specify type of empty list', Token(node.dest_expression.leftmost(), node.expression.rightmost(), Token.Category.NAME))
                     node.add_vars = [True]
                     node.set_dest_expression(node_expression.children[1])
                     node.parent = this_node.parent

@@ -176,11 +176,12 @@ class SymbolNode:
     children : List['SymbolNode']# = []
     parent : 'SymbolNode' = None
     ast_parent : 'ASTNode'
-    function_call : bool = False
-    tuple   : bool = False
-    is_list : bool = False
-    slicing : bool = False
-    is_not  : bool = False
+    function_call = False
+    tuple   = False
+    is_list = False
+    is_set  = False
+    slicing = False
+    is_not  = False
     skip_find_and_get_prefix = False
     scope_prefix : str = ''
     scope : Scope
@@ -589,6 +590,14 @@ class SymbolNode:
         elif self.symbol.id == '{': # }
             if len(self.children) == 0:
                 return 'Dict()'
+
+            if self.is_set:
+                res = 'Set(['
+                for i in range(len(self.children)):
+                    res += self.children[i].to_str()
+                    if i < len(self.children)-1:
+                        res += ', '
+                return res + '])'
 
             if self.children[-1].symbol.id == 'for':
                 assert(len(self.children) == 2)
@@ -1487,12 +1496,22 @@ def nud(self):
     return self
 symbol('[').nud = nud # ]
 
-def nud(self): # {{{
+def nud(self): # {{{{
     if token.value(source) != '}':
         while True:
             if token.value(source) == '}':
                 break
             self.append_child(expression())
+            if token.value(source) != ':':
+                self.is_set = True
+                while True:
+                    if token.value(source) != ',':
+                        break
+                    advance(',')
+                    if token.value(source) == '}':
+                        break
+                    self.append_child(expression())
+                break
             advance(':')
             self.append_child(expression())
 

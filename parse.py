@@ -250,8 +250,17 @@ class SymbolNode:
         if self.token.category == Token.Category.NAME:
             if self.scope_prefix == ':' and ((self.parent and self.parent.function_call) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper())): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
                 return self.token_str()
-            if self.token_str() == 'self' and self.parent is not None and self.parent.symbol.id != '.' and self.parent.symbol.id != 'lambda':
-                return '(.)'
+            if self.token_str() == 'self' and (self.parent is None or (self.parent.symbol.id != '.' and self.parent.symbol.id != 'lambda')):
+                parent = self
+                while parent.parent is not None:
+                    parent = parent.parent
+                ast_parent = parent.ast_parent
+                while ast_parent is not None:
+                    if isinstance(ast_parent, ASTFunctionDefinition):
+                        if len(ast_parent.function_arguments) and ast_parent.function_arguments[0][0] == 'self' and isinstance(ast_parent.parent, ASTClassDefinition):
+                            return '(.)'
+                        break
+                    ast_parent = ast_parent.parent
             return self.scope_prefix + self.token_str()
 
         if self.token.category == Token.Category.NUMERIC_LITERAL:
@@ -334,7 +343,7 @@ class SymbolNode:
                     if c01 == 'split' and len(self.children) == 5 and not (self.children[0].children[0].token_str() == 're'): # split() second argument [limit] in 11l is similar to JavaScript, Ruby and PHP, but not Python
                         return self.children[0].to_str() + '(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'
                     if c01 == 'split' and len(self.children) == 1:
-                        return self.children[0].to_str() + '((‘ ’, "\\t", "\\r", "\\n"), group_delimiters\' 1B)'
+                        return self.children[0].to_str() + '_py()' # + '((‘ ’, "\\t", "\\r", "\\n"), group_delimiters\' 1B)'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha', 'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim'}.get(c01, '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         c00 = self.children[0].children[0].to_str()
@@ -513,8 +522,10 @@ class SymbolNode:
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
-                            if f_node is not None and f_node.function_arguments[i//2 + int(func_name.startswith('.'))][2].startswith(('List[', 'Dict[')): # ]]
-                                res += '&'
+                            if f_node is not None:
+                                arg_type_name = f_node.function_arguments[i//2 + int(func_name.startswith('.'))][2]
+                                if arg_type_name.startswith(('List[', 'Dict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')): # ]]
+                                    res += '&'
                             res += self.children[i].to_str()
                         else:
                             ci_str = self.children[i].to_str()
@@ -1052,7 +1063,7 @@ def trans_type(ty, scope, type_token):
             raise Error('class `' + ty + '` is not defined', type_token)
         if id.type != '(Class)':
             raise Error('`' + ty + '`: expected a class name (got variable' + (' of type `' + id.type + '`' if id.type != '' else '') + ')', type_token)
-        return ty
+        return ty + '&'*id.node.is_inout
 
 class ASTTypeHint(ASTNode):
     var : str
@@ -1073,7 +1084,7 @@ class ASTTypeHint(ASTNode):
             return ' ' * (indent*3) + '(' + ', '.join(self.trans_type(ty) for ty in self.type_args[0].split(',')) + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
         elif self.type == 'Optional':
             assert(len(self.type_args) == 1)
-            return ' ' * (indent*3) + self.trans_type(self.type_args[0]) + '? ' + self.var
+            return ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
         return ' ' * (indent*3) + self.trans_type(self.type + ('[' + ', '.join(self.type_args) + ']' if len(self.type_args) else '')) + '?'*nullable + '&'*self.is_reference + ' ' + self.var
 
     def to_str(self, indent):
@@ -1123,6 +1134,8 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             default_value = arg[1]
             if arg[2] != '':
                 ty = trans_type(arg[2], self.scope, tokens[self.tokeni])
+                # if ty.endswith('&'): # fix error ‘expected function's argument name’ at `F trazar(Rayo& =r; prof)` (when there was `r = ...` instead of `rr = ...`)
+                #     arg = (arg[0].lstrip('='), arg[1], arg[2])
                 farg += ty
                 if default_value == 'N':
                     farg += '?'
@@ -1145,9 +1158,10 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 prev_type = farg[1]
 
         if self.virtual_category == self.VirtualCategory.ABSTRACT:
-            return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + python_types_to_11l[self.function_return_type] + "\n"
+            return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni]) + "\n"
 
-        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' + {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__str__':'String'}.get(self.function_name, self.function_name)
+        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' +
+            {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__add__':'+', '__sub__':'-', '__mul__':'*', '__str__':'String'}.get(self.function_name, self.function_name)
             + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 
@@ -1273,6 +1287,7 @@ class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
     base_class_node : 'ASTClassDefinition' = None
     class_name : str
+    is_inout = False
 
     def to_str(self, indent):
         if self.base_class_name == 'IntEnum':
@@ -1916,6 +1931,9 @@ def parse_internal(this_node, one_line_scope = False):
                         node.base_class_node = base_class.node
                     expected(')')
 
+                if source[token.end:token.end+4] == ' # &':
+                    node.is_inout = True
+
                 new_scope(node)
 
             elif token.value(source) == 'pass':
@@ -2184,7 +2202,7 @@ def parse_internal(this_node, one_line_scope = False):
                 node.set_expression(expression())
             else:
                 node = ASTTypeHint()
-                if source[type_token.end:type_token.end+4] == ' # &':
+                if source[tokens[tokeni-1].end:tokens[tokeni-1].end+4] == ' # &':
                     node.is_reference = True
                 if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)

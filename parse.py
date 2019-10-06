@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError', 'ValueError', 'IndexError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self
@@ -415,7 +415,8 @@ class SymbolNode:
                     func_name = 'Float'
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
-                        return 'Array' + self.children[1].to_str()
+                        parens = len(self.children[1].children) == 7 # if true, then this is a range with step
+                        return 'Array' + '('*parens + self.children[1].to_str() + ')'*parens
                     assert(len(self.children) == 3)
                     if self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() in ('map', 'product', 'zip'): # )
                         return self.children[1].to_str()
@@ -813,7 +814,8 @@ class SymbolNode:
             elif self.symbol.id in ('==', '!=') and self.children[0].function_call and self.children[0].children[0].token_str() == 'id' and self.children[1].function_call and self.children[1].children[0].token_str() == 'id': # replace `id(a) == id(b)` with `&a == &b`
                 return '&' + self.children[0].children[1].token_str() + ' ' + self.symbol.id + ' &' + self.children[1].children[1].token_str()
             elif self.symbol.id == '%' and self.children[0].token.category == Token.Category.STRING_LITERAL:
-                assert(self.children[1].symbol.id == '(')#self.children[1].tuple)
+                if self.children[1].symbol.id != '(':#self.children[1].tuple)
+                    raise Error('please add parentheses around `' + self.children[1].to_str() + '`', self.children[1].token)
                 fmtstr = self.children[0].to_str()
                 nfmtstr = ''
                 i = 0
@@ -2129,7 +2131,8 @@ def parse_internal(this_node, one_line_scope = False):
             elif node.expression.is_list:
                 type_name = 'List'
             node.add_vars = [scope.add_var(name_token.value(source), False, type_name, name_token)]
-            assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
+            if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)): # `poss_nbors = (x-1,y),(x-1,y+1)`
+                raise Error('expected end of statement', token)                                                      #                      ^
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
             if ((node.dest_expression.token_str() == 'Char'   and node.expression.token_str() == 'str')   # skip `Char = str` statement
@@ -2260,7 +2263,8 @@ def parse_internal(this_node, one_line_scope = False):
                 node.set_expression(node_expression)
                 if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
-            assert(token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)) # [-replace with `raise Error` with meaningful error message after first precedent of triggering this assert-]
+            if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)): # `(w, h) = int(w1), int(h1)`
+                raise Error('expected end of statement', token)                                                      #                  ^
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
 

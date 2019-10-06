@@ -615,3 +615,22 @@ scorelist : List[Tuple[float, Tuple[int, int]]] = []
 ((Int, Int), Int) b
 ((Int, (Int, Int)), Int) c
 [(Float, (Int, Int))] scorelist
+
+
+AB = 1
+CD = 2
+def f(i):
+    print(AB)
+    if i == AB:
+        return 1
+    elif i == CD:
+        return 2
+===
+V AB = 1
+V CD = 2
+F f(i)
+   print(:AB)
+   I i == :AB
+      R 1
+   E I i == :CD
+      R 2

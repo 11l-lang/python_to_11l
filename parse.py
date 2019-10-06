@@ -248,7 +248,7 @@ class SymbolNode:
         #     prev_token_end = c.token.end
         # return r
         if self.token.category == Token.Category.NAME:
-            if self.scope_prefix == ':' and ((self.parent and self.parent.function_call) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper())): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
+            if self.scope_prefix == ':' and ((self.parent and self.parent.function_call and self is self.parent.children[0]) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper())): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
                 return self.token_str()
             if self.token_str() == 'self' and (self.parent is None or (self.parent.symbol.id != '.' and self.parent.symbol.id != 'lambda')):
                 parent = self
@@ -402,7 +402,7 @@ class SymbolNode:
                             raise Error('to use `defaultdict` the type of dict keys must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
                         return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
-                                              + trans_type(self.children[1].to_str(), self.scope, self.children[1].token) + ']()'
+                                              + trans_type(self.children[1].token_str(), self.scope, self.children[1].token) + ']()'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
 
@@ -1168,6 +1168,11 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
     else_or_elif : ASTNode = None
 
+    def walk_expressions(self, f):
+        super().walk_expressions(f)
+        if self.else_or_elif is not None and isinstance(self.else_or_elif, ASTElseIf):
+            self.else_or_elif.walk_expressions(f)
+
     def walk_children(self, f):
         super().walk_children(f)
         if self.else_or_elif is not None:
@@ -1182,6 +1187,11 @@ class ASTElse(ASTNodeWithChildren):
 
 class ASTElseIf(ASTNodeWithChildren, ASTNodeWithExpression):
     else_or_elif : ASTNode = None
+
+    def walk_expressions(self, f):
+        super().walk_expressions(f)
+        if self.else_or_elif is not None and isinstance(self.else_or_elif, ASTElseIf):
+            self.else_or_elif.walk_expressions(f)
 
     def walk_children(self, f):
         super().walk_children(f)

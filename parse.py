@@ -405,6 +405,8 @@ class SymbolNode:
                                               + trans_type(self.children[1].token_str(), self.scope, self.children[1].token) + ']()'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
+                    if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randint':
+                        return 'random:(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':

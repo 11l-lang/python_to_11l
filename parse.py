@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'NotImplementedError', 'ValueError', 'IndexError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self
@@ -1728,6 +1728,24 @@ def parse_internal(this_node, one_line_scope = False):
         next_token()
         return token_value
 
+    def check_vars_defined(sn : SymbolNode):
+        if sn.token.category == Token.Category.NAME:
+            if sn.parent is None or sn.parent.symbol.id != '.' or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
+                if not sn.skip_find_and_get_prefix:
+                    sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token.value(source), sn.token)
+        else:
+            if sn.function_call:
+                check_vars_defined(sn.children[0])
+                for i in range(1, len(sn.children), 2):
+                    if sn.children[i+1] is None:
+                        check_vars_defined(sn.children[i])
+                    else:
+                        check_vars_defined(sn.children[i+1]) # checking of named arguments (sn.children[i]) is skipped
+            else:
+                for child in sn.children:
+                    if child is not None:
+                        check_vars_defined(child)
+
     while token is not None:
         if token.category == Token.Category.KEYWORD:
             global scope
@@ -1805,7 +1823,7 @@ def parse_internal(this_node, one_line_scope = False):
 
             elif token.value(source) == 'from':
                 next_token()
-                assert(token.value(source) in ('typing', 'functools', 'itertools', 'enum'))
+                assert(token.value(source) in ('typing', 'functools', 'itertools', 'enum', 'copy'))
                 next_token()
                 advance('import')
                 while True:
@@ -1877,7 +1895,9 @@ def parse_internal(this_node, one_line_scope = False):
 
                     if token.value(source) == '=':
                         next_token()
-                        default = expression().to_str()
+                        expr = expression()
+                        check_vars_defined(expr)
+                        default = expr.to_str()
                         was_default_argument = True
                     else:
                         if was_default_argument and node.first_named_only_argument is None:
@@ -2234,6 +2254,7 @@ def parse_internal(this_node, one_line_scope = False):
             if is_self:
                 node.parent = this_node.parent
                 this_node.parent.children.append(node)
+                node.walk_expressions(check_vars_defined)
                 continue
 
         elif token.category == Token.Category.DEDENT:
@@ -2280,28 +2301,12 @@ def parse_internal(this_node, one_line_scope = False):
                     node.set_dest_expression(node_expression.children[1])
                     node.parent = this_node.parent
                     this_node.parent.children.append(node)
+                    node.walk_expressions(check_vars_defined)
                     continue
                 elif ((node.expression.symbol.id == '[' and len(node.expression.children) == 0) # ] # skip `self.* = []` because `create_array({})` is meaningless
                    or (node.expression.symbol.id == '(' and len(node.expression.children) == 1 and node.expression.children[0].token_str() == 'set')): # ) # skip `self.* = set()`
                     continue
 
-        def check_vars_defined(sn : SymbolNode):
-            if sn.token.category == Token.Category.NAME:
-                if sn.parent is None or sn.parent.symbol.id != '.' or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
-                    if not sn.skip_find_and_get_prefix:
-                        sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token.value(source), sn.token)
-            else:
-                if sn.function_call:
-                    check_vars_defined(sn.children[0])
-                    for i in range(1, len(sn.children), 2):
-                        if sn.children[i+1] is None:
-                            check_vars_defined(sn.children[i])
-                        else:
-                            check_vars_defined(sn.children[i+1]) # checking of named arguments (sn.children[i]) is skipped
-                else:
-                    for child in sn.children:
-                        if child is not None:
-                            check_vars_defined(child)
         node.walk_expressions(check_vars_defined)
 
         node.parent = this_node

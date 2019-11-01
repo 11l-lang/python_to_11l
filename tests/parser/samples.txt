@@ -634,3 +634,23 @@ F f(i)
       R 1
    E I i == :CD
       R 2
+
+
+import random, math
+
+class Individual:
+    def __init__(self):
+        self.genome = [random.random() for i in range(10)]
+    def computeValuesGenome(self, xMin=0, xMax=math.pi):
+        pass
+===
+//import random, math
+
+T Individual
+   genome = (0.<10).map(i -> random:())
+   F ()
+   {
+   }
+   F computeValuesGenome(xMin = 0, xMax = math:pi)
+   {
+   }

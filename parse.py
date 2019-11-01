@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'NotImplementedError', 'ValueError', 'IndexError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self
@@ -1165,7 +1165,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             return ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni]) + "\n"
 
         return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' +
-            {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__add__':'+', '__sub__':'-', '__mul__':'*', '__str__':'String'}.get(self.function_name, self.function_name)
+            {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__eq__':'==', '__add__':'+', '__sub__':'-', '__mul__':'*', '__str__':'String'}.get(self.function_name, self.function_name)
             + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 
@@ -2140,6 +2140,7 @@ def parse_internal(this_node, one_line_scope = False):
             if ((node.dest_expression.token_str() == 'Char'   and node.expression.token_str() == 'str')   # skip `Char = str` statement
              or (node.dest_expression.token_str() == 'Byte'   and node.expression.token_str() == 'int')   # skip `Byte = int` statement
              or (node.dest_expression.token_str() == 'Int64'  and node.expression.token_str() == 'int')   # skip `Int64 = int` statement
+             or (node.dest_expression.token_str() == 'UInt64' and node.expression.token_str() == 'int')   # skip `UInt64 = int` statement
              or (node.dest_expression.token_str() == 'UInt32' and node.expression.token_str() == 'int')): # skip `UInt32 = int` statement
                 continue
 

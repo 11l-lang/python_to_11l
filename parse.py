@@ -406,7 +406,9 @@ class SymbolNode:
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randint':
-                        return 'random:(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'
+                        return 'random:(' + self.children[1].to_str() + ' .. ' + self.children[3].to_str() + ')'
+                    if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randrange':
+                        return 'random:(' + self.children[1].to_str() + (' .< ' + self.children[3].to_str() if len(self.children) == 5 else '') + ')'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -706,7 +708,7 @@ class SymbolNode:
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:sep': 'fs:path:sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir',
                     'os:mkdir': 'fs:create_dir', 'os:makedirs': 'fs:create_dirs', 'os:remove': 'fs:remove_file', 'os:rmdir': 'fs:remove_dir', 'os:rename': 'fs:rename',
                     'time:time': 'Time().unix_time', 'time:sleep': 'sleep', 'datetime:datetime': 'Time', 'datetime:date': 'Time', 'datetime:timedelta': 'TimeDelta', 're:compile': 're:',
-                    'random:randrange': 'random:', 'random:random': 'random:'}.get(r, r)
+                    'random:random': 'random:'}.get(r, r)
 
                 if self.children[0].symbol.id == '.' and self.children[0].children[0].scope_prefix == ':::':
                     if self.children[0].children[0].token_str() == 'datetime':

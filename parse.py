@@ -289,6 +289,8 @@ class SymbolNode:
                             number_with_separators = "'" + n[j-4:j] + number_with_separators
                             j -= 4
                         return sign + '0'*(4-j) + n[0:j] + number_with_separators
+            if n[-1] in 'jJ':
+                n = n[:-1] + 'i'
             return sign + n[i:].replace('_', "'") + ('o' if is_oct else 'b' if is_bin else '')
 
         if self.token.category == Token.Category.STRING_LITERAL:
@@ -417,6 +419,8 @@ class SymbolNode:
                     func_name = 'Int'
                 elif func_name == 'float':
                     func_name = 'Float'
+                elif func_name == 'complex':
+                    func_name = 'Complex'
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
                         parens = len(self.children[1].children) == 7 # if true, then this is a range with step
@@ -699,7 +703,7 @@ class SymbolNode:
                     return ':'*(c1ts != 'exit') + c1ts
 
                 if self.children[0].scope_prefix == ':::':
-                    if self.children[0].token_str() == 'math':
+                    if self.children[0].token_str() in ('math', 'cmath'):
                         c1 = self.children[1].to_str()
                         if c1 not in ('e', 'pi'):
                             if c1 == 'fabs': c1 = 'abs'
@@ -1020,7 +1024,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'Byte':'Byte', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File'}
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'Byte':'Byte', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File'}
 
 def trans_type(ty, scope, type_token):
     if ty[0] in '\'"':
@@ -1501,12 +1505,16 @@ def led(self, left):
     self.append_child(expression())
     if token.value(source) == ':':
         self.slicing = True
-        next_token() # [[[
+        next_token() # [[
         if token.value(source) != ']':
-            self.append_child(expression())
             if token.value(source) == ':':
+                self.children.append(None)
                 next_token()
-                if token.value(source) != ']':
+                self.append_child(expression())
+            else:
+                self.append_child(expression())
+                if token.value(source) == ':':
+                    next_token()
                     self.append_child(expression())
         else:
             self.children.append(None)
@@ -1769,7 +1777,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 're', 'random', 'collections'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 

@@ -228,6 +228,8 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                             if source[i+1:i+2] in '-+':
                                 i += 1
                         i += 1
+                    if source[i] in 'jJ':
+                        i += 1
                     if '_' in source[start:i] and not '.' in source[start:i]: # float numbers do not checked for a while
                         number = source[start:i].replace('_', '')
                         number_with_separators = ''

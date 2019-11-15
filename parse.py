@@ -379,6 +379,8 @@ class SymbolNode:
                     if self.children[0].children[1].token.value(source) == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'
+                    if self.children[0].children[1].token.value(source) == 'conjugate' and len(self.children) == 1: # `c.conjugate()` -> `conjugate(c)`
+                        return 'conjugate(' + self.children[0].children[0].to_str() + ')'
                     if self.children[0].children[1].token.value(source) == 'readlines': # `f.readlines()` -> `f.read_lines(1B)`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + ".read_lines(1B)"

@@ -270,3 +270,9 @@ self.i : int = 0
 
 x_in_list = []
 ^Error: please specify type of empty list
+
+
+# [
+s : str
+s[:3:10:2]
+       ^Error: expected `]`

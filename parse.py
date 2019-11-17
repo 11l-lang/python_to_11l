@@ -1497,18 +1497,8 @@ def led(self, left):
     if token.value(source) == ':':
         self.slicing = True
         self.children.append(None)
-        next_token()
-        if token.value(source) == ':':
-            self.children.append(None)
-            next_token() # [
-        if token.value(source) == ']': # for `dirs[:] = ...`
-            next_token()
-            return self
-    self.append_child(expression())
-    if token.value(source) == ':':
-        self.slicing = True
-        next_token() # [[
-        if token.value(source) != ']':
+        next_token() # [
+        if token.value(source) != ']': # for `arr[:]`
             if token.value(source) == ':':
                 self.children.append(None)
                 next_token()
@@ -1518,8 +1508,23 @@ def led(self, left):
                 if token.value(source) == ':':
                     next_token()
                     self.append_child(expression())
-        else:
-            self.children.append(None)
+    else:
+        self.append_child(expression())
+        if token.value(source) == ':':
+            self.slicing = True
+            next_token() # [[
+            if token.value(source) != ']':
+                if token.value(source) == ':':
+                    self.children.append(None)
+                    next_token()
+                    self.append_child(expression())
+                else:
+                    self.append_child(expression())
+                    if token.value(source) == ':':
+                        next_token()
+                        self.append_child(expression())
+            else:
+                self.children.append(None)
     advance(']')
     return self
 symbol('[').led = led

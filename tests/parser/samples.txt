@@ -239,22 +239,25 @@ s : str
 s[-2]
 s[:-1]
 s[1:]
-s[:1:]
+#s[:1:] # this does not make any sense — please write `s[:1]` instead
+s[:2]
 s[1:2]
 s[::2]
 s[1::2]
 s[3:10:2]
+s[:10:2]
 #s[3:10:] # this does not make any sense — please write `s[3:10]` instead
 ===
 String s
 s[(len)-2]
 s[0 .< (len)-1]
 s[1..]
-s[0.<1]
+s[0.<2]
 s[1.<2]
 s[(0..).step(2)]
 s[(1..).step(2)]
 s[(3.<10).step(2)]
+s[(0.<10).step(2)]
 
 
 class ASTAssignmentWithTypeHint:

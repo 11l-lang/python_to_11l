@@ -590,6 +590,8 @@ class SymbolNode:
                         return 'copy(' + c0 + ')'
                     if c0.startswith('bin(') and len(self.children) == 3 and self.children[1].token_str() == '2' and self.children[2] is None: # ) # `bin(x)[2:]` -> `bin(x)`
                         return c0
+                    if len(self.children) == 4 and self.children[1] is None and self.children[2] is None and self.children[3].symbol.id == '-' and len(self.children[3].children) == 1 and self.children[3].children[0].token_str() == '1': # replace `result[::-1]` with `reversed(result)`
+                        return 'reversed(' + c0 + ')'
                     def for_negative_bound(c):
                         child = self.children[c]
                         if child is None:

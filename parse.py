@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'hex', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self
@@ -588,6 +588,8 @@ class SymbolNode:
                     if len(self.children) == 2: # `a = b[:]` -> `a = copy(b)`
                         assert(self.children[1] is None)
                         return 'copy(' + c0 + ')'
+                    if c0.startswith('bin(') and len(self.children) == 3 and self.children[1].token_str() == '2' and self.children[2] is None: # ) # `bin(x)[2:]` -> `bin(x)`
+                        return c0
                     def for_negative_bound(c):
                         child = self.children[c]
                         if child is None:

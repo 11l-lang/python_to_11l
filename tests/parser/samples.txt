@@ -658,3 +658,18 @@ T Individual
    F computeValuesGenome(xMin = 0, xMax = math:pi)
    {
    }
+
+
+'%4f' % (1.5)
+'%8f' % (1.5)
+'%9f' % (1.5)
+'%9.5f' % (1.5)
+'%4.0f' % (1.5)
+'%2.f' % (1.5)
+===
+‘#.6’.format(1.5)
+‘#.6’.format(1.5)
+‘#2.6’.format(1.5)
+‘#3.5’.format(1.5)
+‘#4.0’.format(1.5)
+‘#2.0’.format(1.5)

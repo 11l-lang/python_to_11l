@@ -874,7 +874,11 @@ class SymbolNode:
                                     nfmtstr += '.'
                             elif fmtstr[i:i+1] == 'f':
                                 if before_period != 0:
-                                    nfmtstr += str(before_period - after_period - 1)
+                                    b = before_period
+                                    if after_period != 0:
+                                        b -= after_period + 1
+                                    if b > 1:
+                                        nfmtstr += str(b)
                                 nfmtstr += '.' + str(after_period)
                             elif fmtstr[i:i+1] == 'g':
                                 nfmtstr += str(before_period)

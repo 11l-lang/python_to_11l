@@ -673,3 +673,10 @@ T Individual
 ‘#3.5’.format(1.5)
 ‘#4.0’.format(1.5)
 ‘#2.0’.format(1.5)
+
+
+dates : List[datetime.date] = []
+times : List[datetime.datetime] = []
+===
+[Time] dates
+[Time] times

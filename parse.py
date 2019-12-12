@@ -238,6 +238,9 @@ class SymbolNode:
     def token_str(self):
         return self.token.value(source) if not self.token_str_override else self.token_str_override
 
+    def is_parentheses(self):
+        return self.symbol.id == '(' and not self.tuple and not self.function_call # )
+
     def to_str(self):
         # r = ''
         # prev_token_end = self.children[0].token.start
@@ -341,7 +344,7 @@ class SymbolNode:
                         return parenthesis[0] + self.children[0].to_str() + parenthesis[1]
                     if c01 == 'join' and not (self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'os'): # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
-                        return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' or self.children[1].function_call else '(' + self.children[1].to_str() + ')') + '.join(' + self.children[0].children[0].to_str() + ')'
+                        return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' or self.children[1].function_call else '(' + self.children[1].to_str() + ')') + '.join(' + (self.children[0].children[0].children[0].to_str() if self.children[0].children[0].is_parentheses() else self.children[0].children[0].to_str()) + ')'
                     if c01 == 'split' and len(self.children) == 5 and not (self.children[0].children[0].token_str() == 're'): # split() second argument [limit] in 11l is similar to JavaScript, Ruby and PHP, but not Python
                         return self.children[0].to_str() + '(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'
                     if c01 == 'split' and len(self.children) == 1:
@@ -474,6 +477,8 @@ class SymbolNode:
                     assert(len(self.children) == 3)
                     if isinstance(self.ast_parent, (ASTIf, ASTWhile)) if self.parent is None else self.parent.symbol.id == 'if': # `if len(arr)` -> `I !arr.empty`
                         return '!' + self.children[1].to_str() + '.empty'
+                    if len(self.children[1].children) == 2 and self.children[1].symbol.id not in ('.', '['): # ]
+                        return '(' + self.children[1].to_str() + ')' + '.len'
                     return self.children[1].to_str() + '.len'
                 elif func_name == 'ord': # replace `ord(ch)` with `ch.code`
                     assert(len(self.children) == 3)
@@ -618,12 +623,13 @@ class SymbolNode:
                 return 'Dict()'
 
             if self.is_set:
-                res = 'Set(['
+                is_not_for = self.children[0].symbol.id != 'for'
+                res = 'Set(' + '['*is_not_for
                 for i in range(len(self.children)):
                     res += self.children[i].to_str()
                     if i < len(self.children)-1:
                         res += ', '
-                return res + '])'
+                return res + ']'*is_not_for + ')'
 
             if self.children[-1].symbol.id == 'for':
                 assert(len(self.children) == 2)
@@ -1036,7 +1042,8 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'Byte':'Byte', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File'}
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'Byte':'Byte', 'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File',
+                       'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):
     if ty[0] in '\'"':
@@ -1046,9 +1053,6 @@ def trans_type(ty, scope, type_token):
     if t is not None:
         return t
     else:
-        if '.' in ty: # for `category : Token.Category`
-            return ty # [-TODO: generalize-]
-
         p = ty.find('[')
         if p != -1:
             assert(ty[-1] == ']')
@@ -1079,6 +1083,9 @@ def trans_type(ty, scope, type_token):
             return trans_type(ty[:p], scope, type_token) + '[' + types + ']'
 
         assert(ty.find(',') == -1)
+
+        if '.' in ty: # for `category : Token.Category`
+            return ty # [-TODO: generalize-]
 
         id = scope.find(ty)
         if id is None:
@@ -2252,7 +2259,9 @@ def parse_internal(this_node, one_line_scope = False):
                         type_args.append(type_arg)
                     else:
                         type_args.append(token.value(source))
-                        next_token() # [[
+                        next_token()
+                    while token.value(source) == '.': # for `datetime.date` in `dates : List[datetime.date] = []`
+                        type_args[-1] += '.' + expected_name('subtype name') # [[
                     if token.value(source) not in ',]':
                         raise Error('expected `,` or `]` in type\'s arguments list', token)
                     if token.value(source) == ',':

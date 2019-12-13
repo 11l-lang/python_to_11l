@@ -428,7 +428,7 @@ class SymbolNode:
                     func_name = 'Complex'
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
-                        parens = len(self.children[1].children) == 7 # if true, then this is a range with step
+                        parens = True#len(self.children[1].children) == 7 # if true, then this is a range with step
                         return 'Array' + '('*parens + self.children[1].to_str() + ')'*parens
                     assert(len(self.children) == 3)
                     if self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() in ('map', 'product', 'zip'): # )
@@ -504,7 +504,7 @@ class SymbolNode:
                     return 'T.base'
                 elif func_name == 'range':
                     assert(3 <= len(self.children) <= 7)
-                    parenthesis = ('(', ')') if self.parent is not None else ('', '')
+                    parenthesis = ('(', ')') if self.parent is not None and (self.parent.symbol.id == 'for' or (self.parent.function_call and self.parent.children[0].token_str() in ('map', 'filter', 'reduce'))) else ('', '')
                     if len(self.children) == 3: # replace `range(e)` with `(0 .< e)`
                         space = ' ' * range_need_space(self.children[1], None)
                         return parenthesis[0] + '0' + space + '.<' + space + self.children[1].to_str() + parenthesis[1]

@@ -511,9 +511,9 @@ class SymbolNode:
                     else:
                         rangestr = ' .< ' if range_need_space(self.children[1], self.children[3]) else '.<'
                         if len(self.children) == 5: # replace `range(b, e)` with `(b .< e)`
-                            if self.children[3].token.category == Token.Category.NUMERIC_LITERAL and self.children[3].token_str().isdigit() and \
-                               self.children[1].token.category == Token.Category.NUMERIC_LITERAL and self.children[1].token_str().isdigit(): # if `b` and `e` are numeric literals, then ...
-                                return parenthesis[0] + self.children[1].to_str() + '..' + str(int(self.children[3].token_str()) - 1) + parenthesis[1] # ... replace `range(b, e)` with `(b..e-1)`
+                            if self.children[3].token.category == Token.Category.NUMERIC_LITERAL and self.children[3].token_str().replace('_', '').isdigit() and \
+                               self.children[1].token.category == Token.Category.NUMERIC_LITERAL and self.children[1].token_str().replace('_', '').isdigit(): # if `b` and `e` are numeric literals, then ...
+                                return parenthesis[0] + self.children[1].token_str().replace('_', '') + '..' + str(int(self.children[3].token_str().replace('_', '')) - 1) + parenthesis[1] # ... replace `range(b, e)` with `(b..e-1)`
                             return parenthesis[0] + self.children[1].to_str() + rangestr + self.children[3].to_str() + parenthesis[1]
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
                             return '(' + self.children[1].to_str() + rangestr + self.children[3].to_str() + ').step(' + self.children[5].to_str() + ')'
@@ -1279,7 +1279,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
                 + ' ' * ((indent+1)*3) + 'I fs:is_dir(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
 
         if len(self.loop_variables) == 1:
-            r = 'L(' + self.loop_variables[0] + ') ' + (self.expression.children[1].token_str()
+            r = 'L(' + self.loop_variables[0] + ') ' + (self.expression.children[1].to_str()
                    if self.expression.function_call and self.expression.children[0].token_str() == 'range' and # `L(i) 100` instead of `L(i) 0.<100`
                  len(self.expression.children) == 3 and self.expression.children[1].token.category == Token.Category.NUMERIC_LITERAL else self.expression.to_str())
         elif self.expression.symbol.id == '(' and len(self.expression.children) == 1 and self.expression.children[0].symbol.id == '.' and len(self.expression.children[0].children) == 2 and self.expression.children[0].children[1].token_str() == 'items': # )

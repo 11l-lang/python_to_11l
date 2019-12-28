@@ -416,6 +416,8 @@ class SymbolNode:
                         return 'random:(' + self.children[1].to_str() + ' .. ' + self.children[3].to_str() + ')'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randrange':
                         return 'random:(' + self.children[1].to_str() + (' .< ' + self.children[3].to_str() if len(self.children) == 5 else '') + ')'
+                    if self.children[0].children[0].token_str() == 'itertools' and self.children[0].children[1].token_str() == 'count': # `itertools.count(1)` -> `1..`
+                        return self.children[1].to_str() + '..'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -1806,7 +1808,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'itertools'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 

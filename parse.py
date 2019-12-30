@@ -877,7 +877,8 @@ class SymbolNode:
                             if fmtstr[i:i+1] in ('d', 'i'):
                                 if before_period != 0:
                                     nfmtstr += str(before_period)
-                                nfmtstr += '.0'
+                                else:
+                                    nfmtstr += '.'#'.0' # `#.0` corresponds to `%.0f` rather than `%i` or `%d`, and `'%i' % (1.7)` = `1`, but `‘#.0’.format(1.7)` = `2`
                             elif fmtstr[i:i+1] == 's':
                                 if before_period != 0:
                                     nfmtstr += str(before_period)

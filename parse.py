@@ -349,6 +349,8 @@ class SymbolNode:
                         return self.children[0].to_str() + '(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'
                     if c01 == 'split' and len(self.children) == 1:
                         return self.children[0].to_str() + '_py()' # + '((‘ ’, "\\t", "\\r", "\\n"), group_delimiters\' 1B)'
+                    if c01 == 'is_integer' and len(self.children) == 1: # `x.is_integer()` -> `fract(x) == 0`
+                        return 'fract(' + self.children[0].children[0].to_str() + ') == 0'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha', 'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim'}.get(c01, '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         c00 = self.children[0].children[0].to_str()
@@ -379,12 +381,12 @@ class SymbolNode:
                        self.children[0].children[1].token_str() == 'read': # ) # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
                         assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
-                    if self.children[0].children[1].token.value(source) == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
+                    if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'
-                    if self.children[0].children[1].token.value(source) == 'conjugate' and len(self.children) == 1: # `c.conjugate()` -> `conjugate(c)`
+                    if c01 == 'conjugate' and len(self.children) == 1: # `c.conjugate()` -> `conjugate(c)`
                         return 'conjugate(' + self.children[0].children[0].to_str() + ')'
-                    if self.children[0].children[1].token.value(source) == 'readlines': # `f.readlines()` -> `f.read_lines(1B)`
+                    if c01 == 'readlines': # `f.readlines()` -> `f.read_lines(1B)`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + ".read_lines(1B)"
                     if self.children[0].children[0].token_str() == 're' and self.children[0].children[1].token_str() != 'compile': # `re.search('pattern', 'string')` -> `re:‘pattern’.search(‘string’)`
@@ -681,9 +683,9 @@ class SymbolNode:
 
             res = self.children[2].children[0].children[0].to_str() if self.children[2].symbol.id == '(' and len(self.children[2].children) == 1 and self.children[2].children[0].symbol.id == '.' and len(self.children[2].children[0].children) == 2 and self.children[2].children[0].children[1].token_str() == 'items' else self.children[2].to_str() # )
             if len(self.children) == 4:
-                res += '.filter' + '2'*self.children[1].tuple + '(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
+                res += '.filter' + (str(len(self.children[1].children)) if self.children[1].tuple else '') + '(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'
             if self.children[1].to_str() != self.children[0].to_str():
-                res +=    '.map' + '2'*self.children[1].tuple + '(' + self.children[1].to_str() + ' -> ' + self.children[0].to_str() + ')'
+                res +=    '.map' + (str(len(self.children[1].children)) if self.children[1].tuple else '') + '(' + self.children[1].to_str() + ' -> ' + self.children[0].to_str() + ')'
             return res
 
         elif self.symbol.id == 'not':
@@ -1677,6 +1679,11 @@ def led(self, left):
         scope.add_var(token.value(source))
         sn.append_child(tokensn)
         next_token()
+        if token.value(source) == ',':
+            next_token()
+            scope.add_var(token.value(source))
+            sn.append_child(tokensn)
+            next_token()
 
     scope = prev_scope
     advance('in')

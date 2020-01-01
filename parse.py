@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'dict', 'set', 'sorted', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self

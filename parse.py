@@ -1165,6 +1165,10 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         self.function_arguments = [arg.split('; ') for arg in d['function_arguments']]
 
     def to_str(self, indent):
+        if self.function_name == 'move' and type(self.parent) == ASTProgram:
+            assert(len(self.function_arguments) == 1)
+            return ''
+
         fargs = []
         for arg in self.function_arguments:
             farg = ''

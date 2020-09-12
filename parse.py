@@ -282,7 +282,10 @@ class SymbolNode:
                 i += 2
                 if is_hex:
                     n = n[i:].replace('_', '')
-                    if len(n) <= 4: # short hexadecimal number
+                    if len(n) <= 2: # ultrashort hexadecimal number
+                        n = '0'*(2-len(n)) + n
+                        return n[:1] + "'" + n[1:]
+                    elif len(n) <= 4: # short hexadecimal number
                         n = '0'*(4-len(n)) + n
                         return n[:2] + "'" + n[2:]
                     else:

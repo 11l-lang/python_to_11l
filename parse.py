@@ -341,7 +341,7 @@ class SymbolNode:
         if self.symbol.id == '(': # )
             if self.function_call:
                 if self.children[0].symbol.id == '.':
-                    c01 = self.children[0].children[1].token.value(source)
+                    c01 = self.children[0].children[1].token_str()
                     if self.children[0].children[0].symbol.id == '{' and c01 == 'get': # } # replace `{'and':'&', 'or':'|', 'in':'C'}.get(self.symbol.id, 'symbol-' + self.symbol.id)` with `(S .symbol.id {‘and’ {‘&’}; ‘or’ {‘|’}; ‘in’ {‘C’} E ‘symbol-’(.symbol.id)})`
                         parenthesis = ('(', ')') if self.parent is not None else ('', '')
                         return parenthesis[0] + self.children[0].to_str() + parenthesis[1]
@@ -1396,6 +1396,8 @@ def next_token():
                     key = '(literal)'
                 elif token.category == Token.Category.NAME:
                     key = '(name)'
+                    if token.value(source) in ('V', 'C', 'I', 'E', 'F', 'L', 'N', 'R', 'S', 'T', 'X', 'var', 'fn', 'loop', 'null', 'type', 'exception'):
+                        tokensn.token_str_override = '_' + token.value(source).lower() + '_'
                 elif token.category == Token.Category.CONSTANT:
                     key = '(constant)'
                 elif token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT):

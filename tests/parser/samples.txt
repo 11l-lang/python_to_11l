@@ -700,3 +700,10 @@ L(i) 700'000
 {
 }
 print(1..999)
+
+
+N = int(input())
+print(N)
+===
+V _n_ = Int(input())
+print(_n_)

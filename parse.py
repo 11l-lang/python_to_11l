@@ -251,7 +251,7 @@ class SymbolNode:
         #     prev_token_end = c.token.end
         # return r
         if self.token.category == Token.Category.NAME:
-            if self.scope_prefix == ':' and ((self.parent and self.parent.function_call and self is self.parent.children[0]) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper())): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
+            if self.scope_prefix == ':' and ((self.parent and self.parent.function_call and self is self.parent.children[0]) or (self.token_str()[0].isupper() and self.token_str() != self.token_str().upper()) or self.token_str() in python_types_to_11l): # global functions and types do not require prefix `:` because global functions and types are ok, but global variables are not so good and they should be marked with `:`
                 return self.token_str()
             if self.token_str() == 'self' and (self.parent is None or (self.parent.symbol.id != '.' and self.parent.symbol.id != 'lambda')):
                 parent = self
@@ -502,7 +502,7 @@ class SymbolNode:
                     assert(len(self.children) == 5)
                     b = self.children[3].symbol.id == 'if'
                     c1 = self.children[1].to_str()
-                    return '('*b + self.children[3].to_str() + ')'*b + '.' + func_name + '(' + {'int':'Int', 'float':'Float'}.get(c1, c1) + ')'
+                    return '('*b + self.children[3].to_str() + ')'*b + '.' + func_name + '(' + {'int':'Int', 'float':'Float', 'str':'String'}.get(c1, c1) + ')'
                 elif func_name == 'reduce':
                     if len(self.children) == 5: # replace `reduce(function, iterable)` with `iterable.reduce(function)`
                         return self.children[3].to_str() + '.reduce(' + self.children[1].to_str() + ')'

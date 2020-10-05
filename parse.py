@@ -501,7 +501,8 @@ class SymbolNode:
                 elif func_name in ('map', 'filter'): # replace `map(function, iterable)` with `iterable.map(function)`
                     assert(len(self.children) == 5)
                     b = self.children[3].symbol.id == 'if'
-                    return '('*b + self.children[3].to_str() + ')'*b + '.' + func_name + '(' + self.children[1].to_str() + ')'
+                    c1 = self.children[1].to_str()
+                    return '('*b + self.children[3].to_str() + ')'*b + '.' + func_name + '(' + {'int':'Int', 'float':'Float'}.get(c1, c1) + ')'
                 elif func_name == 'reduce':
                     if len(self.children) == 5: # replace `reduce(function, iterable)` with `iterable.reduce(function)`
                         return self.children[3].to_str() + '.reduce(' + self.children[1].to_str() + ')'

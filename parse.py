@@ -177,6 +177,7 @@ class SymbolNode:
     parent : 'SymbolNode' = None
     ast_parent : 'ASTNode'
     function_call = False
+    iterable_unpacking = False
     tuple   = False
     is_list = False
     is_set  = False
@@ -481,6 +482,8 @@ class SymbolNode:
                                 break
                 elif func_name == 'product':
                     func_name = 'cart_product'
+                elif func_name == 'print' and self.iterable_unpacking:
+                    func_name = 'print_elements'
 
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
@@ -1502,6 +1505,14 @@ def led(self, left):
     self.append_child(left) # (
     if token.value(source) != ')':
         while True:
+            if token.value(source) == '*': # >[https://stackoverflow.com/a/19525681/2692494 <- google:‘python iterable unpacking precedence’]:‘The unpacking `*` is not an operator; it's part of the call syntax.’
+                if len(self.children) != 1:
+                    raise Error('iterable unpacking is supported only in first agrument', token)
+                if not (left.token.category == Token.Category.NAME and left.token_str() == 'print'):
+                    raise Error('iterable unpacking is supported only for `print()` function', token)
+                self.iterable_unpacking = True
+                next_token()
+
             self.append_child(expression())
             if token.value(source) == '=':
                 next_token()

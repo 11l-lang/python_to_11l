@@ -276,3 +276,13 @@ x_in_list = []
 s : str
 s[:3:10:2]
        ^Error: expected `]`
+
+
+a = [1]
+print(' ', *a)
+           ^Error: iterable unpacking is supported only in first agrument
+
+
+a = [1]
+input(*a)
+      ^Error: iterable unpacking is supported only for `print()` function

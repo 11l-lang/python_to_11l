@@ -530,6 +530,60 @@ class SymbolNode:
                             return parenthesis[0] + self.children[1].to_str() + rangestr + self.children[3].to_str() + parenthesis[1]
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
                             return '(' + self.children[1].to_str() + rangestr + self.children[3].to_str() + ').step(' + self.children[5].to_str() + ')'
+                elif func_name == 'print':
+                    first_named_argument = len(self.children)
+                    for i in range(1, len(self.children), 2):
+                        if self.children[i+1] is not None:
+                            first_named_argument = i
+                            break
+
+                    sep = '‘ ’'
+                    for i in range(first_named_argument, len(self.children), 2):
+                        assert(self.children[i+1] is not None)
+                        if self.children[i].to_str() == 'sep':
+                            sep = self.children[i+1].to_str()
+                            break
+
+                    def surround_with_sep(s, before, after):
+                        if (sep in ('‘ ’', '‘’') # special case for ‘ ’ and ‘’
+                             or sep[0] == s[0]): # ‘`‘sep’‘str’‘sep’` -> `‘sepstrsep’`’|‘`"sep""str""sep"` -> `"sepstrsep"`’
+                            return s[0] + sep[1:-1]*before + s[1:-1] + sep[1:-1]*after + s[-1]
+                        else: # `"sep"‘str’"sep"`|`‘sep’"str"‘sep’`
+                            return sep*before + s + sep*after
+
+                    def parenthesize_if_needed(child):
+                        #if child.token.category in (Token.Category.NAME, Token.Category.NUMERIC_LITERAL) or child.symbol.id == '[': # ] # `print(‘Result: ’3)` is currently not supported in 11l
+                        if child.token.category == Token.Category.NAME or child.symbol.id == '[': # ]
+                            return child.to_str()
+                        else:
+                            return '(' + child.to_str() + ')'
+
+                    res = 'print('
+                    for i in range(1, first_named_argument, 2):
+                        if i == 1: # it's the first agrument
+                            if i == first_named_argument - 2: # it's the only argument — ‘no sep is required’/‘no parentheses are required’
+                                res += self.children[i].to_str()
+                            elif self.children[i].token.category == Token.Category.STRING_LITERAL:
+                                res += surround_with_sep(self.children[i].to_str(), False, True)
+                            else:
+                                res += parenthesize_if_needed(self.children[i])
+                        else:
+                            if self.children[i].token.category == Token.Category.STRING_LITERAL:
+                                if self.children[i-2].token.category == Token.Category.STRING_LITERAL:
+                                    raise Error('consecutive string literals in `print()` are not supported', self.children[i].token)
+                                res += surround_with_sep(self.children[i].to_str(), True, i != first_named_argument - 2)
+                            else:
+                                if self.children[i-2].token.category != Token.Category.STRING_LITERAL:
+                                    res += sep
+                                res += parenthesize_if_needed(self.children[i])
+
+                    for i in range(first_named_argument, len(self.children), 2):
+                        if self.children[i].to_str() != 'sep':
+                            if len(res) > len('print('): # )
+                                res += ', '
+                            res += self.children[i].to_str() + "' " + self.children[i+1].to_str()
+
+                    return res + ')'
                 else:
                     if ':' in func_name:
                         colon_pos = func_name.rfind(':')

@@ -286,3 +286,7 @@ print(' ', *a)
 a = [1]
 input(*a)
       ^Error: iterable unpacking is supported only for `print()` function
+
+
+print('re', 'sult')
+            ^Error: consecutive string literals in `print()` are not supported

@@ -707,3 +707,65 @@ print(N)
 ===
 V _n_ = Int(input())
 print(_n_)
+
+
+(h, m) = (12, 5)
+print('Hour:', h, 'minute:', m)
+print('Hour: ', h, ', minute: ', m, sep = '')
+print('Hour and min:', h, m)
+r = 1
+print('Result:', r)
+print('Result:', r, sep = ' ')
+print('Result:', r, sep = " ")
+print('Result:', r, sep = "\t")
+print('Result:', r, '.', sep = "\t")
+print("\\Result:", r)
+print("\\Result:", r, sep = ' ')
+print("\\Result:", r, sep = " ")
+print("\\Result:", r, sep = "\t")
+===
+V (h, m) = (12, 5)
+print(‘Hour: ’h‘ minute: ’m)
+print(‘Hour: ’h‘, minute: ’m)
+print(‘Hour and min: ’h‘ ’m)
+V r = 1
+print(‘Result: ’r)
+print(‘Result: ’r)
+print(‘Result: ’r)
+print(‘Result:’"\t"r)
+print(‘Result:’"\t"r"\t"‘.’)
+print("\\Result: "r)
+print("\\Result: "r)
+print("\\Result: "r)
+print("\\Result:\t"r)
+
+
+r = 1
+arr = [2]
+print('Result:', r)
+print('Result:', arr[0])
+print('Result:', 3)
+print('Result:', r + 1)
+print('Result: ', r + 1, end = '', sep = '')
+print('Result: ', r + 1, sep = '', end = '')
+print(end = 's')
+(h, m, s, a, b) = (12, 5, 30, 50, 175)
+print(h, m, s)
+print(a, b % 100)
+print(h, ':', m // 10, m % 10, ':', s // 10, s % 10, sep = '')
+print(h, ':', m // 10, m % 10, ':', s // 10, s % 10)
+===
+V r = 1
+V arr = [2]
+print(‘Result: ’r)
+print(‘Result: ’arr[0])
+print(‘Result: ’(3))
+print(‘Result: ’(r + 1))
+print(‘Result: ’(r + 1), end' ‘’)
+print(‘Result: ’(r + 1), end' ‘’)
+print(end' ‘s’)
+V (h, m, s, a, b) = (12, 5, 30, 50, 175)
+print(h‘ ’m‘ ’s)
+print(a‘ ’(b % 100))
+print(h‘:’(m I/ 10)‘’(m % 10)‘:’(s I/ 10)‘’(s % 10))
+print(h‘ : ’(m I/ 10)‘ ’(m % 10)‘ : ’(s I/ 10)‘ ’(s % 10))

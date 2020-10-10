@@ -395,6 +395,9 @@ class SymbolNode:
                     if c01 == 'readlines': # `f.readlines()` -> `f.read_lines(1B)`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + ".read_lines(1B)"
+                    if c01 == 'readline': # `f.readline()` -> `f.read_line(1B)`
+                        assert(len(self.children) == 1)
+                        return self.children[0].children[0].to_str() + ".read_line(1B)"
                     if self.children[0].children[0].token_str() == 're' and self.children[0].children[1].token_str() != 'compile': # `re.search('pattern', 'string')` -> `re:‘pattern’.search(‘string’)`
                         c1_in_braces_if_needed = self.children[1].to_str()
                         if self.children[1].token.category != Token.Category.STRING_LITERAL:

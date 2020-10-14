@@ -769,3 +769,12 @@ print(h‘ ’m‘ ’s)
 print(a‘ ’(b % 100))
 print(h‘:’(m I/ 10)‘’(m % 10)‘:’(s I/ 10)‘’(s % 10))
 print(h‘ : ’(m I/ 10)‘ ’(m % 10)‘ : ’(s I/ 10)‘ ’(s % 10))
+
+
+primes = [True] * 10
+primes[0] = primes[1] = False
+primes[0] = primes[1] = primes[2] = False
+===
+V primes = [1B] * 10
+primes[0] = primes[1] = 0B
+primes[0] = primes[1] = primes[2] = 0B

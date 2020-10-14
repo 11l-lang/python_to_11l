@@ -1070,9 +1070,11 @@ class ASTExprAssignment(ASTNodeWithExpression):
     add_vars : List[bool]
     is_tuple_assign_expression = False
     dest_expression : SymbolNode
+    additional_dest_expressions : List[SymbolNode]
 
-    # def __init__(self):
+    def __init__(self):
     #     self.add_vars = [] # this is not necessary
+        self.additional_dest_expressions = []
 
     def set_dest_expression(self, dest_expression):
         self.dest_expression = dest_expression
@@ -1083,7 +1085,10 @@ class ASTExprAssignment(ASTNodeWithExpression):
             assert(len(self.add_vars) == 1 and self.add_vars[0] and not self.is_tuple_assign_expression)
             return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
         if self.is_tuple_assign_expression or not any(self.add_vars):
-            return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+            r = ' ' * (indent*3) + self.dest_expression.to_str()
+            for ade in self.additional_dest_expressions:
+                r += ' = ' + ade.to_str()
+            return r + ' = ' + self.expression.to_str() + "\n"
         if all(self.add_vars):
             return ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
@@ -2413,7 +2418,15 @@ def parse_internal(this_node, one_line_scope = False):
                     node.add_vars = [False]
                 node.set_dest_expression(node_expression)
                 next_token()
-                node.set_expression(expression())
+                while True:
+                    expr = expression()
+                    if token is not None and token.value(source) == '=':
+                        expr.ast_parent = node
+                        node.additional_dest_expressions.append(expr)
+                        next_token()
+                    else:
+                        node.set_expression(expr)
+                        break
             else:
                 node = ASTExpression()
                 node.set_expression(node_expression)

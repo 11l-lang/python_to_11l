@@ -357,7 +357,10 @@ class SymbolNode:
                         return 'fract(' + self.children[0].children[0].to_str() + ') == 0'
                     if c01 == 'bit_length' and len(self.children) == 1: # `x.bit_length()` -> `bit_length(x)`
                         return 'bit_length(' + self.children[0].children[0].to_str() + ')'
-                    repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi', 'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha', 'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim'}.get(c01, '')
+                    repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi',
+                            'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha',
+                            'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim',
+                            'appendleft':'append_left', 'extendleft':'extend_left', 'popleft':'pop_left'}.get(c01, '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         c00 = self.children[0].children[0].to_str()
                         if repl == 'uppercase' and c00.endswith('[2..]') and self.children[0].children[0].children[0].symbol.id == '(' and self.children[0].children[0].children[0].children[0].token_str() == 'hex': # ) # `hex(x)[2:].upper()` -> `hex(x)`
@@ -416,11 +419,17 @@ class SymbolNode:
                         return 're:' + c1_in_braces_if_needed + '.' + {'fullmatch': 'match', 'findall': 'find_strings', 'finditer': 'find_matches'}.get(c0c1, c0c1) + '(' + self.children[3].to_str() + ')'
                     if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'defaultdict': # `collections.defaultdict(ValueType) # KeyType` -> `DefaultDict[KeyType, ValueType]()`
                         assert(len(self.children) == 3)
-                        if source[self.children[1].token.end + 2] != '#':
+                        if source[self.children[1].token.end + 2 : self.children[1].token.end + 3] != '#':
                             raise Error('to use `defaultdict` the type of dict keys must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
                         return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
                                               + trans_type(self.children[1].token_str(), self.scope, self.children[1].token) + ']()'
+                    if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'deque': # `collections.deque() # ValueType` -> `Deque[ValueType]()`
+                        assert(len(self.children) == 1)
+                        if source[self.token.end + 2 : self.token.end + 3] != '#':
+                            raise Error('to use `deque` the type of deque values must be specified in the comment', self.children[0].children[1].token)
+                        sl = slice(self.token.end + 3, source.find("\n", self.token.end + 3))
+                        return 'Deque[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randint':

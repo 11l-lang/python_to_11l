@@ -914,6 +914,11 @@ class SymbolNode:
                 nfmtstr = ''
                 i = 0
                 while i < len(fmtstr):
+                    if fmtstr[i] == '#':
+                        nfmtstr += '##'
+                        i += 1
+                        continue
+
                     fmtchr = fmtstr[i+1:i+2]
                     if fmtstr[i] == '%':
                         if fmtchr == '%':

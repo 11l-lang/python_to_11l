@@ -622,7 +622,7 @@ class SymbolNode:
                         if self.children[i+1] is None:
                             if f_node is not None:
                                 arg_type_name = f_node.function_arguments[i//2 + int(func_name.startswith('.'))][2]
-                                if arg_type_name.startswith(('List[', 'Dict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')): # ]]
+                                if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')): # ]]]
                                     res += '&'
                             res += self.children[i].to_str()
                         else:
@@ -1104,6 +1104,9 @@ class ASTExprAssignment(ASTNodeWithExpression):
                 r += ' = ' + ade.to_str()
             return r + ' = ' + self.expression.to_str() + "\n"
         if all(self.add_vars):
+            if self.expression.function_call and self.expression.children[0].token_str() == 'ref':
+                assert(len(self.expression.children) == 3)
+                return ' ' * (indent*3) + 'V& ' + self.dest_expression.to_str() + ' = ' + self.expression.children[1].to_str() + "\n"
             return ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
         assert(self.dest_expression.tuple and len(self.dest_expression.children) == len(self.add_vars))
@@ -1251,7 +1254,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         self.function_arguments = [arg.split('; ') for arg in d['function_arguments']]
 
     def to_str(self, indent):
-        if self.function_name == 'move' and type(self.parent) == ASTProgram:
+        if self.function_name in ('move', 'copy', 'ref') and type(self.parent) == ASTProgram:
             assert(len(self.function_arguments) == 1)
             return ''
 
@@ -1267,7 +1270,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 if default_value == 'N':
                     farg += '?'
                 farg += ' '
-                if ty.startswith(('Array[', '[', 'Dict[')): # ]]]
+                if ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')): # ]]]]
                     farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append((farg, arg[2] != ''))

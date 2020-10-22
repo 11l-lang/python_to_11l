@@ -1425,6 +1425,11 @@ class ASTExceptionCatch(ASTNodeWithChildren):
         return self.children_to_str(indent, 'X.catch' + (' ' + self.exception_object_type if self.exception_object_type != '' else '')
                                                       + (' ' + self.exception_object_name if self.exception_object_name != '' else ''))
 
+class ASTDel(ASTNodeWithExpression):
+    def to_str(self, indent):
+        assert(self.expression.slicing and len(self.expression.children) == 3)
+        return ' ' * (indent*3) + self.expression.children[0].to_str() + '.del(' + self.expression.children[1].to_str() + ', ' + self.expression.children[2].to_str() + ")\n"
+
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None
     base_class_node : 'ASTClassDefinition' = None
@@ -2282,6 +2287,13 @@ def parse_internal(this_node, one_line_scope = False):
 
                 new_scope(node)
                 scope = prev_scope
+
+            elif token.value(source) == 'del':
+                node = ASTDel()
+                next_token()
+                node.set_expression(expression())
+                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                    next_token()
 
             else:
                 raise Error('unrecognized statement started with keyword', token)

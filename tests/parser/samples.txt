@@ -778,3 +778,10 @@ primes[0] = primes[1] = primes[2] = False
 V primes = [1B] * 10
 primes[0] = primes[1] = 0B
 primes[0] = primes[1] = primes[2] = 0B
+
+
+arr = [1, 2, 3, 4]
+del arr[2:4]
+===
+V arr = [1, 2, 3, 4]
+arr.del(2, 4)

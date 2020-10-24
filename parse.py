@@ -1390,7 +1390,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
         r = self.children_to_str(indent, r)
 
         if self.was_no_break is not None:
-            r += self.was_no_break.children_to_str(indent + 1, 'L.was_no_break')
+            r += self.was_no_break.children_to_str(indent, 'L.was_no_break')
 
         return r
 

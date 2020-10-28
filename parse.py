@@ -1177,6 +1177,10 @@ def trans_type(ty, scope, type_token):
                 i += 1
             if ty.startswith('Tuple['): # ]
                 return '(' + types + ')'
+            if ty.startswith('Dict['): # ]
+                types_list = types.split(', ')
+                assert(len(types_list) == 2)
+                return '[' + types_list[0] + ' = ' + types_list[1] + ']'
             return trans_type(ty[:p], scope, type_token) + '[' + types + ']'
 
         assert(ty.find(',') == -1)

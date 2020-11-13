@@ -1488,7 +1488,7 @@ def next_token():
                     key = '(literal)'
                 elif token.category == Token.Category.NAME:
                     key = '(name)'
-                    if token.value(source) in ('V', 'C', 'I', 'E', 'F', 'L', 'N', 'R', 'S', 'T', 'X', 'var', 'fn', 'loop', 'null', 'type', 'exception'):
+                    if token.value(source) in ('V', 'C', 'I', 'E', 'F', 'L', 'N', 'R', 'S', 'T', 'X', 'var', 'fn', 'loop', 'null', 'type', 'exception', 'sign'):
                         tokensn.token_str_override = '_' + token.value(source).lower() + '_'
                 elif token.category == Token.Category.CONSTANT:
                     key = '(constant)'

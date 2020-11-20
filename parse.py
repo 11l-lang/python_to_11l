@@ -1920,7 +1920,8 @@ def parse_internal(this_node, one_line_scope = False):
             global scope
 
             if token.value(source) == 'import':
-                assert(type(this_node) == ASTProgram)
+                if type(this_node) != ASTProgram:
+                    raise Error('only global import statements are supported', token)
                 node = ASTImport()
                 next_token()
                 while True:

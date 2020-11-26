@@ -1748,7 +1748,7 @@ def nud(self):
             if token.category != Token.Category.NAME:
                 raise Error('expected an argument name', token)
             tokensn.scope = scope
-            scope.add_var(token.value(source))
+            scope.add_var(tokensn.token_str())
             self.append_child(tokensn)
             next_token()
             if token.value(source) == '=':
@@ -1783,7 +1783,7 @@ def led(self, left):
                 set_scope_recursive(child)
     set_scope_recursive(left)
     tokensn.scope = scope
-    scope.add_var(token.value(source))
+    scope.add_var(tokensn.token_str())
 
     self.append_child(left)
     self.append_child(tokensn)
@@ -1796,12 +1796,12 @@ def led(self, left):
         sn.append_child(self.children.pop())
         self.append_child(sn)
         next_token()
-        scope.add_var(token.value(source))
+        scope.add_var(tokensn.token_str())
         sn.append_child(tokensn)
         next_token()
         if token.value(source) == ',':
             next_token()
-            scope.add_var(token.value(source))
+            scope.add_var(tokensn.token_str())
             sn.append_child(tokensn)
             next_token()
 
@@ -1901,7 +1901,7 @@ def parse_internal(this_node, one_line_scope = False):
         if sn.token.category == Token.Category.NAME:
             if sn.parent is None or sn.parent.symbol.id != '.' or sn is sn.parent.children[0]: # in `a.b` only `a` [first child] is checked
                 if not sn.skip_find_and_get_prefix:
-                    sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token.value(source), sn.token)
+                    sn.scope_prefix = sn.scope.find_and_get_prefix(sn.token_str(), sn.token)
         else:
             if sn.function_call:
                 check_vars_defined(sn.children[0])
@@ -2052,7 +2052,7 @@ def parse_internal(this_node, one_line_scope = False):
                         continue
                     if token.category != Token.Category.NAME:
                         raise Error('expected function\'s argument name', token)
-                    func_arg_name = token.value(source)
+                    func_arg_name = tokensn.token_str()
                     next_token()
                     type_ = ''
                     if token.value(source) == ':': # this is a type hint
@@ -2191,13 +2191,13 @@ def parse_internal(this_node, one_line_scope = False):
                 scope = Scope(None)
                 scope.parent = prev_scope
 
-                node.loop_variables = [token.value(source)]
+                node.loop_variables = [tokensn.token_str()]
                 scope.add_var(node.loop_variables[0], True)
                 next_token()
                 while token.value(source) == ',':
                     next_token()
-                    node.loop_variables.append(token.value(source))
-                    scope.add_var(token.value(source), True)
+                    node.loop_variables.append(tokensn.token_str())
+                    scope.add_var(tokensn.token_str(), True)
                     next_token()
                 advance('in')
                 node.set_expression(expression())
@@ -2291,7 +2291,7 @@ def parse_internal(this_node, one_line_scope = False):
                         advance('as')
                         if token.category != Token.Category.NAME:
                             raise Error('expected exception object name', token)
-                        node.exception_object_name = token.value(source)
+                        node.exception_object_name = tokensn.token_str()
                         scope.add_var(node.exception_object_name, True)
                         next_token()
                 else:
@@ -2313,6 +2313,7 @@ def parse_internal(this_node, one_line_scope = False):
 
         elif token.category == Token.Category.NAME and peek_token().value(source) == '=':
             name_token = token
+            name_token_str = tokensn.token_str()
             node = ASTExprAssignment()
             node.set_dest_expression(tokensn)
             next_token()
@@ -2329,7 +2330,7 @@ def parse_internal(this_node, one_line_scope = False):
                 type_name = 'str'
             elif node.expression.is_list:
                 type_name = 'List'
-            node.add_vars = [scope.add_var(name_token.value(source), False, type_name, name_token)]
+            node.add_vars = [scope.add_var(name_token_str, False, type_name, name_token)]
             if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)): # `poss_nbors = (x-1,y),(x-1,y+1)`
                 raise Error('expected end of statement', token)                                                      #                      ^
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
@@ -2351,7 +2352,7 @@ def parse_internal(this_node, one_line_scope = False):
                 next_token()
                 next_token()
             name_token = token
-            var = token.value(source)
+            var = tokensn.token_str()
             next_token()
             advance(':')
             if token.category not in (Token.Category.NAME, Token.Category.STRING_LITERAL):

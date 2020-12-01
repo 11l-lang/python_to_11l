@@ -1478,7 +1478,7 @@ class Error(Exception):
         self.pos = token.start
         self.end = token.end
 
-def next_token():
+def next_token(): # why ‘next_token’: >[https://youtu.be/Nlqv6NtBXcA?t=1203]:‘we'll have an advance method which will fetch the next token’
     global token, tokeni, tokensn
     if token is None and tokeni != -1:
         raise Error('no more tokens', Token(len(source), len(source), Token.Category.STATEMENT_SEPARATOR))

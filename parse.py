@@ -236,6 +236,9 @@ class SymbolNode:
 
         return self.children[-1].rightmost()
 
+    def left_to_right_token(self):
+        return Token(self.leftmost(), self.rightmost(), Token.Category.NAME)
+
     def token_str(self):
         return self.token.value(source) if not self.token_str_override else self.token_str_override
 
@@ -1106,6 +1109,14 @@ class ASTExprAssignment(ASTNodeWithExpression):
         if type(self.parent) == ASTClassDefinition:
             assert(len(self.add_vars) == 1 and self.add_vars[0] and not self.is_tuple_assign_expression)
             return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+
+        if self.dest_expression.slicing:
+            s = self.dest_expression.to_str() # [
+            if s.endswith(']') and self.expression.function_call and self.expression.children[0].token_str() == 'reversed' and self.expression.children[1].to_str() == s:
+                l = len(self.dest_expression.children[0].to_str())
+                return ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1]  + ')'
+            raise Error('slice assignment is not supported', self.dest_expression.left_to_right_token())
+
         if self.is_tuple_assign_expression or not any(self.add_vars):
             r = ' ' * (indent*3) + self.dest_expression.to_str()
             for ade in self.additional_dest_expressions:

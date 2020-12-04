@@ -528,7 +528,7 @@ class SymbolNode:
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[3].to_str()
                 elif func_name in ('map', 'filter'): # replace `map(function, iterable)` with `iterable.map(function)`
                     assert(len(self.children) == 5)
-                    b = self.children[3].symbol.id == 'if'
+                    b = len(self.children[3].children) > 1 and self.children[3].symbol.id not in ('(', '[') # )]
                     c1 = self.children[1].to_str()
                     return '('*b + self.children[3].to_str() + ')'*b + '.' + func_name + '(' + {'int':'Int', 'float':'Float', 'str':'String'}.get(c1, c1) + ')'
                 elif func_name == 'reduce':

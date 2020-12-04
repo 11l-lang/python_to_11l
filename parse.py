@@ -456,6 +456,8 @@ class SymbolNode:
                 elif func_name == 'int':
                     func_name = 'Int'
                 elif func_name == 'float':
+                    if len(self.children) == 3 and self.children[1].token.category == Token.Category.STRING_LITERAL and self.children[1].token_str()[1:-1].lower() in ('infinity', 'inf'):
+                        return 'Float.infinity'
                     func_name = 'Float'
                 elif func_name == 'complex':
                     func_name = 'Complex'

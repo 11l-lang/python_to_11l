@@ -930,8 +930,7 @@ class SymbolNode:
             elif self.symbol.id in ('==', '!=') and self.children[0].function_call and self.children[0].children[0].token_str() == 'id' and self.children[1].function_call and self.children[1].children[0].token_str() == 'id': # replace `id(a) == id(b)` with `&a == &b`
                 return '&' + self.children[0].children[1].token_str() + ' ' + self.symbol.id + ' &' + self.children[1].children[1].token_str()
             elif self.symbol.id == '%' and self.children[0].token.category == Token.Category.STRING_LITERAL:
-                if self.children[1].symbol.id != '(':#self.children[1].tuple)
-                    raise Error('please add parentheses around `' + self.children[1].to_str() + '`', self.children[1].token)
+                add_parentheses = self.children[1].symbol.id != '(' or self.children[1].function_call # )
                 fmtstr = self.children[0].to_str()
                 nfmtstr = ''
                 i = 0
@@ -1000,7 +999,7 @@ class SymbolNode:
 
                     nfmtstr += fmtstr[i]
                     i += 1
-                return nfmtstr + '.format' + self.children[1].to_str()
+                return nfmtstr + '.format' + '('*add_parentheses + self.children[1].to_str() + ')'*add_parentheses
             else:
                 return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '//=':'I/=', '**':'^', '**=':'^=', '^':'(+)', '^=':'(+)=', '|':'[|]', '|=':'[|]=', '&':'[&]', '&=':'[&]='}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:

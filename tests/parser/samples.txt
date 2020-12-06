@@ -151,7 +151,7 @@ T ASTNodeWithChildren
 [1, 2]
 
 
-def sign(x):
+def sgn(x):
     if x < 0:
         return -1
     elif x > 0:
@@ -159,7 +159,7 @@ def sign(x):
     else:
         return 0
 ===
-F sign(x)
+F sgn(x)
    I x < 0
       R -1
    E I x > 0
@@ -785,3 +785,12 @@ del arr[2:4]
 ===
 V arr = [1, 2, 3, 4]
 arr.del(2, 4)
+
+
+def fn():
+    return 1
+print(fn())
+===
+F _fn_()
+   R 1
+print(_fn_())

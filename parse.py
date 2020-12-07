@@ -1176,19 +1176,19 @@ def trans_type(ty, scope, type_token):
             i = p + 1
             s = i
             nesting_level = 0
-            types = ''
+            types = []
             while True:
                 if ty[i] == '[':
                     nesting_level += 1
                 elif ty[i] == ']':
                     if nesting_level == 0:
                         assert(i == len(ty)-1)
-                        types += trans_type(ty[s:i], scope, type_token)
+                        types.append(trans_type(ty[s:i], scope, type_token))
                         break
                     nesting_level -= 1
                 elif ty[i] == ',':
                     if nesting_level == 0: # ignore inner commas
-                        types += trans_type(ty[s:i], scope, type_token) + ', '
+                        types.append(trans_type(ty[s:i], scope, type_token))
                         i += 1
                         while ty[i] == ' ':
                             i += 1
@@ -1196,12 +1196,11 @@ def trans_type(ty, scope, type_token):
                         #continue # this is not necessary here
                 i += 1
             if ty.startswith('Tuple['): # ]
-                return '(' + types + ')'
+                return '(' + ', '.join(types) + ')'
             if ty.startswith('Dict['): # ]
-                types_list = types.split(', ')
-                assert(len(types_list) == 2)
-                return '[' + types_list[0] + ' = ' + types_list[1] + ']'
-            return trans_type(ty[:p], scope, type_token) + '[' + types + ']'
+                assert(len(types) == 2)
+                return '[' + types[0] + ' = ' + types[1] + ']'
+            return trans_type(ty[:p], scope, type_token) + '[' + ', '.join(types) + ']'
 
         assert(ty.find(',') == -1)
 

@@ -794,3 +794,8 @@ print(fn())
 F _fn_()
    R 1
 print(_fn_())
+
+
+cache : Dict[Tuple[int, int], Tuple[int, List[Tuple[int, str]]]] = {}
+===
+[(Int, Int) = (Int, [(Int, String)])] cache

@@ -634,8 +634,9 @@ class SymbolNode:
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
                             if f_node is not None:
-                                arg_type_name = f_node.function_arguments[i//2 + int(func_name.startswith('.'))][2]
-                                if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')): # ]]]
+                                fargs = f_node.function_arguments[i//2 + int(func_name.startswith('.'))]
+                                arg_type_name = fargs[2]
+                                if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or fargs[3] == '&': # ]]]
                                     res += '&'
                             res += self.children[i].to_str()
                         else:
@@ -1254,7 +1255,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
     function_return_type : str = ''
     is_const = False
-    function_arguments : List[Tuple[str, str, str]]# = [] # (arg_name, default_value, type_name)
+    function_arguments : List[Tuple[str, str, str, str]]# = [] # (arg_name, default_value, type_name, qualifier)
     first_named_only_argument = None
     class VirtualCategory(IntEnum):
         NO = 0
@@ -1292,8 +1293,9 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 farg += ty
                 if default_value == 'N':
                     farg += '?'
+                    assert(arg[3] == '')
                 farg += ' '
-                if ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')): # ]]]]
+                if ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) or arg[3] == '&': # ]]]]
                     farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append((farg, arg[2] != ''))
@@ -2066,10 +2068,13 @@ def parse_internal(this_node, one_line_scope = False):
                     func_arg_name = tokensn.token_str()
                     next_token()
                     type_ = ''
+                    qualifier = ''
                     if token.value(source) == ':': # this is a type hint
                         next_token()
                         if token.category == Token.Category.STRING_LITERAL:
                             type_ = token.value(source)[1:-1]
+                            if token.value(source)[0] == '"': # `def insert(i, n : "Node"):` -> `F insert(i, Node &n)`
+                                qualifier = '&'
                             next_token()
                         else:
                             type_ = advance_type()
@@ -2084,7 +2089,7 @@ def parse_internal(this_node, one_line_scope = False):
                         if was_default_argument and node.first_named_only_argument is None:
                             raise Error('non-default argument follows default argument', tokens[tokeni-1])
                         default = ''
-                    node.function_arguments.append((func_arg_name, default, type_)) # ((
+                    node.function_arguments.append((func_arg_name, default, type_, qualifier)) # ((
                     if token.value(source) not in ',)':
                         raise Error('expected `,` or `)` in function\'s arguments list', token)
                     if token.value(source) == ',':
@@ -2716,7 +2721,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                         detect_arguments_modification(child)
                         for farg in found:
                             fargi = fargs.index(farg)
-                            child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2])
+                            child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2], child.function_arguments[fargi][3])
 
                 index += 1
 

@@ -1095,6 +1095,7 @@ class ASTExpression(ASTNodeWithExpression):
 
 class ASTExprAssignment(ASTNodeWithExpression):
     add_vars : List[bool]
+    drop_list = False
     is_tuple_assign_expression = False
     dest_expression : SymbolNode
     additional_dest_expressions : List[SymbolNode]
@@ -1116,8 +1117,11 @@ class ASTExprAssignment(ASTNodeWithExpression):
             s = self.dest_expression.to_str() # [
             if s.endswith(']') and self.expression.function_call and self.expression.children[0].token_str() == 'reversed' and self.expression.children[1].to_str() == s:
                 l = len(self.dest_expression.children[0].to_str())
-                return ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1]  + ')'
+                return ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1]  + ")\n"
             raise Error('slice assignment is not supported', self.dest_expression.left_to_right_token())
+
+        if self.drop_list:
+            return ' ' * (indent*3) + self.dest_expression.to_str() + ".drop()\n"
 
         if self.is_tuple_assign_expression or not any(self.add_vars):
             r = ' ' * (indent*3) + self.dest_expression.to_str()
@@ -2335,8 +2339,6 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             next_token()
             node.set_expression(expression())
-            if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
-                raise Error('please specify type of empty list', Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME))
             if node.expression.symbol.id == '.' and len(node.expression.children) == 2 and node.expression.children[1].token_str().isupper(): # replace `category = Token.Category.NAME` with `category = NAME`
                 node.set_expression(node.expression.children[1])
                 node.expression.parent = None
@@ -2347,6 +2349,10 @@ def parse_internal(this_node, one_line_scope = False):
             elif node.expression.is_list:
                 type_name = 'List'
             node.add_vars = [scope.add_var(name_token_str, False, type_name, name_token)]
+            if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
+                if node.add_vars[0]:
+                    raise Error('please specify type of empty list', Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME))
+                node.drop_list = True
             if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)): # `poss_nbors = (x-1,y),(x-1,y+1)`
                 raise Error('expected end of statement', token)                                                      #                      ^
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:

@@ -545,7 +545,10 @@ class SymbolNode:
                     parenthesis = ('(', ')') if self.parent is not None and (self.parent.symbol.id == 'for' or (self.parent.function_call and self.parent.children[0].token_str() in ('map', 'filter', 'reduce'))) else ('', '')
                     if len(self.children) == 3: # replace `range(e)` with `(0 .< e)`
                         space = ' ' * range_need_space(self.children[1], None)
-                        return parenthesis[0] + '0' + space + '.<' + space + self.children[1].to_str() + parenthesis[1]
+                        c1 = self.children[1].to_str()
+                        if c1.endswith(' + 1'): # `range(e + 1)` -> `0 .. e`
+                            return parenthesis[0] + '0' + space + '..' + space + c1[:-4] + parenthesis[1]
+                        return parenthesis[0] + '0' + space + '.<' + space + c1 + parenthesis[1]
                     else:
                         rangestr = ' .< ' if range_need_space(self.children[1], self.children[3]) else '.<'
                         if len(self.children) == 5: # replace `range(b, e)` with `(b .< e)`

@@ -552,7 +552,10 @@ class SymbolNode:
                             if self.children[3].token.category == Token.Category.NUMERIC_LITERAL and self.children[3].token_str().replace('_', '').isdigit() and \
                                self.children[1].token.category == Token.Category.NUMERIC_LITERAL and self.children[1].token_str().replace('_', '').isdigit(): # if `b` and `e` are numeric literals, then ...
                                 return parenthesis[0] + self.children[1].token_str().replace('_', '') + '..' + str(int(self.children[3].token_str().replace('_', '')) - 1) + parenthesis[1] # ... replace `range(b, e)` with `(b..e-1)`
-                            return parenthesis[0] + self.children[1].to_str() + rangestr + self.children[3].to_str() + parenthesis[1]
+                            c3 = self.children[3].to_str()
+                            if c3.endswith(' + 1'): # `range(a, b + 1)` -> `a .. b`
+                                return parenthesis[0] + self.children[1].to_str() + rangestr.replace('<', '.') + c3[:-4] + parenthesis[1]
+                            return parenthesis[0] + self.children[1].to_str() + rangestr + c3 + parenthesis[1]
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
                             return '(' + self.children[1].to_str() + rangestr + self.children[3].to_str() + ').step(' + self.children[5].to_str() + ')'
                 elif func_name == 'print':

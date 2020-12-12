@@ -428,6 +428,8 @@ class SymbolNode:
                         return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
                                               + trans_type(self.children[1].token_str(), self.scope, self.children[1].token) + ']()'
                     if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'deque': # `collections.deque() # ValueType` -> `Deque[ValueType]()`
+                        if len(self.children) == 3:
+                            return 'Deque(' + self.children[1].to_str() + ')'
                         assert(len(self.children) == 1)
                         if source[self.token.end + 2 : self.token.end + 3] != '#':
                             raise Error('to use `deque` the type of deque values must be specified in the comment', self.children[0].children[1].token)

@@ -181,6 +181,7 @@ class SymbolNode:
     tuple   = False
     is_list = False
     is_set  = False
+    def is_dict(self): return self.symbol.id == '{' and not self.is_set # }
     slicing = False
     is_not  = False
     skip_find_and_get_prefix = False
@@ -1417,6 +1418,10 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
             r = 'L(' + self.loop_variables[0] + ') ' + (self.expression.children[1].to_str()
                    if self.expression.function_call and self.expression.children[0].token_str() == 'range' and # `L(i) 100` instead of `L(i) 0.<100`
                  len(self.expression.children) == 3 and self.expression.children[1].token.category == Token.Category.NUMERIC_LITERAL else self.expression.to_str())
+            if self.expression.token.category == Token.Category.NAME:
+                sid = self.expression.scope.find(self.expression.token_str())
+                if sid.type in ('Dict', 'DefaultDict'):
+                    r += '.keys()'
         elif self.expression.symbol.id == '(' and len(self.expression.children) == 1 and self.expression.children[0].symbol.id == '.' and len(self.expression.children[0].children) == 2 and self.expression.children[0].children[1].token_str() == 'items': # )
             r = 'L(' + ', '.join(self.loop_variables) + ') ' + self.expression.children[0].children[0].to_str()
         else:
@@ -2356,6 +2361,12 @@ def parse_internal(this_node, one_line_scope = False):
                 type_name = 'str'
             elif node.expression.is_list:
                 type_name = 'List'
+            elif node.expression.is_dict():
+                type_name = 'Dict'
+            elif node.expression.function_call and node.expression.children[0].symbol.id == '.' and \
+                 node.expression.children[0].children[0].token_str() == 'collections' and \
+                 node.expression.children[0].children[1].token_str() == 'defaultdict':
+                type_name = 'DefaultDict'
             node.add_vars = [scope.add_var(name_token_str, False, type_name, name_token)]
             if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
                 if node.add_vars[0]:

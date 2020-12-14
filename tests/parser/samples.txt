@@ -799,3 +799,20 @@ print(_fn_())
 cache : Dict[Tuple[int, int], Tuple[int, List[Tuple[int, str]]]] = {}
 ===
 [(Int, Int) = (Int, [(Int, String)])] cache
+
+
+d0 = {'a': 1}
+for a in d0:
+    print(a)
+import collections
+d = collections.defaultdict(int) # int
+for a in d:
+    print(a)
+===
+V d0 = [‘a’ = 1]
+L(a) d0.keys()
+   print(a)
+//import collections
+V d = DefaultDict[Int, Int]()
+L(a) d.keys()
+   print(a)

@@ -816,3 +816,10 @@ L(a) d0.keys()
 V d = DefaultDict[Int, Int]()
 L(a) d.keys()
    print(a)
+
+
+m = int(input())
+d = {q.lower(): q for q in [input() for i in range(m)]}
+===
+V m = Int(input())
+V d = Dict((0 .< m).map(i -> input()), q -> (q.lowercase(), q))

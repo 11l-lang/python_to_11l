@@ -2687,10 +2687,37 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                     node.children.pop(index)
                     continue
 
-                if type(child) == ASTFor: # detect `for ... in os.walk(...)` and remove `dirs[:] = ...` statement
+                if type(child) == ASTFor:
+                    if len(child.loop_variables): # detect loop variables' changing/modification, and add qualifier `=` to changing ones
+                        lvars = child.loop_variables
+                        found = set()
+                        def detect_lvars_modification(node):
+                            if type(node) == ASTExprAssignment:
+                                nonlocal found
+                                if node.dest_expression.token_str() in lvars:
+                                    found.add(node.dest_expression.token_str())
+                                    if len(lvars) == 1:
+                                        return
+                                elif node.dest_expression.tuple:
+                                    for t in node.dest_expression.children:
+                                        if t.token_str() in lvars:
+                                            found.add(t.token_str())
+                                            if len(lvars) == 1:
+                                                return
+                            def f(e : SymbolNode):
+                                if e.symbol.id[-1] == '=' and e.symbol.id not in ('==', '!=', '<=', '>=') and e.children[0].token_str() in lvars: # +=, -=, *=, /=, etc.
+                                    nonlocal found
+                                    found.add(e.children[0].token_str())
+                            node.walk_expressions(f)
+                            node.walk_children(detect_lvars_modification)
+                        detect_lvars_modification(child)
+                        for lvar in found:
+                            lvari = lvars.index(lvar)
+                            child.loop_variables[lvari] = '=' + child.loop_variables[lvari]
+
                     if child.expression.symbol.id == '(' and child.expression.children[0].symbol.id == '.' \
                             and child.expression.children[0].children[0].token_str() == 'os' \
-                            and child.expression.children[0].children[1].token_str() == 'walk': # )
+                            and child.expression.children[0].children[1].token_str() == 'walk': # ) # detect `for ... in os.walk(...)` and remove `dirs[:] = ...` statement
                         child.os_walk = True
                         assert(len(child.loop_variables) == 3)
                         c0 = child.children[0]
@@ -2710,7 +2737,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                     elif child.expression.symbol.id == '(' and child.expression.children[0].token_str() == 'enumerate': # )
                         assert(len(child.loop_variables) == 2)
                         set_index_node = ASTExprAssignment()
-                        set_index_node.set_dest_expression(SymbolNode(Token(0, 0, Token.Category.NAME), child.loop_variables[0]))
+                        set_index_node.set_dest_expression(SymbolNode(Token(0, 0, Token.Category.NAME), child.loop_variables[0].lstrip('=')))
                         child.loop_variables.pop(0)
                         set_index_node.set_expression(SymbolNode(Token(0, 0, Token.Category.NAME), 'L.index' + (' + ' + child.expression.children[3].to_str() if len(child.expression.children) >= 5 else '')))
                         set_index_node.add_vars = [True]

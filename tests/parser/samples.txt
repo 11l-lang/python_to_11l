@@ -823,3 +823,15 @@ d = {q.lower(): q for q in [input() for i in range(m)]}
 ===
 V m = Int(input())
 V d = Dict((0 .< m).map(i -> input()), q -> (q.lowercase(), q))
+
+
+for i, a in enumerate([1, 2, 3, 4, 5]):
+    a -= 1
+    i -= 1
+    print(a, i)
+===
+L(=a) [1, 2, 3, 4, 5]
+   V i = L.index
+   a--
+   i--
+   print(a‘ ’i)

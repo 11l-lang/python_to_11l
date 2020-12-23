@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self
@@ -473,6 +473,10 @@ class SymbolNode:
                         return self.children[1].to_str()
                     else:
                         return 'Array(' + self.children[1].to_str() + ')'
+                elif func_name == 'tuple': # `tuple(sorted(...))` -> `tuple_sorted(...)`
+                    assert(len(self.children) == 3)
+                    if self.children[1].function_call and self.children[1].children[0].token_str() == 'sorted':
+                        return 'tuple_' + self.children[1].to_str()
                 elif func_name == 'dict':
                     func_name = 'Dict'
                 elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`

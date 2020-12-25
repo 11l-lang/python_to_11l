@@ -2743,7 +2743,14 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                         set_index_node = ASTExprAssignment()
                         set_index_node.set_dest_expression(SymbolNode(Token(0, 0, Token.Category.NAME), child.loop_variables[0].lstrip('=')))
                         child.loop_variables.pop(0)
-                        set_index_node.set_expression(SymbolNode(Token(0, 0, Token.Category.NAME), 'L.index' + (' + ' + child.expression.children[3].to_str() if len(child.expression.children) >= 5 else '')))
+                        start = ''
+                        if len(child.expression.children) >= 5:
+                            if child.expression.children[4] is not None:
+                                assert(child.expression.children[3].to_str() == 'start')
+                                start = child.expression.children[4].to_str()
+                            else:
+                                start = child.expression.children[3].to_str()
+                        set_index_node.set_expression(SymbolNode(Token(0, 0, Token.Category.NAME), 'L.index' + (' + ' + start if start != '' else '')))
                         set_index_node.add_vars = [True]
                         set_index_node.parent = child
                         child.children.insert(0, set_index_node)

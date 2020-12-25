@@ -835,3 +835,11 @@ L(=a) [1, 2, 3, 4, 5]
    a--
    i--
    print(a‘ ’i)
+
+
+for i, a in enumerate([1, 2, 3, 4, 5], start = 2):
+    print(a, i)
+===
+L(a) [1, 2, 3, 4, 5]
+   V i = L.index + 2
+   print(a‘ ’i)

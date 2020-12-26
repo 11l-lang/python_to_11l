@@ -200,6 +200,8 @@ class SymbolNode:
             if self.children[0].token_str() == 'os' and self.children[1].token_str() == 'pathsep':
                 return 'str'
             return None
+        if self.function_call and self.children[0].token_str() == 'str':
+            return 'str'
         return self.scope.var_type(self.token.value(source))
 
     def append_child(self, child):

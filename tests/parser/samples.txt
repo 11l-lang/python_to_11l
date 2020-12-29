@@ -281,6 +281,12 @@ tag += html_escapeq()
 ins = ''
 pre = '<pre ' + ins
 print(pre + html_escapeq(''))
+class TableCell:
+    attrs : str
+    def __init__(self, attrs):
+        self.attrs = attrs
+table : List[List[TableCell]] = []
+table[0][0].attrs += ' colspan="'+str(1)+'"'
 ===
 F html_escapeq(str)
    R str.replace(‘&’, ‘&amp;’).replace(‘"’, ‘&quot;’)
@@ -290,6 +296,12 @@ tag ‘’= html_escapeq()
 V ins = ‘’
 V pre = ‘<pre ’ins
 print(pre‘’html_escapeq(‘’))
+T TableCell
+   String attrs
+   F (attrs)
+      .attrs = attrs
+[[TableCell]] table
+table[0][0].attrs ‘’= ‘ colspan="’String(1)‘"’
 
 
 str1 = '1'

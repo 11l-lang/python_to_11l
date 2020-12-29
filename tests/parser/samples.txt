@@ -287,6 +287,7 @@ class TableCell:
         self.attrs = attrs
 table : List[List[TableCell]] = []
 table[0][0].attrs += ' colspan="'+str(1)+'"'
+table[0][0].attrs += ' '
 ===
 F html_escapeq(str)
    R str.replace(‘&’, ‘&amp;’).replace(‘"’, ‘&quot;’)
@@ -302,6 +303,7 @@ T TableCell
       .attrs = attrs
 [[TableCell]] table
 table[0][0].attrs ‘’= ‘ colspan="’String(1)‘"’
+table[0][0].attrs ‘’= ‘ ’
 
 
 str1 = '1'

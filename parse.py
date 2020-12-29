@@ -2363,7 +2363,9 @@ def parse_internal(this_node, one_line_scope = False):
                 node.expression.parent = None
                 node.expression.skip_find_and_get_prefix = True # this can not be replaced with `isupper()` check before `find_and_get_prefix()` call because there will be conflict with uppercase [constant] variables, like `WIDTH` or `HEIGHT` (they[‘variables’] will not be checked, but they should)
             type_name = ''
-            if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str'):
+            if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str') \
+                or (node.expression.symbol.id == '+' and len(node.expression.children) == 2 and (node.expression.children[0].token.category == Token.Category.STRING_LITERAL
+                                                                                              or node.expression.children[1].token.category == Token.Category.STRING_LITERAL)):
                 type_name = 'str'
             elif node.expression.is_list:
                 type_name = 'List'

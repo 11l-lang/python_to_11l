@@ -278,12 +278,18 @@ def html_escapeq(str):
 link = 'http://...'
 tag : str = '<a href="' + link + '"' # while type inference is not supported, type hint is necessary to convert from `+=` to `‘’=`
 tag += html_escapeq()
+ins = ''
+pre = '<pre ' + ins
+print(pre + html_escapeq(''))
 ===
 F html_escapeq(str)
    R str.replace(‘&’, ‘&amp;’).replace(‘"’, ‘&quot;’)
 V link = ‘http://...’
 String tag = ‘<a href="’link‘"’
 tag ‘’= html_escapeq()
+V ins = ‘’
+V pre = ‘<pre ’ins
+print(pre‘’html_escapeq(‘’))
 
 
 str1 = '1'

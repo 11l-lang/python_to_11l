@@ -40,7 +40,7 @@ class Scope:
         self.parent = None
         if func_args is not None:
             self.is_function = True
-            self.vars = dict(map(lambda x: (x, Scope.Var('', None)), func_args))
+            self.vars = dict(map(lambda x: (x[0], Scope.Var(x[1], None)), func_args))
         else:
             self.is_function = False
             self.vars = {}
@@ -196,10 +196,21 @@ class SymbolNode:
         self.token_str_override = token_str_override
 
     def var_type(self):
+        if self.is_parentheses():
+            return self.children[0].var_type()
+        if self.symbol.id == '[' and not self.is_list and self.children[0].var_type() == 'str': # ]
+            return 'str'
+        if self.token.category == Token.Category.STRING_LITERAL:
+            return 'str'
         if self.symbol.id == '.':
             if self.children[0].token_str() == 'os' and self.children[1].token_str() == 'pathsep':
                 return 'str'
             return None
+        if self.symbol.id == 'if':
+            t0 = self.children[0].var_type()
+            if t0 is not None:
+                return t0
+            return self.children[2].var_type()
         if self.function_call and self.children[0].token_str() == 'str':
             return 'str'
         return self.scope.var_type(self.token.value(source))
@@ -2137,7 +2148,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.is_const = True
 
                 node.parent = this_node
-                new_scope(node, map(lambda arg: arg[0], node.function_arguments))
+                new_scope(node, map(lambda arg: (arg[0], arg[2]), node.function_arguments))
 
                 if len(node.children) == 0: # needed for:
                     n = ASTPass()           # class FileToStringProxy:

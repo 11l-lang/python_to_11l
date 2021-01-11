@@ -198,7 +198,12 @@ class SymbolNode:
     def var_type(self):
         if self.is_parentheses():
             return self.children[0].var_type()
-        if self.symbol.id == '[' and not self.is_list and self.children[0].var_type() == 'str': # ]
+        if self.symbol.id == '*' and self.children[0].var_type() == 'List':
+            return 'List'
+        if self.is_list:
+            return 'List'
+        #if self.symbol.id == '[' and not self.is_list and self.children[0].var_type() == 'str': # ]
+        if self.symbol.id == '[' and self.children[0].var_type() == 'str': # ]
             return 'str'
         if self.token.category == Token.Category.STRING_LITERAL:
             return 'str'
@@ -2382,7 +2387,7 @@ def parse_internal(this_node, one_line_scope = False):
                 or (node.expression.symbol.id == '+' and len(node.expression.children) == 2 and (node.expression.children[0].token.category == Token.Category.STRING_LITERAL
                                                                                               or node.expression.children[1].token.category == Token.Category.STRING_LITERAL)):
                 type_name = 'str'
-            elif node.expression.is_list:
+            elif node.expression.var_type() == 'List':
                 type_name = 'List'
             elif node.expression.is_dict():
                 type_name = 'Dict'
@@ -2636,7 +2641,8 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                     var_name = child.dest_expression.token.value(source)
                     transformation_possible = True
                     while True:
-                        if not (if_node.expression.symbol.id == '==' and if_node.expression.children[0].token.category == Token.Category.NAME and if_node.expression.children[0].token.value(source) == var_name):
+                        if not (if_node.expression.symbol.id == '==' and if_node.expression.children[0].token.category == Token.Category.NAME and if_node.expression.children[0].token.value(source) == var_name
+                                                                     and if_node.expression.children[1].token.category in (Token.Category.STRING_LITERAL, Token.Category.NUMERIC_LITERAL)):
                             transformation_possible = False
                             break
                         if_node = if_node.else_or_elif

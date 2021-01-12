@@ -1552,7 +1552,7 @@ def next_token(): # why ‘next_token’: >[https://youtu.be/Nlqv6NtBXcA?t=1203]
                     key = '(literal)'
                 elif token.category == Token.Category.NAME:
                     key = '(name)'
-                    if token.value(source) in ('V', 'C', 'I', 'E', 'F', 'L', 'N', 'R', 'S', 'T', 'X', 'var', 'fn', 'loop', 'null', 'type', 'exception', 'sign'):
+                    if token.value(source) in ('V', 'C', 'I', 'E', 'F', 'L', 'N', 'R', 'S', 'T', 'X', 'var', 'fn', 'loop', 'null', 'switch', 'type', 'exception', 'sign'):
                         tokensn.token_str_override = '_' + token.value(source).lower() + '_'
                 elif token.category == Token.Category.CONSTANT:
                     key = '(constant)'

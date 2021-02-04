@@ -863,3 +863,16 @@ for i, a in enumerate([1, 2, 3, 4, 5], start = 2):
 L(a) [1, 2, 3, 4, 5]
    V i = L.index + 2
    print(a‘ ’i)
+
+
+def order_disjoint_list_items(data : list, items):
+    data[0] = items[0]
+
+for data, items in [('the cat sat on the mat'.split(' '), ('mat cat').split(' '))]:
+    order_disjoint_list_items(data, items)
+===
+F order_disjoint_list_items(&data, items)
+   data[0] = items[0]
+
+L(data, items) [(‘the cat sat on the mat’.split(‘ ’), (‘mat cat’).split(‘ ’))]
+   order_disjoint_list_items(&data, items)

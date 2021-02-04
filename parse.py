@@ -1338,6 +1338,9 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 farg += ' '
                 if ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) or arg[3] == '&': # ]]]]
                     farg += '&'
+            else:
+                if arg[3] == '&':
+                    farg += '&'
             farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
             fargs.append((farg, arg[2] != ''))
         if self.first_named_only_argument is not None:
@@ -2123,6 +2126,9 @@ def parse_internal(this_node, one_line_scope = False):
                             next_token()
                         else:
                             type_ = advance_type()
+                            if type_ == 'list':
+                                type_ = ''
+                                qualifier = '&'
 
                     if token.value(source) == '=':
                         next_token()

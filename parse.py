@@ -1242,6 +1242,11 @@ def trans_type(ty, scope, type_token):
             if ty.startswith('Dict['): # ]
                 assert(len(types) == 2)
                 return '[' + types[0] + ' = ' + types[1] + ']'
+            if ty.startswith('Callable['): # ]
+                assert(len(types) == 2)
+                return '(' + types[0] + ' -> ' + types[1] + ')'
+            if p == 0: # for `Callable`
+                return ', '.join(types)
             return trans_type(ty[:p], scope, type_token) + '[' + ', '.join(types) + ']'
 
         assert(ty.find(',') == -1)

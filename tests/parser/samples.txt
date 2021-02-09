@@ -876,3 +876,10 @@ F order_disjoint_list_items(&data, items)
 
 L(data, items) [(‘the cat sat on the mat’.split(‘ ’), (‘mat cat’).split(‘ ’))]
    order_disjoint_list_items(&data, items)
+
+
+arr : List[int] = []
+arr += [i*2 for i in range(10)]
+===
+[Int] arr
+arr [+]= (0.<10).map(i -> i * 2)

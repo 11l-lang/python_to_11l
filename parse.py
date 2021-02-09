@@ -200,6 +200,8 @@ class SymbolNode:
             return self.children[0].var_type()
         if self.symbol.id == '*' and self.children[0].var_type() == 'List':
             return 'List'
+        if self.symbol.id == '+' and (self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):
+            return 'List'
         if self.is_list:
             return 'List'
         #if self.symbol.id == '[' and not self.is_list and self.children[0].var_type() == 'str': # ]
@@ -907,7 +909,8 @@ class SymbolNode:
                 return self.children[0].to_str() + '.' + self.children[1].to_str()
 
             elif self.symbol.id == '+=' and self.children[1].symbol.id == '[' and self.children[1].is_list: # ]
-                return self.children[0].to_str() + ' [+]= ' + (self.children[1].to_str()[1:-1] if len(self.children[1].children) == 1 else self.children[1].to_str())
+                c1 = self.children[1].to_str()
+                return self.children[0].to_str() + ' [+]= ' + (c1[1:-1] if len(self.children[1].children) == 1 and c1.startswith('[') else c1) # ]
             elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
                 return self.children[0].to_str() + '++'
             elif self.symbol.id == '-=' and self.children[1].token.value(source) == '1':
@@ -948,7 +951,7 @@ class SymbolNode:
                 return '(' + self.children[0].to_str() + ')‘’' + ('(' + c1 + ')' if c1[0] == '.' else c1)
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + '‘’' + self.children[1].to_str()
-            elif self.symbol.id == '+' and (self.children[0].is_list or self.children[1].is_list or self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):
+            elif self.symbol.id == '+' and (self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):
                 return self.children[0].to_str() + ' [+] ' + self.children[1].to_str()
             elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `'0' <= ch <= '9'` with `ch C ‘0’..‘9’`
                 return self.children[0].children[1].to_str() + ' C ' + self.children[0].children[0].to_str() + (' .. ' if range_need_space(self.children[0].children[0], self.children[1]) else '..') + self.children[1].to_str()

@@ -2825,7 +2825,8 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                         detect_arguments_modification(child)
                         for farg in found:
                             fargi = fargs.index(farg)
-                            child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2], child.function_arguments[fargi][3])
+                            if child.function_arguments[fargi][3] != '&': # if argument already has `&` qualifier, then qualifier `=` is not needed
+                                child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2], child.function_arguments[fargi][3])
 
                 index += 1
 

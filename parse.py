@@ -1233,7 +1233,10 @@ def trans_type(ty, scope, type_token):
                     nesting_level -= 1
                 elif ty[i] == ',':
                     if nesting_level == 0: # ignore inner commas
-                        types.append(trans_type(ty[s:i], scope, type_token))
+                        if ty[s:i] == '[]' and ty.startswith('Callable['): # ] # for `Callable[[], str]`
+                            types.append('()')
+                        else:
+                            types.append(trans_type(ty[s:i], scope, type_token))
                         i += 1
                         while ty[i] == ' ':
                             i += 1
@@ -1249,7 +1252,9 @@ def trans_type(ty, scope, type_token):
                 assert(len(types) == 2)
                 return '(' + types[0] + ' -> ' + types[1] + ')'
             if p == 0: # for `Callable`
-                return ', '.join(types)
+                assert(len(types) != 0)
+                parens = len(types) > 1
+                return '('*parens + ', '.join(types) + ')'*parens
             return trans_type(ty[:p], scope, type_token) + '[' + ', '.join(types) + ']'
 
         assert(ty.find(',') == -1)
@@ -1280,7 +1285,14 @@ class ASTTypeHint(ASTNode):
 
     def to_str_(self, indent, nullable = False):
         if self.type == 'Callable':
-            return ' ' * (indent*3) + '(' + ', '.join(self.trans_type(ty) for ty in self.type_args[0].split(',')) + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
+            if self.type_args[0] == '':
+                args = '()'
+            else:
+                tt = self.type_args[0].split(',')
+                args = ', '.join(self.trans_type(ty) for ty in tt)
+                if len(tt) > 1:
+                    args = '(' + args + ')'
+            return ' ' * (indent*3) + '(' + args + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
         elif self.type == 'Optional':
             assert(len(self.type_args) == 1)
             return ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
@@ -2457,12 +2469,15 @@ def parse_internal(this_node, one_line_scope = False):
                 while token.value(source) != ']':
                     if token.value(source) == '[': # for `Callable[[str, int], str]`
                         next_token()
-                        type_arg = token.value(source)
-                        next_token()
-                        while token.value(source) == ',':
+                        if token.value(source) == ']': # for `Callable[[], str]`
+                            type_arg = ''
+                        else:
+                            type_arg = token.value(source)
                             next_token()
-                            type_arg += ',' + token.value(source)
-                            next_token()
+                            while token.value(source) == ',':
+                                next_token()
+                                type_arg += ',' + token.value(source)
+                                next_token() # [
                         advance(']')
                         type_args.append(type_arg)
                     elif peek_token().value(source) == '[': # ] # for `table : List[List[List[str]]] = []` and `empty_list : List[List[str]] = []`

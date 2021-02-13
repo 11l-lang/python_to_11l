@@ -1163,6 +1163,12 @@ class ASTExprAssignment(ASTNodeWithExpression):
         if self.drop_list:
             return ' ' * (indent*3) + self.dest_expression.to_str() + ".drop()\n"
 
+        if self.dest_expression.tuple and len(self.dest_expression.children) == 2 and \
+           self.     expression.tuple and len(self.     expression.children) == 2 and \
+           self.dest_expression.children[0].to_str() == self.expression.children[1].to_str() and \
+           self.dest_expression.children[1].to_str() == self.expression.children[0].to_str():
+            return ' ' * (indent*3) + 'swap(&' + self.dest_expression.children[0].to_str() + ', &' + self.dest_expression.children[1].to_str() + ")\n"
+
         if self.is_tuple_assign_expression or not any(self.add_vars):
             r = ' ' * (indent*3) + self.dest_expression.to_str()
             for ade in self.additional_dest_expressions:

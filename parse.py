@@ -478,8 +478,11 @@ class SymbolNode:
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
                     func_name = 'String'
-                elif func_name == 'int':
-                    func_name = 'Int'
+                elif func_name in ('int', 'Int64'):
+                    if func_name == 'int':
+                        func_name = 'Int'
+                    if len(self.children) == 5:
+                        return func_name + '(' + self.children[1].to_str() + ", radix' " + self.children[3].to_str() + ')'
                 elif func_name == 'float':
                     if len(self.children) == 3 and self.children[1].token.category == Token.Category.STRING_LITERAL and self.children[1].token_str()[1:-1].lower() in ('infinity', 'inf'):
                         return 'Float.infinity'

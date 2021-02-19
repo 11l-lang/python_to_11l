@@ -91,7 +91,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'NotImplementedError', 'ValueError', 'IndexError'):
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product', 'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError'):
             return ''
 
         s = self
@@ -539,6 +539,8 @@ class SymbolNode:
                                 break
                 elif func_name == 'product':
                     func_name = 'cart_product'
+                elif func_name == 'deepcopy':
+                    func_name = 'copy'
                 elif func_name == 'print' and self.iterable_unpacking:
                     func_name = 'print_elements'
 
@@ -2676,7 +2678,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
             index = 0
             while index < len(node.children):
                 child = node.children[index]
-                if index < len(node.children) - 1 and type(child) == ASTExprAssignment and child.dest_expression.token.category == Token.Category.NAME and type(node.children[index+1]) == ASTIf and node.children[index+1].else_or_elif: # transform if-elif-else chain into switch
+                if index < len(node.children) - 1 and type(child) == ASTExprAssignment and child.dest_expression.token.category == Token.Category.NAME and type(node.children[index+1]) == ASTIf and type(node.children[index+1].else_or_elif) == ASTElseIf: # transform if-elif-else chain into switch
                     if_node = node.children[index+1]
                     var_name = child.dest_expression.token.value(source)
                     transformation_possible = True

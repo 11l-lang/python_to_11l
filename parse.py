@@ -1540,6 +1540,14 @@ class ASTClassDefinition(ASTNodeWithChildren):
     class_name : str
     is_inout = False
 
+    def find_member_including_base_classes(self, name):
+        for child in self.children:
+            if isinstance(child, ASTTypeHint) and child.var == name:
+                return True
+        if self.base_class_node is not None:
+            return self.base_class_node.find_member_including_base_classes(name)
+        return False
+
     def to_str(self, indent):
         if self.base_class_name == 'IntEnum':
             r = ' ' * (indent*3) + 'T.enum ' + self.class_name + "\n"
@@ -2200,7 +2208,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.children.append(n) #         self.result = []
 
                 # Detect virtual functions and assign `virtual_category`
-                if type(this_node) == ASTClassDefinition:
+                if type(this_node) == ASTClassDefinition and node.function_name != '__init__':
                     if this_node.base_class_node is not None:
                         for child in this_node.base_class_node.children:
                             if type(child) == ASTFunctionDefinition and child.function_name == node.function_name:
@@ -2593,7 +2601,13 @@ def parse_internal(this_node, one_line_scope = False):
 
             if (type(node) == ASTExprAssignment and node_expression.token_str() == '.' and node_expression.children[0].token_str() == 'self'
                     and type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'): # only in constructors
-                if scope.parent.add_var(node_expression.children[1].token_str()):
+
+                assert(type(this_node.parent) == ASTClassDefinition)
+                found_in_base_class = False
+                if this_node.parent.base_class_node is not None:
+                    found_in_base_class = this_node.parent.base_class_node.find_member_including_base_classes(node_expression.children[1].token_str())
+
+                if not found_in_base_class and scope.parent.add_var(node_expression.children[1].token_str()):
                     if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
                         raise Error('please specify type of empty list', Token(node.dest_expression.leftmost(), node.expression.rightmost(), Token.Category.NAME))
                     node.add_vars = [True]

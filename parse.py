@@ -2625,7 +2625,7 @@ def parse_internal(this_node, one_line_scope = False):
         node.parent = this_node
         this_node.children.append(node)
 
-        if one_line_scope:
+        if one_line_scope and tokens[tokeni-1].value(source) != ';':
             return
 
     return

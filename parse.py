@@ -6,7 +6,7 @@ except ImportError:
     import tokenizer
 from typing import List, Tuple, Dict, Callable
 from enum import IntEnum
-import os, re, thindf
+import os, re, eldf
 
 class Scope:
     parent : 'Scope'
@@ -2056,7 +2056,7 @@ def parse_internal(this_node, one_line_scope = False):
                                 or os.stat(os.path.dirname(__file__) + '/tokenizer.py').st_mtime > _11l_file_mtime \
                                 or not os.path.isfile(module_file_name + '.py_global_scope')
                         if not modified: # check for dependent modules modifications
-                            py_global_scope = thindf.parse(open(module_file_name + '.py_global_scope', encoding = 'utf-8-sig').read())
+                            py_global_scope = eldf.parse(open(module_file_name + '.py_global_scope', encoding = 'utf-8-sig').read())
                             py_imported_modules = py_global_scope['Imported modules']
                             for m in py_imported_modules:
                                 if os.stat(os.path.join(os.path.dirname(module_file_name), m.replace('.', '/') + '.py')).st_mtime > _11l_file_mtime:
@@ -2069,7 +2069,7 @@ def parse_internal(this_node, one_line_scope = False):
                             s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, module_file_name + '.py', imported_modules)
                             modules[module_name] = Module(scope)
                             open(module_file_name + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
-                            open(module_file_name + '.py_global_scope', 'w', encoding = 'utf-8', newline = "\n").write(thindf.to_thindf(scope.serialize_to_dict(imported_modules)))
+                            open(module_file_name + '.py_global_scope', 'w', encoding = 'utf-8', newline = "\n").write(eldf.to_eldf(scope.serialize_to_dict(imported_modules)))
                             scope = prev_scope
                             if this_node.imported_modules is not None:
                                 this_node.imported_modules.extend(imported_modules)

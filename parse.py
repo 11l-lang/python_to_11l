@@ -458,6 +458,11 @@ class SymbolNode:
                             raise Error('to use `deque` the type of deque values must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.token.end + 3, source.find("\n", self.token.end + 3))
                         return 'Deque[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
+                    if self.children[0].children[0].token_str() == 'int' and self.children[0].children[1].token_str() == 'from_bytes':
+                        assert(len(self.children) == 5)
+                        if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little'):
+                            raise Error("only 'little' byteorder supported so far", self.children[3].token)
+                        return "Int(bytes' " + self.children[1].to_str() + ')'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
                     if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randint':

@@ -2293,6 +2293,8 @@ def parse_internal(this_node, one_line_scope = False):
                 node = ASTWhile()
                 next_token()
                 node.set_expression(expression())
+                if node.expression.token.category in (Token.Category.CONSTANT, Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL) and node.expression.token.value(source) != 'True':
+                    raise Error('do you mean `while True`?', node.expression.token) # forbid `while 1:`
                 new_scope(node)
 
             elif token.value(source) == 'for':

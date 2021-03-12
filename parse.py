@@ -31,6 +31,7 @@ class Scope:
                 self.node.deserialize_from_dict(d['node'])
 
     vars : Dict[str, Var]
+    nonlocals_copy : set
     nonlocals : set
     globals   : set
     is_function : bool
@@ -44,6 +45,7 @@ class Scope:
         else:
             self.is_function = False
             self.vars = {}
+        self.nonlocals_copy = set()
         self.nonlocals = set()
         self.globals   = set()
 
@@ -64,7 +66,7 @@ class Scope:
     def add_var(self, name, error_if_already_defined = False, type = '', err_token = None, node = None):
         s = self
         while True:
-            if name in s.nonlocals or name in s.globals:
+            if name in s.nonlocals_copy or name in s.nonlocals or name in s.globals:
                 return False
             if s.is_function:
                 break
@@ -96,6 +98,8 @@ class Scope:
 
         s = self
         while True:
+            if name in s.nonlocals_copy:
+                return '@='
             if name in s.nonlocals:
                 return '@'
             if name in s.globals:
@@ -2352,7 +2356,10 @@ def parse_internal(this_node, one_line_scope = False):
                     if token.category != Token.Category.NAME:
                         raise Error('expected ' + nonlocal_or_global + ' variable name', token)
                     if nonlocal_or_global == 'nonlocal':
-                        scope.nonlocals.add(token.value(source))
+                        if source[token.end + 1 : token.end + 5] == "# =\n":
+                            scope.nonlocals_copy.add(token.value(source))
+                        else:
+                            scope.nonlocals.add(token.value(source))
                     else:
                         scope.globals.add(token.value(source))
                     next_token()

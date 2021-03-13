@@ -883,3 +883,15 @@ arr += [i*2 for i in range(10)]
 ===
 [Int] arr
 arr [+]= (0.<10).map(i -> i * 2)
+
+
+def get_f(a, b):
+    def f(c):
+        nonlocal a, b # =
+        return a + b + c
+    return f
+===
+F get_f(a, b)
+   F f(c)
+      R @=a + @=b + c
+   R f

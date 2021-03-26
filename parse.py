@@ -213,6 +213,10 @@ class SymbolNode:
             return 'str'
         if self.symbol.id == '*' and self.children[1].var_type() == 'str':
             return 'str'
+        if self.symbol.id == '%' and self.children[0].var_type() == 'str':
+            return 'str'
+        if self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
+            return 'str'
         if self.token.category == Token.Category.STRING_LITERAL:
             return 'str'
         if self.symbol.id == '.':
@@ -1217,7 +1221,7 @@ class ASTAssert(ASTNodeWithExpression):
         self.expression2.ast_parent = self
 
     def to_str(self, indent):
-        return ' ' * (indent*3) + 'assert(' + (self.expression.children[0].to_str() if self.expression.symbol.id == '(' and not self.expression.tuple and not self.expression.function_call # )
+        return ' ' * (indent*3) + 'assert(' + (self.expression.children[0].to_str() if self.expression.is_parentheses()
             else self.expression.to_str()) + (', ' + self.expression2.to_str() if self.expression2 is not None else '') + ")\n"
 
     def walk_expressions(self, f):

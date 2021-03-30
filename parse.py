@@ -242,7 +242,7 @@ class SymbolNode:
 
         if self.symbol.id == '(': # )
             if self.function_call:
-                return self.children[0].token.start
+                return self.children[0].token.start #self.children[0].leftmost()
             else:
                 return self.token.start
         elif self.symbol.id == '[': # ]
@@ -296,8 +296,16 @@ class SymbolNode:
                     field_index += 1
                 if format_args != '':
                     format_args += ', '
-                assert(field_name.isdigit())
-                format_args += self.children[1 + int(field_name)*2].to_str()
+                if field_name.isdigit():
+                    format_args += self.children[1 + int(field_name)*2].to_str()
+                else:
+                    for j in range(1, len(self.children), 2): # `i` can not be used here :():
+                        if self.children[j+1] is not None:
+                            if self.children[j].token_str() == field_name:
+                                format_args += self.children[j+1].to_str()
+                                break
+                    else:
+                        raise Error('argument `' + field_name + '` is not found', self.left_to_right_token())
 
                 if fmtstr[i] == ':':
                     before_period = 0

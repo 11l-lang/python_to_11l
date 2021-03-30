@@ -276,6 +276,73 @@ class SymbolNode:
     def is_parentheses(self):
         return self.symbol.id == '(' and not self.tuple and not self.function_call # )
 
+    def str_format(self):
+        fmtstr = self.children[0].children[0].to_str()
+        nfmtstr = ''
+        format_args = ''
+        field_index = 0
+        i = 0
+        while i < len(fmtstr):
+            if fmtstr[i] == '{':
+                nfmtstr += '#'
+                i += 1
+
+                field_name = ''
+                while fmtstr[i] not in ('}', ':'):
+                    field_name += fmtstr[i]
+                    i += 1
+                if field_name == '':
+                    field_name = str(field_index)
+                    field_index += 1
+                if format_args != '':
+                    format_args += ', '
+                assert(field_name.isdigit())
+                format_args += self.children[1 + int(field_name)*2].to_str()
+
+                if fmtstr[i] == ':':
+                    before_period = 0
+                    after_period = 6
+                    i += 1
+                    if fmtstr[i:i+1] == '0' and fmtstr[i+1:i+2].isdigit(): # zero padding
+                        nfmtstr += '0'
+                    while i < len(fmtstr) and fmtstr[i].isdigit():
+                        before_period = before_period*10 + ord(fmtstr[i]) - ord('0')
+                        i += 1
+                    if fmtstr[i:i+1] == '.':
+                        i += 1
+                        after_period = 0
+                        while i < len(fmtstr) and fmtstr[i].isdigit():
+                            after_period = after_period*10 + ord(fmtstr[i]) - ord('0')
+                            i += 1
+
+                    if fmtstr[i:i+1] == 'f':
+                        if before_period != 0:
+                            b = before_period
+                            if after_period != 0:
+                                b -= after_period + 1
+                            if b > 1:
+                                nfmtstr += str(b)
+                        nfmtstr += '.' + str(after_period)
+                        i += 1
+                    else:
+                        if before_period != 0:
+                            nfmtstr += str(before_period)
+                        else:
+                            nfmtstr += '.' # {
+
+                    assert(fmtstr[i] == '}')
+
+                else:
+                    nfmtstr += '.'
+
+                i += 1
+                continue
+
+            nfmtstr += fmtstr[i]
+            i += 1
+
+        return nfmtstr + '.format(' + format_args + ')'
+
     def to_str(self):
         # r = ''
         # prev_token_end = self.children[0].token.start
@@ -487,6 +554,8 @@ class SymbolNode:
                         return res + ')'
                     if self.children[0].children[0].token_str() == 'itertools' and self.children[0].children[1].token_str() == 'count': # `itertools.count(1)` -> `1..`
                         return self.children[1].to_str() + '..'
+                    if self.children[0].children[0].token.category == Token.Category.STRING_LITERAL and c01 == 'format':
+                        return self.str_format()
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -999,8 +1068,8 @@ class SymbolNode:
                         i += 1
                         continue
 
-                    fmtchr = fmtstr[i+1:i+2]
                     if fmtstr[i] == '%':
+                        fmtchr = fmtstr[i+1:i+2]
                         if fmtchr == '%':
                             nfmtstr += '%'
                             i += 2

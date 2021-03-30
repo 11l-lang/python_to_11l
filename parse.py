@@ -427,7 +427,10 @@ class SymbolNode:
                 l = 3 if s[1:4] in ('"""', "'''") else 1
                 return balance_pq_string(s[1+l:-l])
             elif s[0] in 'bB':
-                return s[1:] + '.code'
+                if len(s) == 4 or (len(s) == 5 and s[2] == "\\"):
+                    return s[1:] + '.code'
+                else:
+                    return 'Bytes(‘' + s[2:-1] + '’)'
             else:
                 l = 3 if s[0:3] in ('"""', "'''") else 1
                 if '\\' in s or ('‘' in s and not '’' in s) or (not '‘' in s and '’' in s):

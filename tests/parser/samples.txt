@@ -920,3 +920,36 @@ F get_f(a, b)
    F f(c)
       R @=a + @=b + c
    R f
+
+
+import os
+
+class EXSSamplePool:
+
+    locations : List[str]
+
+    def __init__(self):
+        self.locations = []
+
+class EXSSamplePoolLocator(EXSSamplePool):
+
+    base : str
+
+    def __init__(self, exsfile_name):
+        self.base = os.path.dirname(exsfile_name)
+        super().__init__()
+===
+//import os
+
+T EXSSamplePool
+   [String] locations
+
+   F ()
+   {
+   }
+
+T EXSSamplePoolLocator(EXSSamplePool)
+   String base
+
+   F (exsfile_name)
+      .base = fs:path:dir_name(exsfile_name)

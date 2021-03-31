@@ -499,7 +499,7 @@ class SymbolNode:
                    len(self.children[0].children[0].children) == 5 and \
                        self.children[0].children[0].children[4] is None and \
                        self.children[0].children[0].children[3].token_str() in ("'rb'", '"rb"') and \
-                       self.children[0].children[1].token_str() == 'read': # ) # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
+                       c01 == 'read': # ) # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
                         assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
                     if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
@@ -513,30 +513,30 @@ class SymbolNode:
                     if c01 == 'readline': # `f.readline()` -> `f.read_line(1B)`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + ".read_line(1B)"
-                    if self.children[0].children[0].token_str() == 're' and self.children[0].children[1].token_str() != 'compile': # `re.search('pattern', 'string')` -> `re:‘pattern’.search(‘string’)`
+                    c00 = self.children[0].children[0].token_str()
+                    if c00 == 're' and c01 != 'compile': # `re.search('pattern', 'string')` -> `re:‘pattern’.search(‘string’)`
                         c1_in_braces_if_needed = self.children[1].to_str()
                         if self.children[1].token.category != Token.Category.STRING_LITERAL:
                             c1_in_braces_if_needed = '(' + c1_in_braces_if_needed + ')'
-                        if self.children[0].children[1].token_str() == 'split': # `re.split('pattern', 'string')` -> `‘string’.split(re:‘pattern’)`
+                        if c01 == 'split': # `re.split('pattern', 'string')` -> `‘string’.split(re:‘pattern’)`
                             return self.children[3].to_str() + '.split(re:' + c1_in_braces_if_needed + ')'
-                        if self.children[0].children[1].token_str() == 'sub': # `re.sub('pattern', 'repl', 'string')` -> `‘string’.replace(re:‘pattern’, ‘repl’)`
+                        if c01 == 'sub': # `re.sub('pattern', 'repl', 'string')` -> `‘string’.replace(re:‘pattern’, ‘repl’)`
                             return self.children[5].to_str() + '.replace(re:' + c1_in_braces_if_needed + ', ' + re.sub(R'\\(\d{1,2})', R'$\1', self.children[3].to_str()) + ')'
-                        if self.children[0].children[1].token_str() == 'match':
+                        if c01 == 'match':
                             assert c1_in_braces_if_needed[0] != '(', 'only string literal patterns supported in `match()` for a while' # )
                             if c1_in_braces_if_needed[-2] == '$': # `re.match('pattern$', 'string')` -> `re:‘pattern’.match(‘string’)`
                                 return 're:' + c1_in_braces_if_needed[:-2] + c1_in_braces_if_needed[-1] + '.match(' + self.children[3].to_str() + ')'
                             else: # `re.match('pattern', 'string')` -> `re:‘^pattern’.search(‘string’)`
                                 return 're:' + c1_in_braces_if_needed[0] + '^' + c1_in_braces_if_needed[1:] + '.search(' + self.children[3].to_str() + ')'
-                        c0c1 = self.children[0].children[1].token_str()
-                        return 're:' + c1_in_braces_if_needed + '.' + {'fullmatch': 'match', 'findall': 'find_strings', 'finditer': 'find_matches'}.get(c0c1, c0c1) + '(' + self.children[3].to_str() + ')'
-                    if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'defaultdict': # `collections.defaultdict(ValueType) # KeyType` -> `DefaultDict[KeyType, ValueType]()`
+                        return 're:' + c1_in_braces_if_needed + '.' + {'fullmatch': 'match', 'findall': 'find_strings', 'finditer': 'find_matches'}.get(c01, c01) + '(' + self.children[3].to_str() + ')'
+                    if c00 == 'collections' and c01 == 'defaultdict': # `collections.defaultdict(ValueType) # KeyType` -> `DefaultDict[KeyType, ValueType]()`
                         assert(len(self.children) == 3)
                         if source[self.children[1].token.end + 2 : self.children[1].token.end + 3] != '#':
                             raise Error('to use `defaultdict` the type of dict keys must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.children[1].token.end + 3, source.find("\n", self.children[1].token.end + 3))
                         return 'DefaultDict[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ', ' \
                                               + trans_type(self.children[1].token_str(), self.scope, self.children[1].token) + ']()'
-                    if self.children[0].children[0].token_str() == 'collections' and self.children[0].children[1].token_str() == 'deque': # `collections.deque() # ValueType` -> `Deque[ValueType]()`
+                    if c00 == 'collections' and c01 == 'deque': # `collections.deque() # ValueType` -> `Deque[ValueType]()`
                         if len(self.children) == 3:
                             return 'Deque(' + self.children[1].to_str() + ')'
                         assert(len(self.children) == 1)
@@ -544,26 +544,26 @@ class SymbolNode:
                             raise Error('to use `deque` the type of deque values must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.token.end + 3, source.find("\n", self.token.end + 3))
                         return 'Deque[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
-                    if self.children[0].children[0].token_str() == 'int' and self.children[0].children[1].token_str() == 'from_bytes':
+                    if c00 == 'int' and c01 == 'from_bytes':
                         assert(len(self.children) == 5)
                         if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little'):
                             raise Error("only 'little' byteorder supported so far", self.children[3].token)
                         return "Int(bytes' " + self.children[1].to_str() + ')'
-                    if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'shuffle':
+                    if c00 == 'random' and c01 == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
-                    if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randint':
+                    if c00 == 'random' and c01 == 'randint':
                         return 'random:(' + self.children[1].to_str() + ' .. ' + self.children[3].to_str() + ')'
-                    if self.children[0].children[0].token_str() == 'random' and self.children[0].children[1].token_str() == 'randrange':
+                    if c00 == 'random' and c01 == 'randrange':
                         return 'random:(' + self.children[1].to_str() + (' .< ' + self.children[3].to_str() if len(self.children) == 5 else '') + ')'
-                    if self.children[0].children[0].token_str() == 'heapq':
-                        res = 'minheap:' + {'heappush':'push', 'heappop':'pop', 'heapify':'heapify'}[self.children[0].children[1].token_str()] + '(&'
+                    if c00 == 'heapq':
+                        res = 'minheap:' + {'heappush':'push', 'heappop':'pop', 'heapify':'heapify'}[c01] + '(&'
                         for i in range(1, len(self.children), 2):
                             assert(self.children[i+1] is None)
                             res += self.children[i].to_str()
                             if i < len(self.children)-2:
                                 res += ', '
                         return res + ')'
-                    if self.children[0].children[0].token_str() == 'itertools' and self.children[0].children[1].token_str() == 'count': # `itertools.count(1)` -> `1..`
+                    if c00 == 'itertools' and c01 == 'count': # `itertools.count(1)` -> `1..`
                         return self.children[1].to_str() + '..'
                     if self.children[0].children[0].token.category == Token.Category.STRING_LITERAL and c01 == 'format':
                         return self.str_format()
@@ -2130,7 +2130,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 

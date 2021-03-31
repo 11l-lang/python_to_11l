@@ -1015,7 +1015,7 @@ class SymbolNode:
                             return 'time:today'
                     if self.children[0].children[0].token_str() == 'os' and self.children[0].children[1].token_str() == 'path':
                         r = {'pathsep':'os:env_path_sep', 'isdir':'fs:is_dir', 'isfile':'fs:is_file', 'islink':'fs:is_symlink',
-                             'dirname':'fs:path:dir_name', 'basename':'fs:path:base_name', 'abspath':'fs:path:absolute', 'relpath':'fs:path:relative',
+                             'dirname':'fs:path:dir_name', 'basename':'fs:path:base_name', 'abspath':'fs:path:absolute', 'relpath':'fs:path:relative', 'realpath':'fs:path:canonical',
                              'getsize':'fs:file_size', 'splitext':'fs:path:split_ext'}.get(self.children[1].token_str(), '')
                         if r != '':
                             return r

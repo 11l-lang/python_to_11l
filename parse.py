@@ -500,14 +500,23 @@ class SymbolNode:
                                 if i < len(self.children)-2:
                                     res += ', '
                         return res + ')'
-                    if self.children[0].children[0].symbol.id == '(' and \
+                    if self.children[0].children[0].function_call and \
                        self.children[0].children[0].children[0].token_str() == 'open' and \
                    len(self.children[0].children[0].children) == 5 and \
                        self.children[0].children[0].children[4] is None and \
                        self.children[0].children[0].children[3].token_str() in ("'rb'", '"rb"') and \
-                       c01 == 'read': # ) # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
+                       c01 == 'read': # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
                         assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
+                    if c01 == 'read': # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(2)`
+                        if self.children[0].children[0].token.category == Token.Category.NAME:
+                            tid = self.scope.find(self.children[0].children[0].token_str())
+                            if type(tid.node) == ASTExprAssignment and tid.node.expression.function_call and \
+                                                                       tid.node.expression.children[0].token_str() == 'open' and \
+                                                                   len(tid.node.expression.children) == 5 and \
+                                                                       tid.node.expression.children[4] is None and \
+                                                                       tid.node.expression.children[3].token_str() in ("'rb'", '"rb"'):
+                                return self.children[0].children[0].token_str() + '.read_bytes(' + self.children[1].to_str() + ')'
                     if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'
@@ -618,7 +627,6 @@ class SymbolNode:
                     sl = slice(self.token.end + 3, source.find("\n", self.token.end + 3))
                     return 'Set[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
                 elif func_name == 'open':
-                    func_name = 'File'
                     mode = '‘r’'
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
@@ -636,6 +644,19 @@ class SymbolNode:
                                 self.children.pop(i+1)
                                 self.children.pop(i)
                                 break
+                    res = 'File('
+                    for i in range(1, len(self.children), 2):
+                        if self.children[i+1] is None:
+                            if i == 3:
+                                res += self.children[i].to_str().replace('b', '') # there is no binary mode in 11l
+                            else:
+                                res += self.children[i].to_str()
+                        else:
+                            res += self.children[i].to_str() + "' "
+                            res += self.children[i+1].to_str()
+                        if i < len(self.children)-2:
+                            res += ', '
+                    return res + ')'
                 elif func_name == 'product':
                     func_name = 'cart_product'
                 elif func_name == 'deepcopy':
@@ -2555,7 +2576,7 @@ def parse_internal(this_node, one_line_scope = False):
                  node.expression.children[0].children[0].token_str() == 'collections' and \
                  node.expression.children[0].children[1].token_str() == 'defaultdict':
                 type_name = 'DefaultDict'
-            node.add_vars = [scope.add_var(name_token_str, False, type_name, name_token)]
+            node.add_vars = [scope.add_var(name_token_str, False, type_name, name_token, node = node)]
             if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
                 if node.add_vars[0]:
                     raise Error('please specify type of empty list', Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME))

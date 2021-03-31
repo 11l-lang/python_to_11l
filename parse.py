@@ -353,7 +353,10 @@ class SymbolNode:
 
     def struct_unpack(self):
         assert(self.children[1].token.category == Token.Category.STRING_LITERAL)
-        return {'i':'Int32', 'I':'UInt32', 'h':'Int16', 'H':'UInt16', 'b':'Int8', 'B':'Byte'}[self.children[1].token_str()[1:-1]] + '.unpack(' + self.children[3].to_str() + ')'
+        res = {'i':'Int32', 'I':'UInt32', 'h':'Int16', 'H':'UInt16', 'b':'Int8', 'B':'Byte'}[self.children[1].token_str()[1:-1]] + '.' + self.children[0].children[1].token_str() + '(' + self.children[3].to_str()
+        if self.children[0].children[1].token_str() == 'unpack_from':
+            res += ', ' + self.children[5].to_str()
+        return res + ')'
 
     def to_str(self):
         # r = ''
@@ -873,7 +876,7 @@ class SymbolNode:
                     c1 = self.children[1].to_str()
                     if self.children[0].function_call and self.children[0].children[0].symbol.id == '.' and \
                                                           self.children[0].children[0].children[0].token_str() == 'struct' and \
-                                                          self.children[0].children[0].children[1].token_str() == 'unpack': # `struct.unpack('I', bmp.read(4))[0]` -> `UInt32.unpack(bmp.read_bytes(4))`
+                                                          self.children[0].children[0].children[1].token_str() in ('unpack', 'unpack_from'): # `struct.unpack('I', bmp.read(4))[0]` -> `UInt32.unpack(bmp.read_bytes(4))`
                         assert(c1 == '0')
                         return self.children[0].struct_unpack()
                     return (c0 + '['

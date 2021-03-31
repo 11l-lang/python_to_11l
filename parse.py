@@ -662,7 +662,7 @@ class SymbolNode:
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
                             if i == 3:
-                                res += self.children[i].to_str().replace('b', '') # there is no binary mode in 11l
+                                res += self.children[i].to_str().replace('b', '').replace('t', '') # there is neither binary nor text mode in 11l
                             else:
                                 res += self.children[i].to_str()
                         else:

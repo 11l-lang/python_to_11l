@@ -353,7 +353,16 @@ class SymbolNode:
 
     def struct_unpack(self):
         assert(self.children[1].token.category == Token.Category.STRING_LITERAL)
-        res = {'i':'Int32', 'I':'UInt32', 'h':'Int16', 'H':'UInt16', 'b':'Int8', 'B':'Byte'}[self.children[1].token_str()[1:-1]] + '.' + self.children[0].children[1].token_str() + '(' + self.children[3].to_str()
+
+        big_endian = False
+        format = self.children[1].token_str()[1:-1]
+        if format.startswith(('<', '>')):
+            if format[0] == '>':
+                big_endian = True
+            format = format[1:]
+        assert(len(format) == 1)
+
+        res = {'i':'Int32', 'I':'UInt32', 'h':'Int16', 'H':'UInt16', 'b':'Int8', 'B':'Byte'}[format] + '.' + self.children[0].children[1].token_str() + '_be'*big_endian + '(' + self.children[3].to_str()
         if self.children[0].children[1].token_str() == 'unpack_from':
             res += ', ' + self.children[5].to_str()
         return res + ')'

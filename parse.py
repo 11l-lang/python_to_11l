@@ -228,7 +228,7 @@ class SymbolNode:
             if t0 is not None:
                 return t0
             return self.children[2].var_type()
-        if self.function_call and self.children[0].token_str() == 'str':
+        if self.function_call and self.children[0].token_str() in ('str', 'chr'):
             return 'str'
         return self.scope.var_type(self.token.value(source))
 
@@ -351,6 +351,10 @@ class SymbolNode:
 
         return nfmtstr + '.format(' + format_args + ')'
 
+    def struct_unpack(self):
+        assert(self.children[1].token.category == Token.Category.STRING_LITERAL)
+        return {'i':'Int32', 'I':'UInt32', 'h':'Int16', 'H':'UInt16', 'b':'Int8', 'B':'Byte'}[self.children[1].token_str()[1:-1]] + '.unpack(' + self.children[3].to_str() + ')'
+
     def to_str(self):
         # r = ''
         # prev_token_end = self.children[0].token.start
@@ -429,6 +433,8 @@ class SymbolNode:
             elif s[0] in 'bB':
                 if len(s) == 4 or (len(s) == 5 and s[2] == "\\"):
                     return s[1:] + '.code'
+                elif '\\' in s:
+                    return 'Bytes("' + s[2:-1] + '")'
                 else:
                     return 'Bytes(‘' + s[2:-1] + '’)'
             else:
@@ -844,6 +850,11 @@ class SymbolNode:
                     return c0 + '.last'
                 else:
                     c1 = self.children[1].to_str()
+                    if self.children[0].function_call and self.children[0].children[0].symbol.id == '.' and \
+                                                          self.children[0].children[0].children[0].token_str() == 'struct' and \
+                                                          self.children[0].children[0].children[1].token_str() == 'unpack': # `struct.unpack('I', bmp.read(4))[0]` -> `UInt32.unpack(bmp.read_bytes(4))`
+                        assert(c1 == '0')
+                        return self.children[0].struct_unpack()
                     return (c0 + '['
                         + '(len)'*(c1[0] == '-') # hacky implementation of ‘this rule’[https://docs.python.org/3/reference/simple_stmts.html]:‘the subscript must yield an integer. If it is negative, the sequence's length is added to it.’
                         + c1 + ']')

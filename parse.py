@@ -2305,7 +2305,7 @@ def parse_internal(this_node, one_line_scope = False):
                             next_token()
                         else:
                             type_ = advance_type()
-                            if type_ == 'list':
+                            if type_ in ('list', 'dict'):
                                 type_ = ''
                                 qualifier = '&'
 

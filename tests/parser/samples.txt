@@ -865,9 +865,11 @@ L(a) d.keys()
 
 m = int(input())
 d = {q.lower(): q for q in [input() for i in range(m)]}
+e = {q.lower(): q for q in [input() for i in range(m)] if len(q) > 1}
 ===
 V m = Int(input())
 V d = Dict((0 .< m).map(i -> input()), q -> (q.lowercase(), q))
+V e = Dict((0 .< m).map(i -> input()).filter(q -> q.len > 1), q -> (q.lowercase(), q))
 
 
 for i, a in enumerate([1, 2, 3, 4, 5]):

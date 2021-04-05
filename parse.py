@@ -911,7 +911,10 @@ class SymbolNode:
                 assert(len(self.children) == 2)
                 c = self.children[1]
                 c2s = c.children[2].to_str()
-                return 'Dict(' + (c2s[1:-1] if c.children[2].function_call and c.children[2].children[0].token_str() == 'range' else c2s) + ', ' + c.children[1].to_str() + ' -> (' + self.children[0].to_str() + ', ' + c.children[0].to_str() + '))'
+                res = (c2s[1:-1] if c.children[2].function_call and c.children[2].children[0].token_str() == 'range' else c2s)
+                if len(self.children[-1].children) == 4:
+                    res += '.filter(' + self.children[-1].children[1].to_str() + ' -> ' + self.children[-1].children[3].to_str() + ')'
+                return 'Dict(' + res + ', ' + c.children[1].to_str() + ' -> (' + self.children[0].to_str() + ', ' + c.children[0].to_str() + '))'
 
             res = '['
             for i in range(0, len(self.children), 2):

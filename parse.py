@@ -807,22 +807,24 @@ class SymbolNode:
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
-                            if f_node is not None:
+                            arg = self.children[i].to_str()
+                            if f_node is not None and arg != 'N':
                                 fargs = f_node.function_arguments[i//2 + int(func_name.startswith('.'))]
                                 arg_type_name = fargs[2]
                                 if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or fargs[3] == '&': # ]]]
                                     res += '&'
-                            res += self.children[i].to_str()
+                            res += arg
                         else:
                             ci_str = self.children[i].to_str()
                             res += ci_str + "' "
-                            if f_node is not None:
+                            arg = self.children[i+1].to_str()
+                            if f_node is not None and arg != 'N':
                                 for farg in f_node.function_arguments:
                                     if farg[0] == ci_str:
                                         if farg[2].startswith(('List[', 'Dict[')): # ]]
                                             res += '&'
                                         break
-                            res += self.children[i+1].to_str()
+                            res += arg
                         if i < len(self.children)-2:
                             res += ', '
                     return res + ')'

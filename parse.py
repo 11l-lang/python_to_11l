@@ -809,9 +809,9 @@ class SymbolNode:
                         if self.children[i+1] is None:
                             arg = self.children[i].to_str()
                             if f_node is not None and arg != 'N':
-                                fargs = f_node.function_arguments[i//2 + int(func_name.startswith('.'))]
-                                arg_type_name = fargs[2]
-                                if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or fargs[3] == '&': # ]]]
+                                farg = f_node.function_arguments[i//2 + int(func_name.startswith('.'))]
+                                arg_type_name = farg[2]
+                                if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or farg[3] == '&': # ]]]
                                     res += '&'
                             res += arg
                         else:
@@ -821,7 +821,7 @@ class SymbolNode:
                             if f_node is not None and arg != 'N':
                                 for farg in f_node.function_arguments:
                                     if farg[0] == ci_str:
-                                        if farg[2].startswith(('List[', 'Dict[')): # ]]
+                                        if farg[2].startswith(('List[', 'Dict[', 'DefaultDict[')) or farg[3] == '&': # ]]]
                                             res += '&'
                                         break
                             res += arg

@@ -955,3 +955,15 @@ T EXSSamplePoolLocator(EXSSamplePool)
 
    F (exsfile_name)
       .base = fs:path:dir_name(exsfile_name)
+
+
+def gnomesort(a : list):
+    return a
+
+print(gnomesort([3,4,2,5,1,6]))
+print(gnomesort(a = [3,4,2,5,1,6]))
+===
+F gnomesort(&a)
+   R a
+print(gnomesort(&[3, 4, 2, 5, 1, 6]))
+print(gnomesort(a' &[3, 4, 2, 5, 1, 6]))

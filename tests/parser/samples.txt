@@ -967,3 +967,32 @@ F gnomesort(&a)
    R a
 print(gnomesort(&[3, 4, 2, 5, 1, 6]))
 print(gnomesort(a' &[3, 4, 2, 5, 1, 6]))
+
+
+from typing import List
+
+def f(l : List[int] = None):
+    if l is None:
+        l = []
+    l.append(1)
+    print(l)
+
+f()
+f()
+
+def f2(l : List[int] = None, l2 : List[int] = None):
+    if l is None:
+        l = []
+    if l2 is None:
+        l2 = []
+    print(l)
+===
+
+F f([Int] &l = [Int]())
+   l.append(1)
+   print(l)
+f()
+f()
+
+F f2([Int] &l = [Int](), [Int] &l2 = [Int]())
+   print(l)

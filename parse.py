@@ -2369,16 +2369,16 @@ def parse_internal(this_node, one_line_scope = False):
                                     node.function_return_type = child.function_return_type
                                 break
 
-                # Detect empty list default arguments (e.g. `def f(l : List[int] = None): if l is None: l = []`)
+                # Detect list default arguments (e.g. `def f(l : List[int] = None): if l is None: l = [...]`)
                 while True:
                     n = node.children[0]
                     if type(n) == ASTIf and n.expression.symbol.id == 'is' and n.expression.children[1].token_str() == 'None' and len(n.children) == 1 and type(n.children[0]) == ASTExprAssignment and n.else_or_elif is None:
                         nc = n.children[0]
-                        if nc.dest_expression.token_str() == n.expression.children[0].token_str() and nc.expression.symbol.id == '[' and len(nc.expression.children) == 0: # ]
+                        if nc.dest_expression.token_str() == n.expression.children[0].token_str() and nc.expression.is_list:
                             for i, farg in enumerate(node.function_arguments):
                                 if farg[0] == nc.dest_expression.token_str():
                                     assert(farg[1] == 'N')
-                                    node.function_arguments[i] = (farg[0], trans_type(farg[2], node.scope, tokens[node.tokeni]) + '()', farg[2], farg[3])
+                                    node.function_arguments[i] = (farg[0], trans_type(farg[2], node.scope, tokens[node.tokeni]) + '()' if len(nc.expression.children) == 0 else nc.expression.to_str(), farg[2], farg[3])
                                     node.children.pop(0)
                                     break # `^L.continue`
                             else:         # ``

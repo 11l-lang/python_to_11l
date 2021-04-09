@@ -996,3 +996,22 @@ f()
 
 F f2([Int] &l = [Int](), [Int] &l2 = [Int]())
    print(l)
+
+
+from typing import List
+
+def f(l : List[int] = None):
+    if l is None:
+        l = [0, 2]
+    l.append(1)
+    print(l)
+
+f()
+f()
+===
+
+F f([Int] &l = [0, 2])
+   l.append(1)
+   print(l)
+f()
+f()

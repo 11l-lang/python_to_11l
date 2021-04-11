@@ -604,13 +604,20 @@ class SymbolNode:
                     if func_name == 'int':
                         func_name = 'Int'
                     if len(self.children) == 5:
-                        return func_name + '(' + self.children[1].to_str() + ", radix' " + self.children[3].to_str() + ')'
+                        if self.children[3+1] is None:
+                            radix = self.children[3].to_str()
+                        else:
+                            assert(self.children[3].token_str() == 'base')
+                            radix = self.children[3+1].to_str()
+                        return func_name + '(' + self.children[1].to_str() + ", radix' " + radix + ')'
                 elif func_name == 'float':
                     if len(self.children) == 3 and self.children[1].token.category == Token.Category.STRING_LITERAL and self.children[1].token_str()[1:-1].lower() in ('infinity', 'inf'):
                         return 'Float.infinity'
                     func_name = 'Float'
                 elif func_name == 'complex':
                     func_name = 'Complex'
+                elif func_name == 'bytearray':
+                    func_name = '[Byte]'
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
                         parens = True#len(self.children[1].children) == 7 # if true, then this is a range with step
@@ -1360,7 +1367,7 @@ class ASTAssert(ASTNodeWithExpression):
         super().walk_expressions(f)
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'Byte':'Byte',
-                       'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):

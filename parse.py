@@ -313,8 +313,12 @@ class SymbolNode:
                     before_period = 0
                     after_period = 6
                     i += 1
+                    if fmtstr[i:i+1] == '<':
+                        nfmtstr += '<'
+                        i += 1
                     if fmtstr[i:i+1] == '0' and fmtstr[i+1:i+2].isdigit(): # zero padding
                         nfmtstr += '0'
+                        i += 1
                     while i < len(fmtstr) and fmtstr[i].isdigit():
                         before_period = before_period*10 + ord(fmtstr[i]) - ord('0')
                         i += 1

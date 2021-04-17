@@ -892,7 +892,11 @@ class SymbolNode:
                     fnb2 = for_negative_bound(2)
                     s = (for_negative_bound(1) or '0') + space + '.' + ('<' + space + fnb2 if fnb2 else '.')
                     if len(self.children) == 4 and self.children[3] is not None:
-                        s = '(' + s + ').step(' + self.children[3].to_str() + ')'
+                        step = self.children[3].to_str()
+                        if step.startswith('-') and s == '0..':
+                            s = '((len)-1..0).step(' + step + ')'
+                        else:
+                            s = '(' + s + ').step(' + step + ')'
                     return c0 + '[' + s + ']'
                 elif self.children[1].to_str() == '-1':
                     return c0 + '.last'

@@ -894,7 +894,7 @@ class SymbolNode:
                     if len(self.children) == 4 and self.children[3] is not None:
                         step = self.children[3].to_str()
                         if step.startswith('-') and s == '0..':
-                            s = '((len)-1..0).step(' + step + ')'
+                            s = '((len)-1..).step(' + step + ')'
                         else:
                             s = '(' + s + ').step(' + step + ')'
                     return c0 + '[' + s + ']'

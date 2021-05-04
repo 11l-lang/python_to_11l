@@ -1691,8 +1691,12 @@ class ASTExceptionCatch(ASTNodeWithChildren):
 
 class ASTDel(ASTNodeWithExpression):
     def to_str(self, indent):
-        assert(self.expression.slicing and len(self.expression.children) == 3)
-        return ' ' * (indent*3) + self.expression.children[0].to_str() + '.del(' + self.expression.children[1].to_str() + ' .< ' + self.expression.children[2].to_str() + ")\n"
+        if self.expression.slicing:
+            assert(len(self.expression.children) == 3)
+            return ' ' * (indent*3) + self.expression.children[0].to_str() + '.del(' + self.expression.children[1].to_str() + ' .< ' + self.expression.children[2].to_str() + ")\n"
+        else:
+            assert(self.expression.symbol.id == '[' and not self.expression.is_list) # ]
+            return ' ' * (indent*3) + self.expression.children[0].to_str() + '.pop(' + self.expression.children[1].to_str() + ")\n"
 
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None

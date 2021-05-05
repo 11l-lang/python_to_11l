@@ -597,7 +597,11 @@ class SymbolNode:
                                 res += ', '
                         return res + ')'
                     if c00 == 'itertools' and c01 == 'count': # `itertools.count(1)` -> `1..`
-                        return self.children[1].to_str() + '..'
+                        r = self.children[1].to_str() + '..'
+                        if len(self.children) == 5: # `itertools.count(1, 2)` -> `(1..).step(2)`
+                            return '(' + r + ').step(' + self.children[3].to_str() + ')'
+                        else:
+                            return r
                     if self.children[0].children[0].token.category == Token.Category.STRING_LITERAL and c01 == 'format':
                         return self.str_format()
 

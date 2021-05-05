@@ -1729,7 +1729,19 @@ class ASTClassDefinition(ASTNodeWithChildren):
                 current_index += 1
                 r += "\n"
             return r
-        return self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name != 'Exception' else ''))
+
+        r = self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name not in ('Exception', 'NamedTuple') else ''))
+
+        if self.base_class_name == 'NamedTuple':
+            members = []
+            for c in self.children:
+                if type(c) == ASTTypeHint:
+                    members.append(c.var)
+            r += ' ' * ((indent+1)*3) + 'F (' + ', '.join(members) + ")\n"
+            for m in members:
+                r += ' ' * ((indent+2)*3) + '.' + m + ' = ' + m + "\n"
+
+        return r
 
 class ASTPass(ASTNode):
     def to_str(self, indent):
@@ -2854,6 +2866,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     for pytype in python_types_to_11l:
         scope.add_var(pytype)
     scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
+    scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
     file_name = file_name_
     next_token()
     p = ASTProgram()

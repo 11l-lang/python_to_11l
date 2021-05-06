@@ -799,6 +799,7 @@ class SymbolNode:
 
                     return res + ')'
                 else:
+                    skip_first_self_argument = False
                     if ':' in func_name:
                         colon_pos = func_name.rfind(':')
                         module_name = func_name[:colon_pos].replace(':', '.')
@@ -807,6 +808,7 @@ class SymbolNode:
                         else:
                             tid = None
                     elif func_name.startswith('.'):
+                        skip_first_self_argument = True
                         s = self.scope
                         while True:
                             if s.is_function and not s.is_lambda_or_for:
@@ -818,13 +820,22 @@ class SymbolNode:
                                 break
                     else:
                         tid = self.scope.find(func_name)
-                    f_node = tid.node if tid is not None and type(tid.node) == ASTFunctionDefinition else None
+                    if tid is not None and type(tid.node) == ASTClassDefinition:
+                        for node in tid.node.children:
+                            if type(node) == ASTFunctionDefinition and node.function_name == '__init__':
+                                f_node = node
+                                skip_first_self_argument = True
+                                break
+                        else:
+                            f_node = None
+                    else:
+                        f_node = tid.node if tid is not None and type(tid.node) == ASTFunctionDefinition else None
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
                             arg = self.children[i].to_str()
                             if f_node is not None and arg != 'N':
-                                farg = f_node.function_arguments[i//2 + int(func_name.startswith('.'))]
+                                farg = f_node.function_arguments[i//2 + int(skip_first_self_argument)]
                                 arg_type_name = farg[2]
                                 if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or farg[3] == '&': # ]]]
                                     res += '&'

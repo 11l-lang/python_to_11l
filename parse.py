@@ -1389,7 +1389,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'Byte':'Byte',
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte',
                        'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
@@ -2672,7 +2672,8 @@ def parse_internal(this_node, one_line_scope = False):
              or (node.dest_expression.token_str() == 'Byte'   and node.expression.token_str() == 'int')   # skip `Byte = int` statement
              or (node.dest_expression.token_str() == 'Int64'  and node.expression.token_str() == 'int')   # skip `Int64 = int` statement
              or (node.dest_expression.token_str() == 'UInt64' and node.expression.token_str() == 'int')   # skip `UInt64 = int` statement
-             or (node.dest_expression.token_str() == 'UInt32' and node.expression.token_str() == 'int')): # skip `UInt32 = int` statement
+             or (node.dest_expression.token_str() == 'UInt32' and node.expression.token_str() == 'int')   # skip `UInt32 = int` statement
+             or (node.dest_expression.token_str() == 'BigInt' and node.expression.token_str() == 'int')): # skip `BigInt = int` statement
                 continue
 
         elif token.category == Token.Category.NAME and (peek_token().value(source) == ':' # this is type hint

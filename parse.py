@@ -604,6 +604,16 @@ class SymbolNode:
                             return r
                     if self.children[0].children[0].token.category == Token.Category.STRING_LITERAL and c01 == 'format':
                         return self.str_format()
+                    if c00 == '_11l':
+                        if c01 in ('next_permutation', 'is_sorted'): # `_11l.next_permutation(arr)` -> `arr.next_permutation()`
+                            return self.children[1].to_str() + '.' + c01 + '()'
+                        res = c01 + '('
+                        for i in range(1, len(self.children), 2):
+                            assert(self.children[i+1] is None)
+                            res += self.children[i].to_str()
+                            if i < len(self.children)-2:
+                                res += ', '
+                        return res + ')'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -2238,7 +2248,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct', '_11l'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 

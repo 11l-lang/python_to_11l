@@ -1334,9 +1334,19 @@ class ASTExprAssignment(ASTNodeWithExpression):
 
         if self.dest_expression.slicing:
             s = self.dest_expression.to_str() # [
-            if s.endswith(']') and self.expression.function_call and self.expression.children[0].token_str() == 'reversed' and self.expression.children[1].to_str() == s:
+            if s.endswith(']') and self.expression.function_call and self.expression.children[0].token_str() in ('reversed', 'sorted') and self.expression.children[1].to_str() == s:
                 l = len(self.dest_expression.children[0].to_str())
-                return ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1]  + ")\n"
+                if self.expression.children[0].token_str() == 'reversed':
+                    return ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1] + ")\n"
+                else:
+                    additional_args = ''
+                    for i in range(3, len(self.expression.children), 2):
+                        additional_args += ', '
+                        if self.expression.children[i+1] is None:
+                            additional_args += self.expression.children[i].to_str()
+                        else:
+                            additional_args += self.expression.children[i].to_str() + "' " + self.expression.children[i+1].to_str()
+                    return ' ' * (indent*3) + s[:l] + '.sort_range(' + s[l+1:-1] + additional_args + ")\n"
             raise Error('slice assignment is not supported', self.dest_expression.left_to_right_token())
 
         if self.drop_list:

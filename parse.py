@@ -989,6 +989,11 @@ class SymbolNode:
                 res += fparams + self.children[0].to_str() + ')'
                 return res
 
+            if self.children[0].symbol.id == '*' and self.children[0].children[0].is_list and self.children[2].function_call and self.children[2].children[0].token_str() == 'range': # `[[0] * m for i in range(n)]` -> `[[0] * m] * n`
+                assert(len(self.children[2].children) == 3)
+                c21 = self.children[2].children[1]
+                return '[' + self.children[0].to_str().replace('@', '') + '] * ' + (c21.to_str() if c21.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME) else '(' + c21.to_str() + ')')
+
             res = self.children[2].children[0].children[0].to_str() if self.children[2].symbol.id == '(' and len(self.children[2].children) == 1 and self.children[2].children[0].symbol.id == '.' and len(self.children[2].children[0].children) == 2 and self.children[2].children[0].children[1].token_str() == 'items' else self.children[2].to_str() # )
             if len(self.children) == 4:
                 res += '.filter(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'

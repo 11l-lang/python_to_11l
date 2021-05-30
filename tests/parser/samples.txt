@@ -1019,3 +1019,22 @@ F f([Int] &l = [0, 2])
    print(l)
 f()
 f()
+
+
+table = [[0]*0 for i in range(10)]
+ar4x5 = [[0]*5 for i in range(4)]
+f45 = [[0.0]*5 for i in range(4)]
+def f(size):
+    a = [[0]*size for i in range(size)]
+    ncols = 3
+    nrows = 4
+    board = [[-1] * (ncols + 2) for _ in range(nrows + 2)]
+===
+V table = [[Int]()] * 10
+V ar4x5 = [[0] * 5] * 4
+V f45 = [[0.0] * 5] * 4
+F f(size)
+   V a = [[0] * size] * size
+   V ncols = 3
+   V nrows = 4
+   V board = [[-1] * (ncols + 2)] * (nrows + 2)

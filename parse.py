@@ -95,7 +95,7 @@ class Scope:
             return ''
         if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
                     'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
-                    'next_permutation', 'is_sorted', 'format_float',
+                    'next_permutation', 'is_sorted', 'format_float', 'move',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
             return ''
 
@@ -1403,7 +1403,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte',
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt64':'UInt64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte',
                        'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
@@ -2304,7 +2304,9 @@ def parse_internal(this_node, one_line_scope = False):
                 advance('import')
                 while True:
                     if token.category != Token.Category.NAME:
-                        if not (module_name == '_11l' and token.value(source) == '*'):
+                        if module_name == '_11l' and token.value(source) == '*':
+                            scope.add_var('collections', True, '(Module)')
+                        else:
                             raise Error('expected name', token)
                     next_token()
                     if token.value(source) != ',':

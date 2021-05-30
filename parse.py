@@ -95,6 +95,7 @@ class Scope:
             return ''
         if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
                     'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
+                    'next_permutation', 'is_sorted', 'format_float',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
             return ''
 
@@ -604,16 +605,6 @@ class SymbolNode:
                             return r
                     if self.children[0].children[0].token.category == Token.Category.STRING_LITERAL and c01 == 'format':
                         return self.str_format()
-                    if c00 == '_11l':
-                        if c01 in ('next_permutation', 'is_sorted'): # `_11l.next_permutation(arr)` -> `arr.next_permutation()`
-                            return self.children[1].to_str() + '.' + c01 + '()'
-                        res = c01 + '('
-                        for i in range(1, len(self.children), 2):
-                            assert(self.children[i+1] is None)
-                            res += self.children[i].to_str()
-                            if i < len(self.children)-2:
-                                res += ', '
-                        return res + ')'
 
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
@@ -733,6 +724,9 @@ class SymbolNode:
                 elif func_name == 'super': # replace `super()` with `T.base`
                     assert(len(self.children) == 1)
                     return 'T.base'
+                elif func_name in ('next_permutation', 'is_sorted'): # `next_permutation(arr)` -> `arr.next_permutation()`
+                    assert(len(self.children) == 3)
+                    return self.children[1].to_str() + '.' + func_name + '()'
                 elif func_name == 'range':
                     assert(3 <= len(self.children) <= 7)
                     parenthesis = ('(', ')') if self.parent is not None and (self.parent.symbol.id == 'for' or (self.parent.function_call and self.parent.children[0].token_str() in ('map', 'filter', 'reduce'))) else ('', '')
@@ -2248,7 +2242,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct', '_11l'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 
@@ -2304,12 +2298,14 @@ def parse_internal(this_node, one_line_scope = False):
 
             elif token.value(source) == 'from':
                 next_token()
-                assert(token.value(source) in ('typing', 'functools', 'itertools', 'enum', 'copy'))
+                module_name = token.value(source)
+                assert(module_name in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l'))
                 next_token()
                 advance('import')
                 while True:
                     if token.category != Token.Category.NAME:
-                        raise Error('expected name', token)
+                        if not (module_name == '_11l' and token.value(source) == '*'):
+                            raise Error('expected name', token)
                     next_token()
                     if token.value(source) != ',':
                         break

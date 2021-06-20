@@ -1038,3 +1038,12 @@ F f(size)
    V ncols = 3
    V nrows = 4
    V board = [[-1] * (ncols + 2)] * (nrows + 2)
+
+
+def gen_row(w, s):
+  def gen_seg(o : List[int]):
+      gen_seg(o)
+===
+F gen_row(w, s)
+   F gen_seg([Int] &o)
+      @gen_seg(&o)

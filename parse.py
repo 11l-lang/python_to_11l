@@ -823,7 +823,7 @@ class SymbolNode:
                                 tid = None
                                 break
                     else:
-                        tid = self.scope.find(func_name)
+                        tid = self.scope.find(func_name.lstrip('@'))
                     if tid is not None and type(tid.node) == ASTClassDefinition:
                         for node in tid.node.children:
                             if type(node) == ASTFunctionDefinition and node.function_name == '__init__':

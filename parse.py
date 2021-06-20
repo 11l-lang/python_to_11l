@@ -1411,7 +1411,7 @@ class ASTAssert(ASTNodeWithExpression):
         super().walk_expressions(f)
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt64':'UInt64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte',
-                       'bool':'Bool', 'None':'N', 'List':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'ConstList':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):
@@ -1563,7 +1563,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                     farg += '?'
                     assert(arg[3] == '')
                 farg += ' '
-                if ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) or arg[3] == '&': # ]]]]
+                if (ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) and not arg[2].startswith('ConstList[')) or arg[3] == '&': # ]]]]]
                     farg += '&'
             else:
                 if arg[3] == '&':
@@ -2698,7 +2698,8 @@ def parse_internal(this_node, one_line_scope = False):
              or (node.dest_expression.token_str() == 'Int64'  and node.expression.token_str() == 'int')   # skip `Int64 = int` statement
              or (node.dest_expression.token_str() == 'UInt64' and node.expression.token_str() == 'int')   # skip `UInt64 = int` statement
              or (node.dest_expression.token_str() == 'UInt32' and node.expression.token_str() == 'int')   # skip `UInt32 = int` statement
-             or (node.dest_expression.token_str() == 'BigInt' and node.expression.token_str() == 'int')): # skip `BigInt = int` statement
+             or (node.dest_expression.token_str() == 'BigInt' and node.expression.token_str() == 'int')   # skip `BigInt = int` statement
+             or (node.dest_expression.token_str() == 'ConstList' and node.expression.token_str() == 'List')): # skip `ConstList = List` statement
                 continue
 
         elif token.category == Token.Category.NAME and (peek_token().value(source) == ':' # this is type hint

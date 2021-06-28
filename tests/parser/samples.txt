@@ -1047,3 +1047,10 @@ def gen_row(w, s):
 F gen_row(w, s)
    F gen_seg([Int] &o)
       @gen_seg(&o)
+
+
+descendants = [1]
+print("Descendants:", len(descendants) if len(descendants) else -1)
+===
+V descendants = [1]
+print(‘Descendants: ’(I !descendants.empty {descendants.len} E -1))

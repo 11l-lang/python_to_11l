@@ -696,7 +696,7 @@ class SymbolNode:
 
                 if func_name == 'len': # replace `len(container)` with `container.len`
                     assert(len(self.children) == 3)
-                    if isinstance(self.ast_parent, (ASTIf, ASTWhile)) if self.parent is None else self.parent.symbol.id == 'if': # `if len(arr)` -> `I !arr.empty`
+                    if isinstance(self.ast_parent, (ASTIf, ASTWhile)) if self.parent is None else (self.parent.symbol.id == 'if' and self is self.parent.children[1]): # `if len(arr)` -> `I !arr.empty`
                         return '!' + self.children[1].to_str() + '.empty'
                     if len(self.children[1].children) == 2 and self.children[1].symbol.id not in ('.', '['): # ]
                         return '(' + self.children[1].to_str() + ')' + '.len'

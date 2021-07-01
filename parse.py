@@ -2761,7 +2761,7 @@ def parse_internal(this_node, one_line_scope = False):
                                 type_arg += ' '
                                 next_token()
                             else:
-                                assert(token.category == Token.Category.NAME)
+                                assert(token.category == Token.Category.NAME or (token.category == Token.Category.CONSTANT and token.value(source) == 'None'))
                                 next_token()
                         type_args.append(type_arg)
                     else:

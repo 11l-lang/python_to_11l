@@ -640,6 +640,8 @@ class SymbolNode:
                     assert(len(self.children) == 3)
                     if self.children[1].function_call and self.children[1].children[0].token_str() == 'sorted':
                         return 'tuple_' + self.children[1].to_str()
+                elif func_name == 'MutTuple':
+                    func_name = ''
                 elif func_name == 'dict':
                     func_name = 'Dict'
                 elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`
@@ -1411,7 +1413,7 @@ class ASTAssert(ASTNodeWithExpression):
         super().walk_expressions(f)
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt64':'UInt64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte',
-                       'bool':'Bool', 'None':'N', 'List':'', 'ConstList':'', 'Tuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'ConstList':'', 'Tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):
@@ -1450,7 +1452,7 @@ def trans_type(ty, scope, type_token):
                         s = i
                         #continue # this is not necessary here
                 i += 1
-            if ty.startswith('Tuple['): # ]
+            if ty.startswith(('Tuple[', 'MutTuple[')): # ]]
                 return '(' + ', '.join(types) + ')'
             if ty.startswith('Dict['): # ]
                 assert(len(types) == 2)

@@ -94,7 +94,7 @@ class Scope:
         if name == 'self':
             return ''
         if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
-                    'open', 'min', 'max', 'divmod', 'hex', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
+                    'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
                     'next_permutation', 'is_sorted', 'format_float', 'move', 'ref',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
             return ''
@@ -693,6 +693,8 @@ class SymbolNode:
                     func_name = 'cart_product'
                 elif func_name == 'deepcopy':
                     func_name = 'copy'
+                elif func_name == 'hexu':
+                    func_name = 'hex'
                 elif func_name == 'print' and self.iterable_unpacking:
                     func_name = 'print_elements'
 

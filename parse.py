@@ -695,6 +695,9 @@ class SymbolNode:
                     func_name = 'copy'
                 elif func_name == 'hexu':
                     func_name = 'hex'
+                elif func_name == 'hex':
+                    assert(len(self.children) == 3)
+                    return '(‘0x’hex(' + self.children[1].to_str() + ').lowercase())'
                 elif func_name == 'print' and self.iterable_unpacking:
                     func_name = 'print_elements'
 
@@ -901,6 +904,8 @@ class SymbolNode:
                         return 'copy(' + c0 + ')'
                     if c0.startswith('bin(') and len(self.children) == 3 and self.children[1].token_str() == '2' and self.children[2] is None: # ) # `bin(x)[2:]` -> `bin(x)`
                         return c0
+                    # if self.children[0].function_call and self.children[0].children[0].token_str() == 'hex' and len(self.children) == 3 and self.children[1].token_str() == '2' and self.children[2] is None: # `hex(x)[2:]` -> `hex(x).lowercase()`
+                    #     return 'hex(' + self.children[0].children[1].to_str() + ').lowercase()'
                     if len(self.children) == 4 and self.children[1] is None and self.children[2] is None and self.children[3].symbol.id == '-' and len(self.children[3].children) == 1 and self.children[3].children[0].token_str() == '1': # replace `result[::-1]` with `reversed(result)`
                         return 'reversed(' + c0 + ')'
                     def for_negative_bound(c):

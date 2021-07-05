@@ -1065,3 +1065,17 @@ V x = 10
 print(hex(x))
 print((‘0x’hex(x).lowercase())[2..])
 print((‘0x’hex(x).lowercase()))
+
+
+arr = [[1], [2], [3]]
+for a in arr: # &
+    a.append(4)
+for i, a in enumerate(arr): # &
+    a.append(i)
+===
+V arr = [[1], [2], [3]]
+L(&a) arr
+   a.append(4)
+L(&a) arr
+   V i = L.index
+   a.append(i)

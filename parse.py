@@ -2551,6 +2551,8 @@ def parse_internal(this_node, one_line_scope = False):
                     next_token()
                 advance('in')
                 node.set_expression(expression())
+                if source[token.end:token.end+4] == ' # &':
+                    node.loop_variables[-1] = '&' + node.loop_variables[-1]
                 new_scope(node)
                 scope = prev_scope
 

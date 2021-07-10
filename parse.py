@@ -1354,7 +1354,8 @@ class ASTExprAssignment(ASTNodeWithExpression):
 
         if self.dest_expression.slicing:
             s = self.dest_expression.to_str() # [
-            if s.endswith(']') and self.expression.function_call and self.expression.children[0].token_str() in ('reversed', 'sorted') and self.expression.children[1].to_str() == s:
+            assert(s.endswith(']'))
+            if self.expression.function_call and self.expression.children[0].token_str() in ('reversed', 'sorted') and self.expression.children[1].to_str() == s:
                 l = len(self.dest_expression.children[0].to_str())
                 if self.expression.children[0].token_str() == 'reversed':
                     return ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1] + ")\n"
@@ -1738,7 +1739,9 @@ class ASTDel(ASTNodeWithExpression):
     def to_str(self, indent):
         if self.expression.slicing:
             assert(len(self.expression.children) == 3)
-            return ' ' * (indent*3) + self.expression.children[0].to_str() + '.del(' + self.expression.children[1].to_str() + ' .< ' + self.expression.children[2].to_str() + ")\n"
+            s = self.expression.to_str()
+            l = len(self.expression.children[0].to_str())
+            return ' ' * (indent*3) + self.expression.children[0].to_str() + '.del(' + s[l+1:-1] + ")\n"
         else:
             assert(self.expression.symbol.id == '[' and not self.expression.is_list) # ]
             return ' ' * (indent*3) + self.expression.children[0].to_str() + '.pop(' + self.expression.children[1].to_str() + ")\n"

@@ -1460,6 +1460,9 @@ def trans_type(ty, scope, type_token):
                         s = i
                         #continue # this is not necessary here
                 i += 1
+            if ty.startswith('Optional['): # ]
+                assert(len(types) == 1)
+                return types[0] + '?'
             if ty.startswith(('Tuple[', 'MutTuple[')): # ]]
                 return '(' + ', '.join(types) + ')'
             if ty.startswith('Dict['): # ]
@@ -1658,8 +1661,20 @@ class ASTSwitch(ASTNodeWithExpression):
         return r
 
 class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
+    was_no_break : ASTNodeWithChildren = None
+
+    def walk_children(self, f):
+        super().walk_children(f)
+        if self.was_no_break is not None:
+            self.was_no_break.walk_children(f)
+
     def to_str(self, indent):
-        return self.children_to_str(indent, 'L' if self.expression.token.category == Token.Category.CONSTANT and self.expression.token.value(source) == 'True' else 'L ' + self.expression.to_str())
+        r = self.children_to_str(indent, 'L' if self.expression.token.category == Token.Category.CONSTANT and self.expression.token.value(source) == 'True' else 'L ' + self.expression.to_str())
+
+        if self.was_no_break is not None:
+            r += self.was_no_break.children_to_str(indent, 'L.was_no_break')
+
+        return r
 
 class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
     was_no_break : ASTNodeWithChildren = None
@@ -2536,6 +2551,12 @@ def parse_internal(this_node, one_line_scope = False):
                 if node.expression.token.category in (Token.Category.CONSTANT, Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL) and node.expression.token.value(source) != 'True':
                     raise Error('do you mean `while True`?', node.expression.token) # forbid `while 1:`
                 new_scope(node)
+
+                if token is not None and token.value(source) == 'else':
+                    node.was_no_break = ASTNodeWithChildren()
+                    node.was_no_break.parent = node
+                    next_token()
+                    new_scope(node.was_no_break)
 
             elif token.value(source) == 'for':
                 node = ASTFor()

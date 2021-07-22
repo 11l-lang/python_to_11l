@@ -1282,9 +1282,11 @@ def pre_nl(toki = None):
         toki = tokeni
     if toki > 0 and toki < len(tokens):
         ti = toki - 1
-        while ti > 0 and tokens[ti].category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
+        while ti > 0 and tokens[ti].category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR, Token.Category.INDENT):
             ti -= 1
-        return (min(source[tokens[ti].end:tokens[toki].start].count("\n"), 2) - 1) * "\n"
+        lines_with_comments = len(re.findall(r'\n[ \t]*#',
+                    source[tokens[ti].end:tokens[toki].start]))
+        return (min(source[tokens[ti].end:tokens[toki].start].count("\n") - lines_with_comments, 2) - 1) * "\n"
     return ''
 
 class ASTNodeWithChildren(ASTNode):

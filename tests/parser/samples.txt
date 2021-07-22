@@ -256,6 +256,7 @@ V i = 0
 s[(len)-1 - i]
 s[0 .< (len)-1]
 s[1..]
+
 s[0.<2]
 s[1.<2]
 s[(0..).step(2)]
@@ -313,6 +314,7 @@ s = str1 + '' + str2
 ===
 V str1 = ‘1’
 V str2 = ‘2’
+
 V s = str1‘’str2
 
 
@@ -566,6 +568,7 @@ r = self.newlines() + ' ' * (indent*3) + 'F ' + (self.function_name if self.func
     + '(' + ", ".join(self.function_arguments if len(self.function_arguments) == 0 or self.function_arguments[0] != 'self' else self.function_arguments[1:]) + ")\n"
 ===
 V indent = 0
+
 V r = .newlines()‘’(‘ ’ * (indent * 3))‘F ’(I .function_name != ‘__init__’ {.function_name} E ‘’)‘(’(I .function_arguments.empty | .function_arguments[0] != ‘self’ {.function_arguments} E .function_arguments[1..]).join(‘, ’)")\n"
 
 
@@ -591,7 +594,6 @@ L
 import test_deep_imports
 print()
 ===
-//import test_deep_imports
 print()
 
 
@@ -678,8 +680,6 @@ class Individual:
     def computeValuesGenome(self, xMin=0, xMax=math.pi):
         pass
 ===
-//import random, math
-
 T Individual
    genome = (0.<10).map(i -> random:())
    F ()
@@ -863,7 +863,6 @@ for a in d:
 V d0 = [‘a’ = 1]
 L(a) d0.keys()
    print(a)
-//import collections
 V d = DefaultDict[Int, Int]()
 L(a) d.keys()
    print(a)
@@ -947,8 +946,6 @@ class EXSSamplePoolLocator(EXSSamplePool):
         self.base = os.path.dirname(exsfile_name)
         super().__init__()
 ===
-//import os
-
 T EXSSamplePool
    [String] locations
 
@@ -971,6 +968,7 @@ print(gnomesort(a = [3,4,2,5,1,6]))
 ===
 F gnomesort(&a)
    R a
+
 print(gnomesort(&[3, 4, 2, 5, 1, 6]))
 print(gnomesort(a' &[3, 4, 2, 5, 1, 6]))
 
@@ -993,10 +991,10 @@ def f2(l : List[int] = None, l2 : List[int] = None):
         l2 = []
     print(l)
 ===
-
 F f([Int] &l = [Int]())
    l.append(1)
    print(l)
+
 f()
 f()
 
@@ -1015,10 +1013,10 @@ def f(l : List[int] = None):
 f()
 f()
 ===
-
 F f([Int] &l = [0, 2])
    l.append(1)
    print(l)
+
 f()
 f()
 

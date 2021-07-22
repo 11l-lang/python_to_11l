@@ -1277,6 +1277,16 @@ class ASTNode:
     def walk_children(self, f):
         pass
 
+def pre_nl(toki = None):
+    if toki is None:
+        toki = tokeni
+    if toki > 0 and toki < len(tokens):
+        ti = toki - 1
+        while ti > 0 and tokens[ti].category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
+            ti -= 1
+        return (min(source[tokens[ti].end:tokens[toki].start].count("\n"), 2) - 1) * "\n"
+    return ''
+
 class ASTNodeWithChildren(ASTNode):
     # children : List['ASTNode'] = [] # OMFG! This actually means static (common for all objects of type ASTNode) variable, not default value of member variable, that was unexpected to me as it contradicts C++11 behavior
     children : List['ASTNode']
@@ -1291,12 +1301,7 @@ class ASTNodeWithChildren(ASTNode):
             f(child)
 
     def children_to_str(self, indent, t):
-        r = ''
-        if self.tokeni > 0:
-            ti = self.tokeni - 1
-            while ti > 0 and tokens[ti].category in (Token.Category.DEDENT, Token.Category.STATEMENT_SEPARATOR):
-                ti -= 1
-            r = (min(source[tokens[ti].end:tokens[self.tokeni].start].count("\n"), 2) - 1) * "\n"
+        r = pre_nl(self.tokeni)
         r += ' ' * (indent*3) + t + "\n"
         for c in self.children:
             r += c.to_str(indent+1)
@@ -1326,11 +1331,12 @@ class ASTImport(ASTNode):
         self.modules = []
 
     def to_str(self, indent):
-        return ' ' * (indent*3) + '//import ' + ', '.join(self.modules) + "\n" # this is easier than avoid to add empty line here: `import sys\n\ndef f()` -> `\nF f()`
+        #return ' ' * (indent*3) + '//import ' + ', '.join(self.modules) + "\n" # this is easier than avoid to add empty line here: `import sys\n\ndef f()` -> `\nF f()`
+        return ''
 
 class ASTExpression(ASTNodeWithExpression):
     def to_str(self, indent):
-        return ' ' * (indent*3) + self.expression.to_str() + "\n"
+        return self.pre_nl + ' ' * (indent*3) + self.expression.to_str() + "\n"
 
 class ASTExprAssignment(ASTNodeWithExpression):
     add_vars : List[bool]
@@ -1342,6 +1348,7 @@ class ASTExprAssignment(ASTNodeWithExpression):
     def __init__(self):
     #     self.add_vars = [] # this is not necessary
         self.additional_dest_expressions = []
+        self.pre_nl = pre_nl()
 
     def set_dest_expression(self, dest_expression):
         self.dest_expression = dest_expression
@@ -1350,7 +1357,7 @@ class ASTExprAssignment(ASTNodeWithExpression):
     def to_str(self, indent):
         if type(self.parent) == ASTClassDefinition:
             assert(len(self.add_vars) == 1 and self.add_vars[0] and not self.is_tuple_assign_expression)
-            return ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+            return self.pre_nl + ' ' * (indent*3) + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
         if self.dest_expression.slicing:
             s = self.dest_expression.to_str() # [
@@ -1358,7 +1365,7 @@ class ASTExprAssignment(ASTNodeWithExpression):
             if self.expression.function_call and self.expression.children[0].token_str() in ('reversed', 'sorted') and self.expression.children[1].to_str() == s:
                 l = len(self.dest_expression.children[0].to_str())
                 if self.expression.children[0].token_str() == 'reversed':
-                    return ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1] + ")\n"
+                    return self.pre_nl + ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1] + ")\n"
                 else:
                     additional_args = ''
                     for i in range(3, len(self.expression.children), 2):
@@ -1367,31 +1374,31 @@ class ASTExprAssignment(ASTNodeWithExpression):
                             additional_args += self.expression.children[i].to_str()
                         else:
                             additional_args += self.expression.children[i].to_str() + "' " + self.expression.children[i+1].to_str()
-                    return ' ' * (indent*3) + s[:l] + '.sort_range(' + s[l+1:-1] + additional_args + ")\n"
+                    return self.pre_nl + ' ' * (indent*3) + s[:l] + '.sort_range(' + s[l+1:-1] + additional_args + ")\n"
             raise Error('slice assignment is not supported', self.dest_expression.left_to_right_token())
 
         if self.drop_list:
-            return ' ' * (indent*3) + self.dest_expression.to_str() + ".drop()\n"
+            return self.pre_nl + ' ' * (indent*3) + self.dest_expression.to_str() + ".drop()\n"
 
         if self.dest_expression.tuple and len(self.dest_expression.children) == 2 and \
            self.     expression.tuple and len(self.     expression.children) == 2 and \
            self.dest_expression.children[0].to_str() == self.expression.children[1].to_str() and \
            self.dest_expression.children[1].to_str() == self.expression.children[0].to_str():
-            return ' ' * (indent*3) + 'swap(&' + self.dest_expression.children[0].to_str() + ', &' + self.dest_expression.children[1].to_str() + ")\n"
+            return self.pre_nl + ' ' * (indent*3) + 'swap(&' + self.dest_expression.children[0].to_str() + ', &' + self.dest_expression.children[1].to_str() + ")\n"
 
         if self.is_tuple_assign_expression or not any(self.add_vars):
-            r = ' ' * (indent*3) + self.dest_expression.to_str()
+            r = self.pre_nl + ' ' * (indent*3) + self.dest_expression.to_str()
             for ade in self.additional_dest_expressions:
                 r += ' = ' + ade.to_str()
             return r + ' = ' + self.expression.to_str() + "\n"
         if all(self.add_vars):
             if self.expression.function_call and self.expression.children[0].token_str() == 'ref':
                 assert(len(self.expression.children) == 3)
-                return ' ' * (indent*3) + 'V& ' + self.dest_expression.to_str() + ' = ' + self.expression.children[1].to_str() + "\n"
-            return ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+                return self.pre_nl + ' ' * (indent*3) + 'V& ' + self.dest_expression.to_str() + ' = ' + self.expression.children[1].to_str() + "\n"
+            return self.pre_nl + ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
 
         assert(self.dest_expression.tuple and len(self.dest_expression.children) == len(self.add_vars))
-        r = ' ' * (indent*3) + '('
+        r = self.pre_nl + ' ' * (indent*3) + '('
         for i in range(len(self.add_vars)):
             if self.add_vars[i]:
                 r += 'V '
@@ -1512,11 +1519,11 @@ class ASTTypeHint(ASTNode):
                 args = ', '.join(self.trans_type(ty) for ty in tt)
                 if len(tt) > 1:
                     args = '(' + args + ')'
-            return ' ' * (indent*3) + '(' + args + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
+            return self.pre_nl + ' ' * (indent*3) + '(' + args + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
         elif self.type == 'Optional':
             assert(len(self.type_args) == 1)
-            return ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
-        return ' ' * (indent*3) + self.trans_type(self.type + ('[' + ', '.join(self.type_args) + ']' if len(self.type_args) else '')) + '?'*nullable + '&'*self.is_reference + ' ' + self.var
+            return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
+        return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type + ('[' + ', '.join(self.type_args) + ']' if len(self.type_args) else '')) + '?'*nullable + '&'*self.is_reference + ' ' + self.var
 
     def to_str(self, indent):
         return self.to_str_(indent) + "\n"
@@ -1728,8 +1735,11 @@ class ASTBreak(ASTNode):
         return ' ' * (indent*3) + "L.break\n"
 
 class ASTReturn(ASTNodeWithExpression):
+    def __init__(self):
+        self.pre_nl = pre_nl()
+
     def to_str(self, indent):
-        return ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str() if self.expression is not None else '') + "\n"
+        return self.pre_nl + ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str() if self.expression is not None else '') + "\n"
 
     def walk_expressions(self, f):
         if self.expression is not None: f(self.expression)
@@ -1777,7 +1787,7 @@ class ASTClassDefinition(ASTNodeWithChildren):
 
     def to_str(self, indent):
         if self.base_class_name == 'IntEnum':
-            r = ' ' * (indent*3) + 'T.enum ' + self.class_name + "\n"
+            r = pre_nl(self.tokeni) + ' ' * (indent*3) + 'T.enum ' + self.class_name + "\n"
             current_index = 0
             for c in self.children:
                 assert(type(c) == ASTExprAssignment and c.expression.token.category == Token.Category.NUMERIC_LITERAL)
@@ -2740,6 +2750,7 @@ def parse_internal(this_node, one_line_scope = False):
         elif token.category == Token.Category.NAME and (peek_token().value(source) == ':' # this is type hint
                   or (token.value(source) == 'self' and peek_token().value(source) == '.' and peek_token(2).category == Token.Category.NAME)
                                                    and peek_token(3).value(source) == ':'):
+            npre_nl = pre_nl()
             is_self = peek_token().value(source) == '.'
             if is_self:
                 if not (type(this_node) == ASTFunctionDefinition and this_node.function_name == '__init__'):
@@ -2820,6 +2831,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.is_reference = True
                 if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
+            node.pre_nl = npre_nl
             node.type_token = type_token
             node.var = var
             node.type = type_
@@ -2843,6 +2855,7 @@ def parse_internal(this_node, one_line_scope = False):
             return
 
         else:
+            npre_nl = pre_nl()
             node_expression = expression()
             if token is not None and token.value(source) == '=':
                 node = ASTExprAssignment()
@@ -2873,6 +2886,9 @@ def parse_internal(this_node, one_line_scope = False):
                 node.set_expression(node_expression)
                 if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
+
+            node.pre_nl = npre_nl
+
             if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)): # `(w, h) = int(w1), int(h1)`
                 raise Error('expected end of statement', token)                                                      #                  ^
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
@@ -3167,4 +3183,4 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     tokensn   = prev_tokensn
     file_name = prev_file_name
 
-    return s
+    return s.lstrip("\n")

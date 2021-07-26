@@ -214,7 +214,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                 start = i
                 i += 1
                 if is_hex:
-                    while i < len(source) and ('0' <= source[i] <= '9' or 'a' <= source[i] <= 'z' or 'A' <= source[i] <= 'Z' or source[i] == '_'):
+                    while i < len(source) and ('0' <= source[i] <= '9' or 'a' <= source[i] <= 'f' or 'A' <= source[i] <= 'F' or source[i] == '_'):
                         i += 1
                 elif is_oct:
                     while i < len(source) and ('0' <= source[i] <= '7' or source[i] == '_'):

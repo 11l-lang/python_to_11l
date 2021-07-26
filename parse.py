@@ -414,7 +414,7 @@ class SymbolNode:
             if is_hex or is_oct or is_bin:
                 i += 2
                 if is_hex:
-                    n = n[i:].replace('_', '')
+                    n = n[i:].replace('_', '').upper()
                     if len(n) <= 2: # ultrashort hexadecimal number
                         n = '0'*(2-len(n)) + n
                         return n[:1] + "'" + n[1:]

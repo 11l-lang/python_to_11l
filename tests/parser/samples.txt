@@ -1078,3 +1078,10 @@ L(&a) arr
 L(&a) arr
    V i = L.index
    a.append(i)
+
+
+a = .5
+b = 2.
+===
+V a = .5
+V b = 2.

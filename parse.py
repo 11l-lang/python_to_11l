@@ -778,7 +778,9 @@ class SymbolNode:
 
                     def parenthesize_if_needed(child):
                         #if child.token.category in (Token.Category.NAME, Token.Category.NUMERIC_LITERAL) or child.symbol.id == '[': # ] # `print(‘Result: ’3)` is currently not supported in 11l
-                        if child.token.category == Token.Category.NAME or child.symbol.id in ('[', '('): # )]
+                        if (child.token.category == Token.Category.NAME or child.symbol.id in ('[', '(')): # )]
+                        #                                              or (child.symbol.id == '.' and len(child.children) == 2) # for `print('Error:', error.message)` (commented because this breaks `print("--", self.n.sub)`)
+                        #                                              or (child.symbol.id == '%' and child.children[0].token.category == Token.Category.STRING_LITERAL) # for `print("%2d:"%x, row(x))` (commented because this breaks `print(row(x), "%2d:"%x)`)
                             return child.to_str()
                         else:
                             return '(' + child.to_str() + ')'

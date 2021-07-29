@@ -1747,8 +1747,11 @@ class ASTReturn(ASTNodeWithExpression):
         if self.expression is not None: f(self.expression)
 
 class ASTException(ASTNodeWithExpression):
+    def __init__(self):
+        self.pre_nl = pre_nl()
+
     def to_str(self, indent):
-        return ' ' * (indent*3) + 'X ' + self.expression.to_str() + "\n"
+        return self.pre_nl + ' ' * (indent*3) + 'X ' + self.expression.to_str() + "\n"
 
 class ASTExceptionTry(ASTNodeWithChildren):
     def to_str(self, indent):

@@ -1085,3 +1085,12 @@ b = 2.
 ===
 V a = .5
 V b = 2.
+
+
+ppm = open('sand_pile.ppm', 'wb')
+ppm.write("P6\n2 2\n255\n".encode())
+ppm.write(bytes([Byte(255), 0, 0]))
+===
+V ppm = File(‘sand_pile.ppm’, ‘w’)
+ppm.write_bytes("P6\n2 2\n255\n".encode())
+ppm.write_bytes([Byte(255), 0, 0])

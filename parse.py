@@ -527,15 +527,15 @@ class SymbolNode:
                        c01 == 'read': # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
                         assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
-                    if c01 == 'read': # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(2)`
+                    if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(2)`
                         if self.children[0].children[0].token.category == Token.Category.NAME:
                             tid = self.scope.find(self.children[0].children[0].token_str())
                             if type(tid.node) == ASTExprAssignment and tid.node.expression.function_call and \
                                                                        tid.node.expression.children[0].token_str() == 'open' and \
                                                                    len(tid.node.expression.children) == 5 and \
                                                                        tid.node.expression.children[4] is None and \
-                                                                       tid.node.expression.children[3].token_str() in ("'rb'", '"rb"'):
-                                return self.children[0].children[0].token_str() + '.read_bytes(' + self.children[1].to_str() + ')'
+                                                                       tid.node.expression.children[3].token_str()[-2] == 'b':
+                                return self.children[0].children[0].token_str() + '.' + c01 + '_bytes(' + self.children[1].to_str() + ')'
                     if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'
@@ -627,6 +627,8 @@ class SymbolNode:
                     func_name = 'Complex'
                 elif func_name == 'bytearray':
                     func_name = '[Byte]'
+                elif func_name == 'bytes':
+                    return self.children[1].to_str()
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
                         parens = True#len(self.children[1].children) == 7 # if true, then this is a range with step

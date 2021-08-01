@@ -715,6 +715,10 @@ print(" group={group} off_by={group} polyphony={polyphony} off_mode=fast".format
 print("\t<region> lovel={lovel:03} hivel={hivel:03} amp_velcurve_{hivel:03}=1".format(lovel=10, hivel=20))
 print('{:<11} {:<36} {:<15} {:<15}'.format('Character', 'Name', 'Unicode', 'UTF-8 encoding (hex)'))
 print('{:<11} {:<15} {:<15}'.format('Character', 'Unicode', 'UTF-8 encoding (hex)'))
+print('# #. %d' % 7)
+print('# #. {}'.format(7))
+print("#%2i" % 2)
+print("## Got %d" % 3)
 ===
 print(‘#.14’.format(0.5))
 print(‘#2.14’.format(0.5))
@@ -729,6 +733,10 @@ print(‘ group=#. off_by=#. polyphony=#. off_mode=fast’.format(1, 1, 2))
 print("\t<region> lovel=#03 hivel=#03 amp_velcurve_#03=1".format(10, 20, 20))
 print(‘#<11 #<36 #<15 #<15’.format(‘Character’, ‘Name’, ‘Unicode’, ‘UTF-8 encoding (hex)’))
 print(‘#<11 #<15 #<15’.format(‘Character’, ‘Unicode’, ‘UTF-8 encoding (hex)’))
+print(‘# ##. #.’.format(7))
+print(‘# ##. #.’.format(7))
+print(‘###2’.format(2))
+print(‘### Got #.’.format(3))
 
 
 dates : List[datetime.date] = []

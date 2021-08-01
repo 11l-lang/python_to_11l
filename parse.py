@@ -286,6 +286,11 @@ class SymbolNode:
         field_index = 0
         i = 0
         while i < len(fmtstr):
+            if fmtstr[i] == '#' and (fmtstr[i+1:i+2] in ('#', '{', '.', '<') or fmtstr[i+1:i+2].isdigit()): # }
+                nfmtstr += '##'
+                i += 1
+                continue
+
             if fmtstr[i] == '{':
                 nfmtstr += '#'
                 i += 1
@@ -1179,7 +1184,7 @@ class SymbolNode:
                 nfmtstr = ''
                 i = 0
                 while i < len(fmtstr):
-                    if fmtstr[i] == '#':
+                    if fmtstr[i] == '#' and (fmtstr[i+1:i+2] in ('#', '%', '.', '<') or fmtstr[i+1:i+2].isdigit()):
                         nfmtstr += '##'
                         i += 1
                         continue

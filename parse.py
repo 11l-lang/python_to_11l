@@ -1125,7 +1125,7 @@ class SymbolNode:
                                           or (self.children[1].symbol.id == '+' and len(self.children[1].children) == 2 and
                                              (self.children[1].children[0].token.category == Token.Category.STRING_LITERAL
                                            or self.children[1].children[1].token.category == Token.Category.STRING_LITERAL))
-                                           or self.children[1].token.category == Token.Category.STRING_LITERAL):
+                                           or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'List':
                 return self.children[0].to_str() + ' [+]= ' + self.children[1].to_str()

@@ -322,6 +322,8 @@ class SymbolNode:
                     if fmtstr[i:i+1] == '<':
                         nfmtstr += '<'
                         i += 1
+                    elif fmtstr[i:i+1] == '>':
+                        i += 1
                     if fmtstr[i:i+1] == '0' and fmtstr[i+1:i+2].isdigit(): # zero padding
                         nfmtstr += '0'
                         i += 1

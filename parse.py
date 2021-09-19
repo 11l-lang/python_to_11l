@@ -1088,15 +1088,34 @@ class SymbolNode:
                     return self.children[0].to_str() + ':' + self.children[1].to_str()
 
                 if self.children[0].to_str() == 'self':
+                    def capture_level(self):
+                        parent = self
+                        while parent.parent is not None:
+                            parent = parent.parent
+                        ast_parent = parent.ast_parent
+                        while type(ast_parent) != ASTProgram:
+                            if type(ast_parent.parent) == ASTClassDefinition:
+                                capture_level = 0
+                                s = self.scope
+                                while True:
+                                    if s.is_function:
+                                        capture_level += 1
+                                    s = s.parent
+                                    if id(s) == id(ast_parent.scope):
+                                        break
+                                return capture_level - 1
+                            ast_parent = ast_parent.parent
+                        return 1
+
                     parent = self
                     while parent.parent:
                         if parent.parent.symbol.id == 'for' and id(parent.parent.children[0]) == id(parent):
-                            return '@.' + self.children[1].to_str()
+                            return '@'*capture_level(self) + '.' + self.children[1].to_str()
                         parent = parent.parent
                         if parent.symbol.id == 'lambda':
                             if len(parent.children) >= 3 and parent.children[0].token_str() == 'self':
                                 return 'self.' + self.children[1].to_str()
-                            return '@.' + self.children[1].to_str()
+                            return '@'*capture_level(self) + '.' + self.children[1].to_str()
                     ast_parent = parent.ast_parent
                     function_nesting = 0
                     while type(ast_parent) != ASTProgram:

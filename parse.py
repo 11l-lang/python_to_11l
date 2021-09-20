@@ -526,6 +526,7 @@ class SymbolNode:
                                 if i < len(self.children)-2:
                                     res += ', '
                         return res + ')'
+
                     if self.children[0].children[0].function_call and \
                        self.children[0].children[0].children[0].token_str() == 'open' and \
                    len(self.children[0].children[0].children) == 5 and \
@@ -534,6 +535,16 @@ class SymbolNode:
                        c01 == 'read': # transform `open(fname, 'rb').read()` into `File(fname).read_bytes()`
                         assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ').read_bytes()'
+
+                    if self.children[0].children[0].function_call and \
+                       self.children[0].children[0].children[0].token_str() == 'open' and \
+                   len(self.children[0].children[0].children) == 5 and \
+                       self.children[0].children[0].children[4] is None and \
+                       self.children[0].children[0].children[3].token_str() in ("'wb'", '"wb"') and \
+                       c01 == 'write': # transform `open(fname, 'wb').write(bytes)` into `File(fname, ‘w’).write_bytes(bytes)`
+                        assert(self.children[0].children[0].children[2] is None)
+                        return 'File(' + self.children[0].children[0].children[1].to_str() + ', ‘w’).write_bytes(' + self.children[1].to_str() + ')'
+
                     if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(2)`
                         if self.children[0].children[0].token.category == Token.Category.NAME:
                             tid = self.scope.find(self.children[0].children[0].token_str())

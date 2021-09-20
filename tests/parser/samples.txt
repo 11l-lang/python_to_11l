@@ -1102,3 +1102,8 @@ ppm.write(bytes([Byte(255), 0, 0]))
 V ppm = File(‘sand_pile.ppm’, ‘w’)
 ppm.write_bytes("P6\n2 2\n255\n".encode())
 ppm.write_bytes([Byte(255), 0, 0])
+
+
+open('tmp.ppm', 'wb').write(b"P6\n")
+===
+File(‘tmp.ppm’, ‘w’).write_bytes(Bytes("P6\n"))

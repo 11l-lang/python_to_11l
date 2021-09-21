@@ -1107,3 +1107,30 @@ ppm.write_bytes([Byte(255), 0, 0])
 open('tmp.ppm', 'wb').write(b"P6\n")
 ===
 File(‘tmp.ppm’, ‘w’).write_bytes(Bytes("P6\n"))
+
+
+from typing import BinaryIO
+
+class BitWriter:
+    out : BinaryIO
+
+    def flush(self):
+        self.out.write(b'A')
+
+class BitReader:
+    input : BinaryIO
+
+    def _readbit(self):
+        a = self.input.read(1)
+===
+T BitWriter
+   File out
+
+   F flush()
+      .out.write_bytes('A'.code)
+
+T BitReader
+   File input
+
+   F _readbit()
+      V a = .input.read_bytes(1)

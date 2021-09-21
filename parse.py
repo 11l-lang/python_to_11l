@@ -554,6 +554,10 @@ class SymbolNode:
                                                                        tid.node.expression.children[4] is None and \
                                                                        tid.node.expression.children[3].token_str()[-2] == 'b':
                                 return self.children[0].children[0].token_str() + '.' + c01 + '_bytes(' + self.children[1].to_str() + ')'
+                        elif self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'self': # `out : BinaryIO...self.out.write(...)` -> `....out.write_bytes(...)`
+                            tid = self.scope.find(self.children[0].children[0].children[1].token_str())
+                            if tid.type == 'BinaryIO':
+                                return self.children[0].children[0].to_str() + '.' + c01 + '_bytes(' + self.children[1].to_str() + ')'
                     if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'
@@ -1471,7 +1475,7 @@ class ASTAssert(ASTNodeWithExpression):
         super().walk_expressions(f)
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt64':'UInt64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte',
-                       'bool':'Bool', 'None':'N', 'List':'', 'ConstList':'', 'Tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'ConstList':'', 'Tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):

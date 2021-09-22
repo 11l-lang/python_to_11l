@@ -516,9 +516,9 @@ class SymbolNode:
                             return child.token.category == Token.Category.STRING_LITERAL and (len(ts) == 3 or (ts[:2] == '"\\' and len(ts) == 4))
                         if repl.endswith('trim') and len(self.children) == 1: # `strip()` -> `trim((‘ ’, "\t", "\r", "\n"))`
                             res += '(‘ ’, "\\t", "\\r", "\\n")'
-                        elif repl.endswith('trim') and not is_char(self.children[1]): # `"...".strip("\t ")` -> `"...".trim(Array[Char]("\t "))`
+                        elif repl.endswith('trim') and not is_char(self.children[1]): # `"...".strip("\t ")` -> `"...".trim([Char]("\t "))`
                             assert(len(self.children) == 3)
-                            res += 'Array[Char](' + self.children[1].to_str() + ')'
+                            res += '[Char](' + self.children[1].to_str() + ')'
                         else:
                             for i in range(1, len(self.children), 2):
                                 assert(self.children[i+1] is None)

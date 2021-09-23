@@ -95,7 +95,7 @@ class Scope:
             return ''
         if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
                     'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
-                    'next_permutation', 'is_sorted', 'format_float', 'move', 'ref',
+                    'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
             return ''
 

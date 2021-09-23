@@ -1165,14 +1165,18 @@ class SymbolNode:
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'List':
                 return self.children[0].to_str() + ' [+]= ' + self.children[1].to_str()
+            elif self.symbol.id == '*' and (self.children[0].token.category == Token.Category.STRING_LITERAL or
+                                            self.children[1].token.category == Token.Category.STRING_LITERAL): # for `print(10*" " + "left:" + 21*" " + "right: ")`
+                p = self.parent is not None and self.parent.symbol.id == '+'
+                return '('*p + self.children[0].to_str() + ' * ' + self.children[1].to_str() + ')'*p
             elif self.symbol.id == '+' and self.children[1].symbol.id == '*' and self.children[0].token.category == Token.Category.STRING_LITERAL \
                                                                              and self.children[1].children[1].token.category == Token.Category.STRING_LITERAL: # for `outfile.write('<blockquote'+(ch=='<')*' class="re"'+'>')`
-                return self.children[0].to_str() + '(' + self.children[1].to_str() + ')'
+                return self.children[0].to_str() + self.children[1].to_str()
             elif self.symbol.id == '+' and self.children[1].symbol.id == '*' and self.children[1].children[0].token.category == Token.Category.STRING_LITERAL \
                                                                              and (self.children[0].token.category == Token.Category.STRING_LITERAL
                                                                               or (self.children[0].symbol.id == '+'
                                                                               and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL)): # for `outfile.write("<table"+' style="display: inline"'*(prevci != 0 and instr[prevci-1] != "\n")+...)` and `outfile.write('<pre>' + ins + '</pre>' + "\n"*(not self.habr_html))`
-                return self.children[0].to_str() + '(' + self.children[1].to_str() + ')'
+                return self.children[0].to_str() + self.children[1].to_str()
             elif self.symbol.id == '+' and self.children[1].token.category == Token.Category.STRING_LITERAL and ((self.children[0].symbol.id == '+'
                                        and self.children[0].children[1].token.category == Token.Category.STRING_LITERAL) # for `outfile.write(... + '<br /></span>' # ... \n + '<div class="spoiler_text" ...')`
                                         or self.children[0].token.category == Token.Category.STRING_LITERAL): # for `pre {margin: 0;}''' + # ... \n '''...`
@@ -1186,11 +1190,11 @@ class SymbolNode:
                 return self.children[0].to_str() + ('(' + c1 + ')' if c1[0] == '.' else c1)
             elif self.symbol.id == '+' and self.children[1].symbol.id == '*' and (self.children[1].children[0].token.category == Token.Category.STRING_LITERAL   # for `self.newlines() + ' ' * (indent*3) + 'F ' + ...`
                                                                                or self.children[1].children[1].token.category == Token.Category.STRING_LITERAL): # for `(... + self.ohd*'</span>')`
-                p = self.children[0].symbol.id == '*'
-                return '('*p + self.children[0].to_str() + ')'*p + '‘’(' + self.children[1].to_str() + ')'
+                p = False#self.children[0].symbol.id == '*'
+                return '('*p + self.children[0].to_str() + ')'*p + '‘’' + self.children[1].to_str()
             elif self.symbol.id == '+' and self.children[0].symbol.id == '*' and self.children[0].children[0].token.category == Token.Category.STRING_LITERAL: # for `' ' * (indent*3) + self.expression.to_str() + "\n"`
                 c1 = self.children[1].to_str()
-                return '(' + self.children[0].to_str() + ')‘’' + ('(' + c1 + ')' if c1[0] == '.' else c1)
+                return self.children[0].to_str() + '‘’' + ('(' + c1 + ')' if c1[0] == '.' else c1)
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + '‘’' + self.children[1].to_str()
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):

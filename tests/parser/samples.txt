@@ -1134,3 +1134,12 @@ T BitReader
 
    F _readbit()
       V a = .input.read_bytes(1)
+
+
+print("="*54)
+print(10*" " + "left:" + 21*" " + "right: ")
+print(" "*10 + "left:" + " "*21 + "right: ")
+===
+print(‘=’ * 54)
+print((10 * ‘ ’)‘left:’(21 * ‘ ’)‘right: ’)
+print((‘ ’ * 10)‘left:’(‘ ’ * 21)‘right: ’)

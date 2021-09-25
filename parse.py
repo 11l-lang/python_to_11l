@@ -1464,6 +1464,9 @@ class ASTExprAssignment(ASTNodeWithExpression):
         super().walk_expressions(f)
 
 class ASTAssert(ASTNodeWithExpression):
+    def __init__(self):
+        self.pre_nl = pre_nl()
+
     expression2 : SymbolNode = None
 
     def set_expression2(self, expression2):
@@ -1471,7 +1474,7 @@ class ASTAssert(ASTNodeWithExpression):
         self.expression2.ast_parent = self
 
     def to_str(self, indent):
-        return ' ' * (indent*3) + 'assert(' + (self.expression.children[0].to_str() if self.expression.is_parentheses()
+        return self.pre_nl + ' ' * (indent*3) + 'assert(' + (self.expression.children[0].to_str() if self.expression.is_parentheses()
             else self.expression.to_str()) + (', ' + self.expression2.to_str() if self.expression2 is not None else '') + ")\n"
 
     def walk_expressions(self, f):

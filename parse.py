@@ -214,7 +214,7 @@ class SymbolNode:
         #if self.symbol.id == '[' and not self.is_list and self.children[0].var_type() == 'str': # ]
         if self.symbol.id == '[' and self.children[0].var_type() == 'str': # ]
             return 'str'
-        if self.symbol.id == '*' and self.children[1].var_type() == 'str':
+        if self.symbol.id == '*' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
             return 'str'
         if self.symbol.id == '%' and self.children[0].var_type() == 'str':
             return 'str'

@@ -1460,6 +1460,8 @@ class ASTExprAssignment(ASTNodeWithExpression):
 
     def walk_expressions(self, f):
         f(self.dest_expression)
+        for ade in self.additional_dest_expressions:
+            f(ade)
         super().walk_expressions(f)
 
 class ASTAssert(ASTNodeWithExpression):

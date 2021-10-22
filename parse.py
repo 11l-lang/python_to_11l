@@ -633,6 +633,8 @@ class SymbolNode:
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
                     func_name = 'String'
+                elif func_name == 'bool':
+                    func_name = 'Bool'
                 elif func_name in ('int', 'Int64', 'BigInt'):
                     if func_name == 'int':
                         func_name = 'Int'

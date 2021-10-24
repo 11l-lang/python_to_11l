@@ -93,7 +93,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
                     'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
                     'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
@@ -742,6 +742,9 @@ class SymbolNode:
                 elif func_name == 'chr': # replace `chr(code)` with `Char(code' code)`
                     assert(len(self.children) == 3)
                     return "Char(code' " + self.children[1].to_str() + ')'
+                elif func_name == 'int_to_str_with_radix': # replace `int_to_str_with_radix(i, base)` with `String(i, radix' base)`
+                    assert(len(self.children) == 5)
+                    return 'String(' + self.children[1].to_str() + ", radix' " + self.children[3].to_str() + ')'
                 elif func_name == 'isinstance': # replace `isinstance(obj, type)` with `T(obj) >= type`
                     assert(len(self.children) == 5)
                     return 'T(' + self.children[1].to_str() + ') >= ' + self.children[3].to_str()

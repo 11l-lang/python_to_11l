@@ -1151,3 +1151,10 @@ V left = input()
 V right = input()
 print((10 * ‘ ’)‘’left‘’(21 * ‘ ’)‘’right)
 print((‘ ’ * 10)‘’left‘’(‘ ’ * 21)‘’right)
+
+
+def f(a, b):
+    return a + [] + b
+===
+F f(a, b)
+   R a [+] b

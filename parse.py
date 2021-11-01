@@ -1201,6 +1201,8 @@ class SymbolNode:
                 return self.children[0].to_str() + '‘’' + ('(' + c1 + ')' if c1[0] == '.' else c1)
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + '‘’' + self.children[1].to_str()
+            elif self.symbol.id == '+' and self.children[0].symbol.id == '+' and self.children[0].children[1].is_list and len(self.children[0].children[1].children) == 0: # `a + [] + b` -> `a [+] b`
+                return self.children[0].children[0].to_str() + ' [+] ' + self.children[1].to_str()
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):
                 return self.children[0].to_str() + ' [+] ' + self.children[1].to_str()
             elif self.symbol.id == '<=' and self.children[0].symbol.id == '<=': # replace `'0' <= ch <= '9'` with `ch C ‘0’..‘9’`

@@ -207,7 +207,7 @@ class SymbolNode:
             return self.children[0].var_type()
         if self.symbol.id == '*' and self.children[0].var_type() == 'List':
             return 'List'
-        if self.symbol.id == '+' and (self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):
+        if self.symbol.id == '+' and len(self.children) == 2 and (self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):
             return 'List'
         if self.is_list:
             return 'List'
@@ -218,7 +218,7 @@ class SymbolNode:
             return 'str'
         if self.symbol.id == '%' and self.children[0].var_type() == 'str':
             return 'str'
-        if self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
+        if self.symbol.id == '+' and len(self.children) == 2 and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
             return 'str'
         if self.token.category == Token.Category.STRING_LITERAL:
             return 'str'

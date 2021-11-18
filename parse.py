@@ -1498,7 +1498,7 @@ class ASTAssert(ASTNodeWithExpression):
         if self.expression2 is not None: f(self.expression2)
         super().walk_expressions(f)
 
-python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt64':'UInt64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte',
+python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt64':'UInt64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte', 'Bytes':'Bytes',
                        'bool':'Bool', 'None':'N', 'List':'', 'ConstList':'', 'Tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 

@@ -94,7 +94,7 @@ class Scope:
         if name == 'self':
             return ''
         if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
-                    'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
+                    'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce',
                     'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
             return ''
@@ -503,6 +503,12 @@ class SymbolNode:
                         return 'fract(' + self.children[0].children[0].to_str() + ') == 0'
                     if c01 == 'bit_length' and len(self.children) == 1: # `x.bit_length()` -> `bit_length(x)`
                         return 'bit_length(' + self.children[0].children[0].to_str() + ')'
+                    if c01 == 'to_bytes': # `i.to_bytes(length, byteorder)` -> `bytes_from_int(UIntXX(i))`
+                        assert(len(self.children) == 5)
+                        if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little' if self.children[4] is None else
+                                self.children[4].token.category == Token.Category.STRING_LITERAL and self.children[4].token_str()[1:-1] == 'little' and self.children[3].token_str() == 'byteorder'):
+                            raise Error("only 'little' byteorder supported so far", self.children[3].token)
+                        return 'bytes_from_int(UInt' + str(int(self.children[1].to_str()) * 8) + '(' + self.children[0].children[0].to_str() + '))'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi',
                             'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha',
                             'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim',
@@ -604,7 +610,8 @@ class SymbolNode:
                         return 'Deque[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
                     if c00 == 'int' and c01 == 'from_bytes':
                         assert(len(self.children) == 5)
-                        if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little'):
+                        if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little' if self.children[4] is None else
+                                self.children[4].token.category == Token.Category.STRING_LITERAL and self.children[4].token_str()[1:-1] == 'little' and self.children[3].token_str() == 'byteorder'):
                             raise Error("only 'little' byteorder supported so far", self.children[3].token)
                         return "Int(bytes' " + self.children[1].to_str() + ')'
                     if c00 == 'random' and c01 == 'shuffle':
@@ -726,6 +733,8 @@ class SymbolNode:
                 elif func_name == 'hex':
                     assert(len(self.children) == 3)
                     return '(‘0x’hex(' + self.children[1].to_str() + ').lowercase())'
+                elif func_name == 'rotl32':
+                    func_name = 'rotl'
                 elif func_name == 'print' and self.iterable_unpacking:
                     func_name = 'print_elements'
 

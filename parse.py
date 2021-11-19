@@ -352,9 +352,11 @@ class SymbolNode:
                         if before_period != 0:
                             nfmtstr += str(before_period)
                         else:
-                            nfmtstr += '.' # {
+                            nfmtstr += '.' # {{
 
-                    assert(fmtstr[i] == '}')
+                    if fmtstr[i] != '}':
+                        tpos = self.children[0].children[0].token.start + i
+                        raise Error('expected `}`', Token(tpos, tpos, Token.Category.STRING_LITERAL))
 
                 else:
                     nfmtstr += '.'

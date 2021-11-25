@@ -663,6 +663,13 @@ class SymbolNode:
                 elif func_name == 'bytearray':
                     func_name = '[Byte]'
                 elif func_name == 'bytes':
+                    if self.children[1].token.category == Token.Category.STRING_LITERAL:
+                        s = self.children[1].token.value(source)
+                        assert(s[0] in 'bB')
+                        if '\\' in s:
+                            return 'Bytes("' + s[2:-1] + '")'
+                        else:
+                            return 'Bytes(‘' + s[2:-1] + '’)'
                     return self.children[1].to_str()
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`

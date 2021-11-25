@@ -1158,3 +1158,10 @@ def f(a, b):
 ===
 F f(a, b)
    R a [+] b
+
+
+demo1 = [b"", Bytes("a"), b"abc"]
+demo2 = [b"", bytes(b"a"), b"abc"]
+===
+V demo1 = [Bytes(‘’), Bytes(‘a’), Bytes(‘abc’)]
+V demo2 = [Bytes(‘’), Bytes(‘a’), Bytes(‘abc’)]

@@ -806,7 +806,10 @@ class SymbolNode:
                                 return parenthesis[0] + self.children[1].to_str() + rangestr.replace('<', '.') + c3[:-4] + parenthesis[1]
                             return parenthesis[0] + self.children[1].to_str() + rangestr + c3 + parenthesis[1]
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
-                            return '(' + self.children[1].to_str() + rangestr + self.children[3].to_str() + ').step(' + self.children[5].to_str() + ')'
+                            c3 = self.children[3].to_str()
+                            if c3.endswith(' + 1'): # `range(b, e + 1, step)` -> `(b .. e).step(step)`
+                                return '(' + self.children[1].to_str() + rangestr.replace('<', '.') + c3[:-4] + ').step(' + self.children[5].to_str() + ')'
+                            return '(' + self.children[1].to_str() + rangestr + c3 + ').step(' + self.children[5].to_str() + ')'
                 elif func_name == 'print':
                     first_named_argument = len(self.children)
                     for i in range(1, len(self.children), 2):

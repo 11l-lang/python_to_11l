@@ -94,7 +94,7 @@ class Scope:
         if name == 'self':
             return ''
         if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product_of_a_seq', 'product',
-                    'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key',
+                    'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key',
                     'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
             return ''
@@ -747,6 +747,8 @@ class SymbolNode:
                     return '(‘0x’hex(' + self.children[1].to_str() + ').lowercase())'
                 elif func_name == 'rotl32':
                     func_name = 'rotl'
+                elif func_name == 'rotr32':
+                    func_name = 'rotr'
                 elif func_name == 'print' and self.iterable_unpacking:
                     func_name = 'print_elements'
 

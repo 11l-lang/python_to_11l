@@ -93,7 +93,7 @@ class Scope:
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product',
+        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product_of_a_seq', 'product',
                     'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key',
                     'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
                     'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError'):
@@ -734,6 +734,8 @@ class SymbolNode:
                         if i < len(self.children)-2:
                             res += ', '
                     return res + ')'
+                elif func_name == 'product_of_a_seq':
+                    func_name = 'product'
                 elif func_name == 'product':
                     func_name = 'cart_product'
                 elif func_name == 'deepcopy':

@@ -619,7 +619,7 @@ class SymbolNode:
                         return ('Int' if c00 == 'int' else c00) + "(bytes' " + self.children[1].to_str() + ')'
                     if c00 == 'random' and c01 == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
-                    if c00 == 'random' and c01 == 'randint':
+                    if c00 == 'random' and c01 in ('randint', 'uniform'):
                         return 'random:(' + self.children[1].to_str() + ' .. ' + self.children[3].to_str() + ')'
                     if c00 == 'random' and c01 == 'randrange':
                         return 'random:(' + self.children[1].to_str() + (' .< ' + self.children[3].to_str() if len(self.children) == 5 else '') + ')'

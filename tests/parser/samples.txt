@@ -703,9 +703,13 @@ T Individual
 
 
 print('{:16.14f}'.format(0.5))
+print('{:16.14}'.format(0.5))
 print('{:17.14f}'.format(0.5))
+print('{:17.14}'.format(0.5))
 print('{:20.14f}'.format(0.5))
+print('{:20.14}'.format(0.5))
 print('{:16f}'.format(0.5))
+print('{:16}'.format(0.5))
 print('{:03}'.format(1))
 print('{}, {}, {}'.format('a', 'b', 'c'))
 print('{0}, {1}, {2}'.format('a', 'b', 'c'))
@@ -721,9 +725,13 @@ print("#%2i" % 2)
 print("## Got %d" % 3)
 ===
 print(‘#.14’.format(0.5))
+print(‘#.14’.format(0.5))
+print(‘#2.14’.format(0.5))
 print(‘#2.14’.format(0.5))
 print(‘#5.14’.format(0.5))
+print(‘#5.14’.format(0.5))
 print(‘#9.6’.format(0.5))
+print(‘#16’.format(0.5))
 print(‘#03’.format(1))
 print(‘#., #., #.’.format(‘a’, ‘b’, ‘c’))
 print(‘#., #., #.’.format(‘a’, ‘b’, ‘c’))
@@ -1165,3 +1173,51 @@ demo2 = [b"", bytes(b"a"), b"abc"]
 ===
 V demo1 = [Bytes(‘’), Bytes(‘a’), Bytes(‘abc’)]
 V demo2 = [Bytes(‘’), Bytes(‘a’), Bytes(‘abc’)]
+
+
+---
+# [https://www.rosettacode.org/wiki/Addition_chains#Python]
+n = 7
+best = [1, 2]
+print(f'L({n}) = {len(best) - 1}')
+
+# [https://www.rosettacode.org/wiki/Bin_given_limits#Python]
+limits = [1]
+bins = [2]
+print(f"          < {limits[0]:3} := {bins[0]:3}")
+
+# [https://www.rosettacode.org/wiki/Bioinformatics/base_count#Python]
+(i, n, part) = (1, 2, 3)
+print(f"{i*n:>5}: {part}")
+print(f"{i*n:>5}: {{part}}")
+print(f"{i*n:>5}: {{{part}}}")
+print(f"{i*n}: {part}")
+print(f"{i*n}: {{part}}")
+print(f"{i*n}: {{{part}}}")
+
+# [https://www.rosettacode.org/wiki/Price_list_behind_API#Python]
+import random
+price_list_size = 100_000
+price_list = [random.randrange(100_000) for i in range(price_list_size)]
+def get_max_price():
+    return max(price_list)
+print(f"Using {price_list_size} random prices from 0 to {get_max_price()}")
+(mn, mx, count) = (1.1, 2.2, 3)
+print(f"  From {mn:8.1f} ... {mx:8.1f} with {count} items.")
+print("  From {:8.1f} ... {:8.1f} with {} items.".format(mn, mx, count))
+
+v = 0.5
+print(f'{v:16.14f}')
+print(f'{v:16.14}')
+print('{:16.14f}'.format(v))
+print(f'{v:17.14f}')
+print('{:17.14f}'.format(v))
+print(f'{v:20.14f}')
+print('{:20.14f}'.format(v))
+print(f'{v:16f}')
+print('{:16f}'.format(v))
+o = 1
+print('{o:03}')
+print('{:03}'.format(o))
+===
+.

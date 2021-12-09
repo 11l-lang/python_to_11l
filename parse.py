@@ -320,6 +320,7 @@ class SymbolNode:
                 if fmtstr[i] == ':':
                     before_period = 0
                     after_period = 6
+                    was_dot = False
                     i += 1
                     if fmtstr[i:i+1] == '<':
                         nfmtstr += '<'
@@ -333,13 +334,14 @@ class SymbolNode:
                         before_period = before_period*10 + ord(fmtstr[i]) - ord('0')
                         i += 1
                     if fmtstr[i:i+1] == '.':
+                        was_dot = True
                         i += 1
                         after_period = 0
                         while i < len(fmtstr) and fmtstr[i].isdigit():
                             after_period = after_period*10 + ord(fmtstr[i]) - ord('0')
                             i += 1
 
-                    if fmtstr[i:i+1] == 'f':
+                    if fmtstr[i:i+1] == 'f' or was_dot:
                         if before_period != 0:
                             b = before_period
                             if after_period != 0:
@@ -347,7 +349,8 @@ class SymbolNode:
                             if b > 1:
                                 nfmtstr += str(b)
                         nfmtstr += '.' + str(after_period)
-                        i += 1
+                        if fmtstr[i] == 'f':
+                            i += 1
                     else:
                         if before_period != 0:
                             nfmtstr += str(before_period)

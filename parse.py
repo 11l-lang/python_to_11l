@@ -341,7 +341,7 @@ class SymbolNode:
                             after_period = after_period*10 + ord(fmtstr[i]) - ord('0')
                             i += 1
 
-                    if fmtstr[i:i+1] == 'f' or was_dot:
+                    if fmtstr[i:i+1] == 'f':
                         if before_period != 0:
                             b = before_period
                             if after_period != 0:
@@ -349,9 +349,12 @@ class SymbolNode:
                             if b > 1:
                                 nfmtstr += str(b)
                         nfmtstr += '.' + str(after_period)
-                        if fmtstr[i] == 'f':
-                            i += 1
+                        i += 1
                     else:
+                        if was_dot:
+                            tpos = self.children[0].children[0].token.start + i
+                            raise Error("floating point numbers without 'f' in format specifier are not supported", Token(tpos, tpos, Token.Category.STRING_LITERAL))
+
                         if before_period != 0:
                             nfmtstr += str(before_period)
                         else:

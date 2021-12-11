@@ -200,9 +200,16 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                             tokens.append(Token(j, j, Token.Category.INDENT))
                             j += 1
                             s = j
-                            colon_pos : Optional[int] = None # {{
-                            while source[j] != '}':
-                                if source[j] == ':':
+                            colon_pos : Optional[int] = None
+                            nesting_level = 0
+                            while True:
+                                if source[j] == '{':
+                                    nesting_level += 1
+                                elif source[j] == '}':
+                                    if nesting_level == 0:
+                                        break
+                                    nesting_level -= 1
+                                elif source[j] == ':' and nesting_level == 0:
                                     colon_pos = j
                                 j += 1
                             for new_token in tokenize(source[s:colon_pos if colon_pos is not None else j]):
@@ -214,7 +221,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                             tokens.append(Token(j, j, Token.Category.DEDENT))
                             substr_start = j + 1
                         elif source[j] == '}':
-                            if source[j+1] != '}':
+                            if source[j+1] != '}': # {
                                 raise Error("f-string: single '}' is not allowed", j)
                             j += 2
                             continue

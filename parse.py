@@ -1998,7 +1998,7 @@ def next_token(): # why ‘next_token’: >[https://youtu.be/Nlqv6NtBXcA?t=1203]
                     tokensn.token_str_override = '_' + token.value(source).lower() + '_'
             elif token.category == Token.Category.CONSTANT:
                 key = '(constant)'
-            elif token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.INDENT, Token.Category.DEDENT):
+            elif token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.INDENT, Token.Category.DEDENT, Token.Category.FSTRING_END):
                 key = ';'
             else:
                 key = token.value(source)
@@ -2189,7 +2189,7 @@ symbol('[').nud = nud # ]
 
 def nud(self):
     #assert(token.category == Token.Category.FSTRING); next_token() # skip auxiliary FSTRING token
-    while token.category != Token.Category.STATEMENT_SEPARATOR:
+    while token.category != Token.Category.FSTRING_END:
         if token.category == Token.Category.STRING_LITERAL:
             self.append_child(tokensn)
             next_token()

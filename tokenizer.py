@@ -44,9 +44,10 @@ class Token:
         NUMERIC_LITERAL = 4
         STRING_LITERAL = 5
         FSTRING = 6
-        INDENT = 7 # [https://docs.python.org/3/reference/lexical_analysis.html#indentation][-1]
-        DEDENT = 8
-        STATEMENT_SEPARATOR = 9
+        FSTRING_END = 7 # this is needed for syntax highlighting
+        INDENT = 8 # [https://docs.python.org/3/reference/lexical_analysis.html#indentation][-1]
+        DEDENT = 9
+        STATEMENT_SEPARATOR = 10
 
     start : int
     end : int
@@ -186,7 +187,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                     i += 1
 
                 if ch in 'fF':
-                    tokens.append(Token(lexem_start, i, Token.Category.FSTRING))
+                    tokens.append(Token(lexem_start, lexem_start + 1 + len(ends), Token.Category.FSTRING))
                     #tokens.append(Token(i, i, Token.Category.FSTRING)) # second FSTRING token is needed for parsing f-strings starting with expression [otherwise there is an error: no symbol corresponding to token `` (belonging to Category.INDENT) found while parsing expression]
                     j = lexem_start + 1 + len(ends)
                     substr_start = j
@@ -228,7 +229,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                         j += 1
                     if j > substr_start:
                         tokens.append(Token(substr_start, j, Token.Category.STRING_LITERAL))
-                    tokens.append(Token(i, i, Token.Category.STATEMENT_SEPARATOR))
+                    tokens.append(Token(j, i, Token.Category.FSTRING_END))
                     continue
 
                 category = Token.Category.STRING_LITERAL

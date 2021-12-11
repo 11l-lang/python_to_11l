@@ -1201,7 +1201,7 @@ print(f"{i*n}: {{pa")
 print(f"{i*n}: rt}}")
 print(f"{i*n}: {{{part}}}")
 print(f"{i*n}:\t{part}")
-print(f"{i*n}{part}")
+print(f"{i*n}{str(part)}")
 
 # [https://www.rosettacode.org/wiki/Price_list_behind_API#Python]
 import random
@@ -1257,7 +1257,7 @@ print((i * n)‘: {pa’)
 print((i * n)‘: rt}’)
 print((i * n)‘: {’part‘}’)
 print((i * n)":\t"part)
-print((i * n)‘’part)
+print((i * n)‘’String(part))
 V price_list_size = 100'000
 V price_list = (0 .< price_list_size).map(i -> random:(100'000))
 F get_max_price()

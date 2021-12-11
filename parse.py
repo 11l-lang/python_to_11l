@@ -191,6 +191,7 @@ class SymbolNode:
     def is_dict(self): return self.symbol.id == '{' and not self.is_set # }
     slicing = False
     is_not  = False
+    has_format_specifiers = False
     skip_find_and_get_prefix = False
     scope_prefix : str = ''
     scope : Scope
@@ -486,6 +487,56 @@ class SymbolNode:
                         return '"' + s[l:-l].replace('"', R'\"').replace(R"\'", "'") + '"'
                 else:
                     return balance_pq_string(s[l:-l])
+
+        if self.token.category == Token.Category.FSTRING:
+            r = ''
+            if self.has_format_specifiers:
+                i = 0
+                while i < len(self.children):
+                    child = self.children[i]
+                    if child.token.category == Token.Category.STRING_LITERAL:
+                        r += child.token.value(source)
+                    else:
+                        fmt = ''
+                        if i + 1 < len(self.children) and self.children[i + 1].token.category == Token.Category.STATEMENT_SEPARATOR:
+                            fmt = ':' + self.children[i + 1].token.value(source).replace('>', '')
+                            if '.' in fmt:
+                                if fmt[-1] != 'f':
+                                    raise Error("floating point numbers without 'f' in format specifier are not supported", self.children[i + 1].token)
+                                fmt = fmt[:-1]
+                            elif fmt[-1] == 'f':
+                                fmt = fmt[:-1] + '.6'
+                            i += 1
+                        r += '{' + child.to_str() + fmt + '}'
+                    i += 1
+
+                for child in self.children:
+                    if child.token.category == Token.Category.STRING_LITERAL:
+                        if '\\' in child.token.value(source):
+                            r = 'f:"' + r + '"'
+                            break
+                else:
+                    r = 'f:‘' + r + '’'
+            else:
+                prev_is_str = False
+                for child in self.children:
+                    if child.token.category == Token.Category.STRING_LITERAL:
+                        assert(not prev_is_str)
+                        prev_is_str = True
+                        s = child.token.value(source).replace('{{', '{').replace('}}', '}')
+                        if '\\' in s:
+                            r += '"' + s + '"'
+                        else:
+                            r += '‘' + s + '’'
+                    else:
+                        if not prev_is_str and len(r) != 0:
+                            r += '‘’'
+                        prev_is_str = False
+                        if child.token.category == Token.Category.NAME or child.symbol.id in ('[', '('): # )]
+                            r += child.to_str()
+                        else:
+                            r += '(' + child.to_str() + ')'
+            return r
 
         if self.token.category == Token.Category.CONSTANT:
             return {'None': 'N', 'False': '0B', 'True': '1B'}[self.token.value(source)]
@@ -1935,22 +1986,23 @@ def next_token(): # why ‘next_token’: >[https://youtu.be/Nlqv6NtBXcA?t=1203]
     else:
         token = tokens[tokeni]
         tokensn = SymbolNode(token)
-        if token.category != Token.Category.INDENT:
-            if token.category != Token.Category.KEYWORD or token.value(source) in allowed_keywords_in_expressions:
-                key : str
-                if token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL):
-                    key = '(literal)'
-                elif token.category == Token.Category.NAME:
-                    key = '(name)'
-                    if token.value(source) in ('V', 'C', 'I', 'E', 'F', 'L', 'N', 'R', 'S', 'T', 'X', 'var', 'fn', 'loop', 'null', 'switch', 'type', 'exception', 'sign'):
-                        tokensn.token_str_override = '_' + token.value(source).lower() + '_'
-                elif token.category == Token.Category.CONSTANT:
-                    key = '(constant)'
-                elif token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT):
-                    key = ';'
-                else:
-                    key = token.value(source)
-                tokensn.symbol = symbol_table[key]
+        if token.category != Token.Category.KEYWORD or token.value(source) in allowed_keywords_in_expressions:
+            key : str
+            if token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL):
+                key = '(literal)'
+            elif token.category == Token.Category.FSTRING:
+                key = '(fstring)'
+            elif token.category == Token.Category.NAME:
+                key = '(name)'
+                if token.value(source) in ('V', 'C', 'I', 'E', 'F', 'L', 'N', 'R', 'S', 'T', 'X', 'var', 'fn', 'loop', 'null', 'switch', 'type', 'exception', 'sign'):
+                    tokensn.token_str_override = '_' + token.value(source).lower() + '_'
+            elif token.category == Token.Category.CONSTANT:
+                key = '(constant)'
+            elif token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.INDENT, Token.Category.DEDENT):
+                key = ';'
+            else:
+                key = token.value(source)
+            tokensn.symbol = symbol_table[key]
 
 def advance(value):
     if token.value(source) != value:
@@ -2134,6 +2186,28 @@ def nud(self):
     advance(']')
     return self
 symbol('[').nud = nud # ]
+
+def nud(self):
+    #assert(token.category == Token.Category.FSTRING); next_token() # skip auxiliary FSTRING token
+    while token.category != Token.Category.STATEMENT_SEPARATOR:
+        if token.category == Token.Category.STRING_LITERAL:
+            self.append_child(tokensn)
+            next_token()
+        else:
+            assert(token.category == Token.Category.INDENT)
+            next_token()
+            self.append_child(expression())
+            if token.category == Token.Category.STATEMENT_SEPARATOR:
+                self.has_format_specifiers = True
+                # next_token()
+                # assert(token.category == Token.Category.STRING_LITERAL)
+                self.append_child(tokensn)
+                next_token()
+            assert(token.category == Token.Category.DEDENT)
+            next_token()
+    next_token()
+    return self
+symbol('(fstring)').nud = nud
 
 def nud(self): # {{{{
     if token.value(source) != '}':

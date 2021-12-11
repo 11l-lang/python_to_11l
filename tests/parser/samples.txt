@@ -1172,11 +1172,12 @@ V demo1 = [Bytes(‘’), Bytes(‘a’), Bytes(‘abc’)]
 V demo2 = [Bytes(‘’), Bytes(‘a’), Bytes(‘abc’)]
 
 
----
 # [https://www.rosettacode.org/wiki/Addition_chains#Python]
 n = 7
 best = [1, 2]
+print(f'L({n}) = {len(best)}')
 print(f'L({n}) = {len(best) - 1}')
+print(f'L({n}) = {len(best) - 1:2}')
 
 # [https://www.rosettacode.org/wiki/Bin_given_limits#Python]
 limits = [1]
@@ -1189,9 +1190,12 @@ print(f"{i*n:>5}: {part}")
 print(f"{i*n:<5}: {part}")
 print(f"{i*n:>5}: {{part}}")
 print(f"{i*n:>5}: {{{part}}}")
+print(f"{i*n:>5}:\t{part}")
 print(f"{i*n}: {part}")
 print(f"{i*n}: {{part}}")
 print(f"{i*n}: {{{part}}}")
+print(f"{i*n}:\t{part}")
+print(f"{i*n}{part}")
 
 # [https://www.rosettacode.org/wiki/Price_list_behind_API#Python]
 import random
@@ -1206,7 +1210,7 @@ print("  From {:8.1f} ... {:8.1f} with {} items.".format(mn, mx, count))
 
 v = 0.5
 print(f'{v:16.14f}')
-print(f'{v:16.14}')
+#print(f'{v:16.14}')
 print('{:16.14f}'.format(v))
 print(f'{v:17.14f}')
 print('{:17.14f}'.format(v))
@@ -1215,7 +1219,48 @@ print('{:20.14f}'.format(v))
 print(f'{v:16f}')
 print('{:16f}'.format(v))
 o = 1
-print('{o:03}')
+print(f'{o:03}')
 print('{:03}'.format(o))
 ===
-.
+V n = 7
+V best = [1, 2]
+print(‘L(’n‘) = ’best.len)
+print(‘L(’n‘) = ’(best.len - 1))
+print(f:‘L({n}) = {best.len - 1:2}’)
+
+V limits = [1]
+V bins = [2]
+print(f:‘          < {limits[0]:3} := {bins[0]:3}’)
+
+(V i, n, V part) = (1, 2, 3)
+print(f:‘{i * n:5}: {part}’)
+print(f:‘{i * n:<5}: {part}’)
+print(f:‘{i * n:5}: {{part}}’)
+print(f:‘{i * n:5}: {{{part}}}’)
+print(f:"{i * n:5}:\t{part}")
+print((i * n)‘: ’part)
+print((i * n)‘: {part}’)
+print((i * n)‘: {’part‘}’)
+print((i * n)":\t"part)
+print((i * n)‘’part)
+V price_list_size = 100'000
+V price_list = (0 .< price_list_size).map(i -> random:(100'000))
+F get_max_price()
+   R max(:price_list)
+print(‘Using ’price_list_size‘ random prices from 0 to ’get_max_price())
+V (mn, mx, count) = (1.1, 2.2, 3)
+print(f:‘  From {mn:8.1} ... {mx:8.1} with {count} items.’)
+print(‘  From #6.1 ... #6.1 with #. items.’.format(mn, mx, count))
+
+V v = 0.5
+print(f:‘{v:16.14}’)
+print(‘#.14’.format(v))
+print(f:‘{v:17.14}’)
+print(‘#2.14’.format(v))
+print(f:‘{v:20.14}’)
+print(‘#5.14’.format(v))
+print(f:‘{v:16.6}’)
+print(‘#9.6’.format(v))
+V o = 1
+print(f:‘{o:03}’)
+print(‘#03’.format(o))

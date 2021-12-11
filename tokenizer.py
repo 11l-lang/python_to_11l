@@ -1,4 +1,4 @@
-﻿from typing import List, Tuple
+﻿from typing import List, Tuple, Optional
 Char = str
 from enum import IntEnum
 
@@ -43,9 +43,10 @@ class Token:
         OPERATOR_OR_DELIMITER = 3
         NUMERIC_LITERAL = 4
         STRING_LITERAL = 5
-        INDENT = 6 # [https://docs.python.org/3/reference/lexical_analysis.html#indentation][-1]
-        DEDENT = 7
-        STATEMENT_SEPARATOR = 8
+        FSTRING = 6
+        INDENT = 7 # [https://docs.python.org/3/reference/lexical_analysis.html#indentation][-1]
+        DEDENT = 8
+        STATEMENT_SEPARATOR = 9
 
     start : int
     end : int
@@ -164,9 +165,9 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                 elif ch == ';':
                     category = Token.Category.STATEMENT_SEPARATOR
 
-            elif ch in ('"', "'") or (ch in 'rRbB' and source[i:i+1] in ('"', "'")):
+            elif ch in ('"', "'") or (ch in 'rRbBfF' and source[i:i+1] in ('"', "'")):
                 ends : str
-                if ch in 'rRbB':
+                if ch in 'rRbBfF':
                     ends = source[i:i+3] if source[i:i+3] in ('"""', "'''") else source[i]
                 else:
                     i -= 1
@@ -183,6 +184,46 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                         i += len(ends)
                         break
                     i += 1
+
+                if ch in 'fF':
+                    tokens.append(Token(lexem_start, i, Token.Category.FSTRING))
+                    #tokens.append(Token(i, i, Token.Category.FSTRING)) # second FSTRING token is needed for parsing f-strings starting with expression [otherwise there is an error: no symbol corresponding to token `` (belonging to Category.INDENT) found while parsing expression]
+                    j = lexem_start + 1 + len(ends)
+                    substr_start = j
+                    while j < i - 1:
+                        if source[j] == '{':
+                            if source[j+1] == '{':
+                                j += 2
+                                continue
+                            if j > substr_start:
+                                tokens.append(Token(substr_start, j, Token.Category.STRING_LITERAL))
+                            tokens.append(Token(j, j, Token.Category.INDENT))
+                            j += 1
+                            s = j
+                            colon_pos : Optional[int] = None # {{
+                            while source[j] != '}':
+                                if source[j] == ':':
+                                    colon_pos = j
+                                j += 1
+                            for new_token in tokenize(source[s:colon_pos if colon_pos is not None else j]):
+                                tokens.append(Token(new_token.start + s, new_token.end + s, new_token.category))
+                            if colon_pos is not None:
+                                #tokens.append(Token(colon_pos, colon_pos, Token.Category.STATEMENT_SEPARATOR))
+                                #tokens.append(Token(colon_pos + 1, j, Token.Category.STRING_LITERAL))
+                                tokens.append(Token(colon_pos + 1, j, Token.Category.STATEMENT_SEPARATOR))
+                            tokens.append(Token(j, j, Token.Category.DEDENT))
+                            substr_start = j + 1
+                        elif source[j] == '}':
+                            if source[j+1] != '}':
+                                raise Error("f-string: single '}' is not allowed", j)
+                            j += 2
+                            continue
+                        j += 1
+                    if j > substr_start:
+                        tokens.append(Token(substr_start, j, Token.Category.STRING_LITERAL))
+                    tokens.append(Token(i, i, Token.Category.STATEMENT_SEPARATOR))
+                    continue
+
                 category = Token.Category.STRING_LITERAL
 
             elif ch.isalpha() or ch == '_': # this is NAME/IDENTIFIER or KEYWORD

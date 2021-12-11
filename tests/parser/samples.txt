@@ -1229,7 +1229,7 @@ o = 1
 print(f'{o:03}')
 print('{:03}'.format(o))
 print(f'{f"{o:03}"}')
-print(f'{f"{o}":3}')
+print(f'{f"{o}":>3}')
 ===
 V n = 7
 V best = [1, 2]

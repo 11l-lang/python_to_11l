@@ -67,7 +67,7 @@ class Token:
     def to_str(self, source):
         return 'Token('+str(self.category)+', "'+self.value(source)+'")'
 
-def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int, int]] = None):
+def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int, int]] = None) -> List[Token]:
     tokens : List[Token] = []
     indentation_levels : List[int] = []
     nesting_elements : List[Tuple[Char, int]] = [] # parentheses, square brackets or curly braces

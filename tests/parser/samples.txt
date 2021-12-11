@@ -1177,7 +1177,9 @@ n = 7
 best = [1, 2]
 print(f'L({n}) = {len(best)}')
 print(f'L({n}) = {len(best) - 1}')
+print(f'''L({n}) = {len(best) - 1}''')
 print(f'L({n}) = {len(best) - 1:2}')
+print(f"""L({n}) = {len(best) - 1:2}""")
 
 # [https://www.rosettacode.org/wiki/Bin_given_limits#Python]
 limits = [1]
@@ -1226,6 +1228,8 @@ V n = 7
 V best = [1, 2]
 print(‘L(’n‘) = ’best.len)
 print(‘L(’n‘) = ’(best.len - 1))
+print(‘L(’n‘) = ’(best.len - 1))
+print(f:‘L({n}) = {best.len - 1:2}’)
 print(f:‘L({n}) = {best.len - 1:2}’)
 
 V limits = [1]

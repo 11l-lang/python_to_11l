@@ -190,7 +190,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                     #tokens.append(Token(i, i, Token.Category.FSTRING)) # second FSTRING token is needed for parsing f-strings starting with expression [otherwise there is an error: no symbol corresponding to token `` (belonging to Category.INDENT) found while parsing expression]
                     j = lexem_start + 1 + len(ends)
                     substr_start = j
-                    while j < i - 1:
+                    while j < i - len(ends):
                         if source[j] == '{':
                             if source[j+1] == '{':
                                 j += 2

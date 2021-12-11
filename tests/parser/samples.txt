@@ -1222,13 +1222,14 @@ print(f'{v:17.14f}')
 print('{:17.14f}'.format(v))
 print(f'{v:20.14f}')
 print('{:20.14f}'.format(v))
+print(f'{v:020.14f}')
 print(f'{v:16f}')
 print('{:16f}'.format(v))
 o = 1
 print(f'{o:03}')
 print('{:03}'.format(o))
 print(f'{f"{o:03}"}')
-print(f'{f"{o}":03}')
+print(f'{f"{o}":3}')
 ===
 V n = 7
 V best = [1, 2]
@@ -1273,10 +1274,11 @@ print(f:‘{v:17.14}’)
 print(‘#2.14’.format(v))
 print(f:‘{v:20.14}’)
 print(‘#5.14’.format(v))
+print(f:‘{v:020.14}’)
 print(f:‘{v:16.6}’)
 print(‘#9.6’.format(v))
 V o = 1
 print(f:‘{o:03}’)
 print(‘#03’.format(o))
 print((f:‘{o:03}’))
-print(f:‘{o:03}’)
+print(f:‘{o:3}’)

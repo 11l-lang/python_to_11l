@@ -964,7 +964,7 @@ class SymbolNode:
                             if f_node is not None and arg != 'N':
                                 farg = f_node.function_arguments[i//2 + int(skip_first_self_argument)]
                                 arg_type_name = farg[2]
-                                if arg_type_name.startswith(('List[', 'Dict[', 'DefaultDict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or farg[3] == '&': # ]]]
+                                if arg_type_name.startswith(('List[', 'list[', 'Dict[', 'dict[', 'DefaultDict[', 'collections.defaultdict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or farg[3] == '&': # ]]]]]]
                                     res += '&'
                             res += arg
                         else:
@@ -974,7 +974,7 @@ class SymbolNode:
                             if f_node is not None and arg != 'N':
                                 for farg in f_node.function_arguments:
                                     if farg[0] == ci_str:
-                                        if farg[2].startswith(('List[', 'Dict[', 'DefaultDict[')) or farg[3] == '&': # ]]]
+                                        if farg[2].startswith(('List[', 'list[', 'Dict[', 'dict[', 'DefaultDict[', 'collections.defaultdict[')) or farg[3] == '&': # ]]]]]]
                                             res += '&'
                                         break
                             res += arg
@@ -1573,7 +1573,7 @@ class ASTAssert(ASTNodeWithExpression):
         super().walk_expressions(f)
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Int64':'Int64', 'UInt64':'UInt64', 'UInt32':'UInt32', 'BigInt':'BigInt', 'Byte':'Byte', 'Bytes':'Bytes',
-                       'bool':'Bool', 'None':'N', 'List':'', 'ConstList':'', 'Tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'DefaultDict':'DefaultDict', 'Set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):
@@ -1615,9 +1615,9 @@ def trans_type(ty, scope, type_token):
             if ty.startswith('Optional['): # ]
                 assert(len(types) == 1)
                 return types[0] + '?'
-            if ty.startswith(('Tuple[', 'MutTuple[')): # ]]
+            if ty.startswith(('Tuple[', 'tuple[', 'MutTuple[')): # ]]]
                 return '(' + ', '.join(types) + ')'
-            if ty.startswith('Dict['): # ]
+            if ty.startswith(('Dict[', 'dict[')): # ]]
                 assert(len(types) == 2)
                 return '[' + types[0] + ' = ' + types[1] + ']'
             if ty.startswith('Callable['): # ]
@@ -1675,7 +1675,7 @@ class ASTTypeHint(ASTNode):
 
 class ASTAssignmentWithTypeHint(ASTTypeHint, ASTNodeWithExpression):
     def to_str(self, indent):
-        if self.type == 'DefaultDict':
+        if self.type in ('DefaultDict', 'collections.defaultdict'):
             assert(self.expression.function_call and self.expression.children[0].to_str() == 'collections:defaultdict')
             return super().to_str(indent)
 
@@ -1855,7 +1855,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
                  len(self.expression.children) == 3 and self.expression.children[1].token.category == Token.Category.NUMERIC_LITERAL else self.expression.to_str())
             if self.expression.token.category == Token.Category.NAME:
                 sid = self.expression.scope.find(self.expression.token_str())
-                if sid.type in ('Dict', 'DefaultDict'):
+                if sid.type in ('Dict', 'dict', 'DefaultDict', 'collections.defaultdict'):
                     r += '.keys()'
         elif self.expression.symbol.id == '(' and len(self.expression.children) == 1 and self.expression.children[0].symbol.id == '.' and len(self.expression.children[0].children) == 2 and self.expression.children[0].children[1].token_str() == 'items': # )
             r = 'L(' + ', '.join(self.loop_variables) + ') ' + self.expression.children[0].children[0].to_str()
@@ -2546,6 +2546,11 @@ def parse_internal(this_node, one_line_scope = False):
                 def advance_type():
                     type_ = token.value(source)
                     next_token()
+                    if token.value(source) == '.': # for `collections.defaultdict`
+                        next_token()
+                        assert(token.category == Token.Category.NAME)
+                        type_ += '.' + token.value(source)
+                        next_token()
                     if token.value(source) == '[': # ]
                         nesting_level = 0
                         while True:

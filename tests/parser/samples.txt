@@ -1282,3 +1282,33 @@ print(f:‘{o:03}’)
 print(‘#03’.format(o))
 print((f:‘{o:03}’))
 print(f:‘{o:3}’)
+
+
+# [https://www.python.org/dev/peps/pep-0585/ <- [https://docs.python.org/3/library/typing.html]:‘Deprecated since version 3.9’]
+t : tuple[int, float]
+l : list[int] = []
+d : dict[int, str] = {}
+
+class Obj:
+    s : set[int]
+
+import collections
+
+def f(l : list[int], d : collections.defaultdict[str, list[str]]) -> list[float]:
+    return [float(l[0])]
+
+anagram : collections.defaultdict[str, list[str]] = collections.defaultdict(list)
+f(l, anagram)
+===
+(Int, Float) t
+[Int] l
+[Int = String] d
+
+T Obj
+   Set[Int] s
+
+F f([Int] &l, DefaultDict[String, [String]] &d) -> [Float]
+   R [Float(l[0])]
+
+DefaultDict[String, [String]] anagram
+f(&l, &anagram)

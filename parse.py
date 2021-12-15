@@ -1807,7 +1807,7 @@ class ASTSwitch(ASTNodeWithExpression):
             f(case)
 
     def to_str(self, indent):
-        r = ' ' * (indent*3) + 'S ' + self.expression.to_str() + "\n"
+        r = self.pre_nl + ' ' * (indent*3) + 'S ' + self.expression.to_str() + "\n"
         for case in self.cases:
             r += case.children_to_str(indent + 1, 'E' if case.expression.token_str() == 'E' else case.expression.to_str())
         return r
@@ -3215,6 +3215,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                                 i += 1
 
                         switch_node = ASTSwitch()
+                        switch_node.pre_nl = child.pre_nl if not found_reference_to_var_name else ''
                         switch_node.set_expression(child.dest_expression if found_reference_to_var_name else child.expression)
                         if_node = node.children[index+1]
                         while True:

@@ -212,7 +212,7 @@ if True: if False: print(1)
 
 
 open("filename", newline = "\n")
-                 ^Error: `newline` argument is only supported in 'w' mode
+                 ^Error: `newline` argument is only supported in 'w' and 'a' modes
 
 
 open("filename", 'w', newline = '')

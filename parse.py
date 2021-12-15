@@ -771,8 +771,8 @@ class SymbolNode:
                             if arg_name == 'mode':
                                 mode = self.children[i+1].to_str()
                             elif arg_name == 'newline':
-                                if mode not in ('‘w’', '"w"'):
-                                    raise Error("`newline` argument is only supported in 'w' mode", self.children[i].token)
+                                if mode not in ('‘w’', '"w"', '‘a’', '"a"'):
+                                    raise Error("`newline` argument is only supported in 'w' and 'a' modes", self.children[i].token)
                                 if self.children[i+1].to_str() != '"\\n"':
                                     raise Error(R'the only allowed value for `newline` argument is `"\n"`', self.children[i+1].token)
                                 self.children.pop(i+1)
@@ -2594,9 +2594,9 @@ def parse_internal(this_node, one_line_scope = False):
                             next_token()
                         else:
                             type_ = advance_type()
-                            if type_ in ('list', 'dict'):
-                                type_ = ''
-                                qualifier = '&'
+                        if type_ in ('list', 'dict'):
+                            type_ = ''
+                            qualifier = '&'
 
                     if token.value(source) == '=':
                         next_token()

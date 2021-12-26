@@ -1312,3 +1312,10 @@ F f([Int] &l, DefaultDict[String, [String]] &d) -> [Float]
 
 DefaultDict[String, [String]] anagram
 f(&l, &anagram)
+
+
+for n in list(range(1, 11)) + list(range(95, 106)) + [297, 576, 594, 891, 909, 999, 1998, 2079, 2251, 2277, 2439, 2997, 4878]:
+    print(n)
+===
+L(n) Array(1..10) [+] Array(95..105) [+] [297, 576, 594, 891, 909, 999, 1998, 2079, 2251, 2277, 2439, 2997, 4878]
+   print(n)

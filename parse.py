@@ -234,6 +234,8 @@ class SymbolNode:
             return self.children[2].var_type()
         if self.function_call and self.children[0].token_str() in ('str', 'chr'):
             return 'str'
+        if self.function_call and self.children[0].token_str() == 'list':
+            return 'List'
         if self.token.category == Token.Category.NAME:
             return self.scope.var_type(self.token.value(source))
         return None

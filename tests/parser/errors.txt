@@ -290,3 +290,14 @@ input(*a)
 
 print('re', 'sult')
             ^Error: consecutive string literals in `print()` are not supported
+
+
+def list_primes(n):
+    return [i for (i, isprime) in enumerate(list_primality(n)) if isprime]
+                  ^Error: expected name
+
+
+def list_primes(n):
+    for (i, isprime) in enumerate(list_primality(n)):
+        ^Error: expected name
+        print()

@@ -2311,6 +2311,8 @@ def led(self, left):
             if child is not None:
                 set_scope_recursive(child)
     set_scope_recursive(left)
+    if token.category != Token.Category.NAME:
+        raise Error('expected name', token)
     tokensn.scope = scope
     scope.add_var(tokensn.token_str())
 
@@ -2759,6 +2761,9 @@ def parse_internal(this_node, one_line_scope = False):
                 prev_scope = scope
                 scope = Scope(None)
                 scope.parent = prev_scope
+
+                if token.category != Token.Category.NAME:
+                    raise Error('expected name', token)
 
                 node.loop_variables = [tokensn.token_str()]
                 scope.add_var(node.loop_variables[0], True)

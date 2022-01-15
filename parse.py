@@ -698,6 +698,8 @@ class SymbolNode:
                                 res += ', '
                         return res + ')'
                     if c00 == 'itertools' and c01 == 'count': # `itertools.count(1)` -> `1..`
+                        if len(self.children) < 3:
+                            raise Error('please specify `start` argument', Token(self.token.start, self.token.end + 1, Token.Category.NAME))
                         r = self.children[1].to_str() + '..'
                         if len(self.children) == 5: # `itertools.count(1, 2)` -> `(1..).step(2)`
                             return '(' + r + ').step(' + self.children[3].to_str() + ')'

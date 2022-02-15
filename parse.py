@@ -2817,7 +2817,7 @@ def parse_internal(this_node, one_line_scope = False):
                 while True:
                     if token.category != Token.Category.NAME:
                         raise Error('expected ' + nonlocal_or_global + ' variable name', token)
-                    if nonlocal_or_global == 'nonlocal':
+                    if nonlocal_or_global == 'nonlocal' or source[token.end + 1 : token.end + 5] == "# @\n":
                         if source[token.end + 1 : token.end + 5] == "# =\n":
                             scope.nonlocals_copy.update(nonlocals)
                             nonlocals.clear()

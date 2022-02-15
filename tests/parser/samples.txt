@@ -1319,3 +1319,29 @@ for n in list(range(1, 11)) + list(range(95, 106)) + [297, 576, 594, 891, 909, 9
 ===
 L(n) Array(1..10) [+] Array(95..105) [+] [297, 576, 594, 891, 909, 999, 1998, 2079, 2251, 2277, 2439, 2997, 4878]
    print(n)
+
+
+for _ in range(int(input())):
+    n = int(input())
+    a = list(map(int, input().split()))
+    assert(len(a) == n)
+
+    moves = 0
+    def mov(i, j, k):
+        global moves # @
+        a[i] += 1
+        a[j] -= 2
+        a[k] += 1
+        moves += 1
+===
+L(_) 0 .< Int(input())
+   V n = Int(input())
+   V a = input().split_py().map(Int)
+   assert(a.len == n)
+
+   V moves = 0
+   F mov(i, j, k)
+      @a[i]++
+      @a[j] -= 2
+      @a[k]++
+      @moves++

@@ -866,6 +866,9 @@ class SymbolNode:
                             return parenthesis[0] + '0' + space + '..' + space + c1[:-4] + parenthesis[1]
                         return parenthesis[0] + '0' + space + '.<' + space + c1 + parenthesis[1]
                     else:
+                        c1p = self.children[1].to_str()
+                        if self.children[1].symbol.id == 'if':
+                            c1p = '(' + c1p + ')'
                         rangestr = ' .< ' if range_need_space(self.children[1], self.children[3]) else '.<'
                         if len(self.children) == 5: # replace `range(b, e)` with `(b .< e)`
                             if self.children[3].token.category == Token.Category.NUMERIC_LITERAL and self.children[3].token_str().replace('_', '').isdigit() and \
@@ -873,13 +876,13 @@ class SymbolNode:
                                 return parenthesis[0] + self.children[1].token_str().replace('_', '') + '..' + str(int(self.children[3].token_str().replace('_', '')) - 1) + parenthesis[1] # ... replace `range(b, e)` with `(b..e-1)`
                             c3 = self.children[3].to_str()
                             if c3.endswith(' + 1'): # `range(a, b + 1)` -> `a .. b`
-                                return parenthesis[0] + self.children[1].to_str() + rangestr.replace('<', '.') + c3[:-4] + parenthesis[1]
-                            return parenthesis[0] + self.children[1].to_str() + rangestr + c3 + parenthesis[1]
+                                return parenthesis[0] + c1p + rangestr.replace('<', '.') + c3[:-4] + parenthesis[1]
+                            return parenthesis[0] + c1p + rangestr + c3 + parenthesis[1]
                         else: # replace `range(b, e, step)` with `(b .< e).step(step)`
                             c3 = self.children[3].to_str()
                             if c3.endswith(' + 1'): # `range(b, e + 1, step)` -> `(b .. e).step(step)`
-                                return '(' + self.children[1].to_str() + rangestr.replace('<', '.') + c3[:-4] + ').step(' + self.children[5].to_str() + ')'
-                            return '(' + self.children[1].to_str() + rangestr + c3 + ').step(' + self.children[5].to_str() + ')'
+                                return '(' + c1p + rangestr.replace('<', '.') + c3[:-4] + ').step(' + self.children[5].to_str() + ')'
+                            return '(' + c1p + rangestr + c3 + ').step(' + self.children[5].to_str() + ')'
                 elif func_name == 'print':
                     first_named_argument = len(self.children)
                     for i in range(1, len(self.children), 2):

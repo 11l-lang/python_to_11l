@@ -711,6 +711,11 @@ class SymbolNode:
                 func_name = self.children[0].to_str()
                 if func_name == 'str':
                     func_name = 'String'
+                elif func_name == 'Char' and self.children[1].token.category != Token.Category.STRING_LITERAL:
+                    if not (self.children[1].function_call and self.children[1].children[0].token_str() in ('str', 'int')):
+                        raise Error('ambiguous Char constructor: write `Char(str(' + self.children[1].to_str() + '))` or ' +
+                                                                      '`Char(int(' + self.children[1].to_str() + '))`', self.left_to_right_token())
+                    return 'Char(' + ('string' if self.children[1].children[0].token_str() == 'str' else 'digit') + "' " + self.children[1].children[1].to_str() + ')'
                 elif func_name == 'bool':
                     func_name = 'Bool'
                 elif func_name in ('int', 'Int64', 'BigInt'):

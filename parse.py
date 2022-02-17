@@ -2913,7 +2913,7 @@ def parse_internal(this_node, one_line_scope = False):
             next_token()
             node.set_expression(expression())
             type_name = ''
-            if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() == 'str') \
+            if node.expression.token.category == Token.Category.STRING_LITERAL or (node.expression.function_call and node.expression.children[0].token_str() in ('str', 'input')) \
                 or (node.expression.symbol.id == '+' and len(node.expression.children) == 2 and (node.expression.children[0].token.category == Token.Category.STRING_LITERAL
                                                                                               or node.expression.children[1].token.category == Token.Category.STRING_LITERAL)):
                 type_name = 'str'

@@ -1369,3 +1369,17 @@ F solve(n)
          I Int(nn.join(‘’)) % 7 == 0
             R Int(nn.join(‘’))
    X 0
+
+
+# [https://codeforces.com/contest/1626/submission/146679304]
+for _ in range(int(input())):
+    n = input()
+
+    for i in range(1, len(n)):
+        print(n[i-1] + n[i])
+===
+L(_) 0 .< Int(input())
+   V n = input()
+
+   L(i) 1 .< n.len
+      print(n[i - 1]‘’n[i])

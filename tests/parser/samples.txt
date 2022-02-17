@@ -1403,3 +1403,12 @@ a, b = map(int, input().split())
 ===
 V (a, b) = input().split_py().map(Int)
 V (c, d) = input().split_py().map(Int)
+
+
+a, b = 1, 2
+(c, d) = (1, 2)
+a, b = b, a
+===
+V (a, b) = (1, 2)
+V (c, d) = (1, 2)
+swap(&a, &b)

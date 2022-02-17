@@ -2815,6 +2815,18 @@ def parse_internal(this_node, one_line_scope = False):
                     node.expression = None
                 else:
                     node.set_expression(expression())
+                    if token.value(source) == ',':
+                        node.expression.ast_parent = None
+                        tuple_expr = SymbolNode(Token(token.start, token.start, Token.Category.OPERATOR_OR_DELIMITER))
+                        tuple_expr.symbol = symbol_table['('] # )
+                        tuple_expr.tuple = True
+                        tuple_expr.append_child(node.expression)
+                        next_token()
+                        tuple_expr.append_child(expression())
+                        while token.value(source) == ',':
+                            next_token()
+                            tuple_expr.append_child(expression())
+                        node.set_expression(tuple_expr)
                 if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 

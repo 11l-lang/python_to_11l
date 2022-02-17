@@ -1383,3 +1383,16 @@ L(_) 0 .< Int(input())
 
    L(i) 1 .< n.len
       print(n[i - 1]‘’n[i])
+
+
+def foo():
+    return 1, 2
+
+def bar():
+    return 1, 2, 3
+===
+F foo()
+   R (1, 2)
+
+F bar()
+   R (1, 2, 3)

@@ -3093,9 +3093,8 @@ def parse_internal(this_node, one_line_scope = False):
                     else:
                         node.set_expression(expr)
                         break
-            elif token is not None and token.value(source) == ',':
+            elif token is not None and token.value(source) == ',': # for `a, b = ...`
                 node = ASTExprAssignment()
-                node.add_vars = []
 
                 tuple_expr = SymbolNode(Token(token.start, token.start, Token.Category.OPERATOR_OR_DELIMITER))
                 tuple_expr.symbol = symbol_table['('] # )
@@ -3110,6 +3109,9 @@ def parse_internal(this_node, one_line_scope = False):
 
                 node.add_vars = []
                 for v in tuple_expr.children:
+                    if v.token.category != Token.Category.NAME:
+                        node.is_tuple_assign_expression = True
+                        break
                     node.add_vars.append(scope.add_var(v.token_str()))
 
                 advance('=')

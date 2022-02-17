@@ -1396,3 +1396,10 @@ F foo()
 
 F bar()
    R (1, 2, 3)
+
+
+a, b = map(int, input().split())
+(c, d) = map(int, input().split())
+===
+V (a, b) = input().split_py().map(Int)
+V (c, d) = input().split_py().map(Int)

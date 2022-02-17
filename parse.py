@@ -3093,6 +3093,28 @@ def parse_internal(this_node, one_line_scope = False):
                     else:
                         node.set_expression(expr)
                         break
+            elif token is not None and token.value(source) == ',':
+                node = ASTExprAssignment()
+                node.add_vars = []
+
+                tuple_expr = SymbolNode(Token(token.start, token.start, Token.Category.OPERATOR_OR_DELIMITER))
+                tuple_expr.symbol = symbol_table['('] # )
+                tuple_expr.tuple = True
+                tuple_expr.append_child(node_expression)
+                next_token()
+                tuple_expr.append_child(expression())
+                while token.value(source) == ',':
+                    next_token()
+                    tuple_expr.append_child(expression())
+                node.set_dest_expression(tuple_expr)
+
+                node.add_vars = []
+                for v in tuple_expr.children:
+                    node.add_vars.append(scope.add_var(v.token_str()))
+
+                advance('=')
+
+                node.set_expression(expression())
             else:
                 node = ASTExpression()
                 node.set_expression(node_expression)

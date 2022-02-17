@@ -301,3 +301,7 @@ def list_primes(n):
     for (i, isprime) in enumerate(list_primality(n)):
         ^Error: expected name
         print()
+
+
+a, b c
+     ^Error: expected `=`

@@ -1377,12 +1377,39 @@ for _ in range(int(input())):
 
     for i in range(1, len(n)):
         print(n[i-1] + n[i])
+
+# [https://codeforces.com/contest/1616/submission/146711179]
+for _ in range(int(input())):
+    n = int(input())
+    s = input()
+    assert(len(s) == n)
+
+    r = s + s[::-1]
+    for k in range(1, len(s)):
+        t = s[:k] + s[k-1::-1]
+        if t < r:
+            r = t
+
+    print(r)
 ===
 L(_) 0 .< Int(input())
    V n = input()
 
    L(i) 1 .< n.len
       print(n[i - 1]‘’n[i])
+
+L(_) 0 .< Int(input())
+   V n = Int(input())
+   V s = input()
+   assert(s.len == n)
+
+   V r = s‘’reversed(s)
+   L(k) 1 .< s.len
+      V t = s[0 .< k]‘’s[(k - 1 ..).step(-1)]
+      I t < r
+         r = t
+
+   print(r)
 
 
 def foo():

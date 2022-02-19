@@ -305,3 +305,7 @@ def list_primes(n):
 
 a, b c
      ^Error: expected `=`
+
+
+Char(1&2)
+^Error: ambiguous Char constructor: write `Char(str(1&2))` or `Char(int(1&2))`

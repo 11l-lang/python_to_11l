@@ -2837,7 +2837,7 @@ def parse_internal(this_node, one_line_scope = False):
                 while True:
                     if token.category != Token.Category.NAME:
                         raise Error('expected ' + nonlocal_or_global + ' variable name', token)
-                    if nonlocal_or_global == 'nonlocal' or source[token.end + 1 : token.end + 5] == "# @\n":
+                    if nonlocal_or_global == 'nonlocal':
                         if source[token.end + 1 : token.end + 5] == "# =\n":
                             scope.nonlocals_copy.update(nonlocals)
                             nonlocals.clear()
@@ -2845,7 +2845,12 @@ def parse_internal(this_node, one_line_scope = False):
                         else:
                             nonlocals.add(token.value(source))
                     else:
-                        scope.globals.add(token.value(source))
+                        if source[token.end + 1 : token.end + 5] == "# @\n":
+                            nonlocals.update(scope.globals)
+                            scope.globals.clear()
+                            nonlocals.add(token.value(source))
+                        else:
+                            scope.globals.add(token.value(source))
                     next_token()
                     if token.value(source) == ',':
                         next_token()

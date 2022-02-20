@@ -1448,3 +1448,61 @@ a[0], a[1] = a[1], a[0]
 V a = [1, 2]
 (a[0], a[1]) = (a[1], 1)
 swap(&a[0], &a[1])
+
+
+# [https://codeforces.com/contest/1579/submission/146984105]
+for _ in range(int(input())):
+    s = input()
+
+    cA = s.count('A')
+    cB = s.count('B')
+    cC = s.count('C')
+
+    def solve():
+        global cA, cB, cC # @
+
+        while True:
+            if cA > cC: # удаляем A и B
+                cA -= 1
+                cB -= 1
+                if cB < 0:
+                    return False
+            else: # удаляем B и C
+                cB -= 1
+                cC -= 1
+                if cB < 0 or cC < 0:
+                    return False
+            if cA == cB == cC == 0:
+                return True
+
+    if solve():
+        print('YES')
+    else:
+        print('NO')
+===
+L(_) 0 .< Int(input())
+   V s = input()
+
+   V cA = s.count(‘A’)
+   V cB = s.count(‘B’)
+   V cC = s.count(‘C’)
+
+   F solve()
+
+      L
+         I @cA > @cC
+            @cA--
+            I --@cB < 0
+               R 0B
+         E
+            @cB--
+            @cC--
+            I @cB < 0 | @cC < 0
+               R 0B
+         I @cA == @cB == @cC == 0
+            R 1B
+
+   I solve()
+      print(‘YES’)
+   E
+      print(‘NO’)

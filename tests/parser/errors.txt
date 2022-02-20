@@ -309,3 +309,7 @@ a, b c
 
 Char(1&2)
 ^Error: ambiguous Char constructor: write `Char(str(1&2))` or `Char(int(1&2))`
+
+
+from math import sqrt
+^Error: `from` is not supported (try `import math`)

@@ -2535,7 +2535,8 @@ def parse_internal(this_node, one_line_scope = False):
             elif token.value(source) == 'from':
                 next_token()
                 module_name = token.value(source)
-                assert(module_name in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l'))
+                if module_name not in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l'):
+                    raise Error('`from` is not supported (try `import ' + module_name + '`)', tokens[tokeni-1])
                 next_token()
                 advance('import')
                 while True:

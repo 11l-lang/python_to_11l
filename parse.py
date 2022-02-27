@@ -2180,7 +2180,9 @@ def led(self, left):
             if token.value(source) != ']':
                 if token.value(source) == ':':
                     self.children.append(None)
-                    next_token()
+                    next_token() # [
+                    if token.value(source) == ']':
+                        raise Error('please remove redundant colon (`:`)', tokens[tokeni-1])
                     self.append_child(expression())
                 else:
                     self.append_child(expression())

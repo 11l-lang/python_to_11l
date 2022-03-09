@@ -1499,7 +1499,7 @@ class ASTExpression(ASTNodeWithExpression):
 
 class ASTExprAssignment(ASTNodeWithExpression):
     add_vars : List[bool]
-    drop_list = False
+    drop_list_or_dict = False
     is_tuple_assign_expression = False
     dest_expression : SymbolNode
     additional_dest_expressions : List[SymbolNode]
@@ -1536,7 +1536,7 @@ class ASTExprAssignment(ASTNodeWithExpression):
                     return self.pre_nl + ' ' * (indent*3) + s[:l] + '.sort_range(' + s[l+1:-1] + additional_args + ")\n"
             raise Error('slice assignment is not supported', self.dest_expression.left_to_right_token())
 
-        if self.drop_list:
+        if self.drop_list_or_dict:
             return self.pre_nl + ' ' * (indent*3) + self.dest_expression.to_str() + ".drop()\n"
 
         if self.dest_expression.tuple and len(self.dest_expression.children) == 2 and \
@@ -2950,10 +2950,10 @@ def parse_internal(this_node, one_line_scope = False):
                 node.set_expression(node.expression.children[1])
                 node.expression.parent = None
                 node.expression.skip_find_and_get_prefix = True # this can not be replaced with `isupper()` check before `find_and_get_prefix()` call because there will be conflict with uppercase [constant] variables, like `WIDTH` or `HEIGHT` (they[‘variables’] will not be checked, but they should)
-            if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
+            if node.expression.symbol.id in ('[', '{') and len(node.expression.children) == 0: # }]
                 if node.add_vars[0]:
-                    raise Error('please specify type of empty list', Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME))
-                node.drop_list = True
+                    raise Error('please specify type of empty ' + ('list' if node.expression.symbol.id == '[' else 'dict'), Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME)) # ]
+                node.drop_list_or_dict = True
             if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)): # `poss_nbors = (x-1,y),(x-1,y+1)`
                 raise Error('expected end of statement', token)                                                      #                      ^
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
@@ -3159,8 +3159,8 @@ def parse_internal(this_node, one_line_scope = False):
                     found_in_base_class = this_node.parent.base_class_node.find_member_including_base_classes(node_expression.children[1].token_str())
 
                 if not found_in_base_class and scope.parent.add_var(node_expression.children[1].token_str()):
-                    if node.expression.symbol.id == '[' and len(node.expression.children) == 0: # ]
-                        raise Error('please specify type of empty list', Token(node.dest_expression.leftmost(), node.expression.rightmost(), Token.Category.NAME))
+                    if node.expression.symbol.id in ('[', '{') and len(node.expression.children) == 0: # }]
+                        raise Error('please specify type of empty ' + ('list' if node.expression.symbol.id == '[' else 'dict'), Token(node.dest_expression.leftmost(), node.expression.rightmost(), Token.Category.NAME)) # ]
                     node.add_vars = [True]
                     node.set_dest_expression(node_expression.children[1])
                     node.parent = this_node.parent

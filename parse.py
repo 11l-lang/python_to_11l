@@ -697,6 +697,14 @@ class SymbolNode:
                             if i < len(self.children)-2:
                                 res += ', '
                         return res + ')'
+                    if c00 == 'bisect':
+                        res = 'bisect:' + {'bisect':'right', 'bisect_right':'right', 'bisect_left':'left'}[c01] + '('
+                        for i in range(1, len(self.children), 2):
+                            assert(self.children[i+1] is None)
+                            res += self.children[i].to_str()
+                            if i < len(self.children)-2:
+                                res += ', '
+                        return res + ')'
                     if c00 == 'itertools' and c01 == 'count': # `itertools.count(1)` -> `1..`
                         if len(self.children) < 3:
                             raise Error('please specify `start` argument', Token(self.token.start, self.token.end + 1, Token.Category.NAME))
@@ -2480,7 +2488,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct', 'bisect'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 

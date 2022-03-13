@@ -1848,6 +1848,11 @@ class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
             self.was_no_break.walk_children(f)
 
     def to_str(self, indent):
+        if self.expression.token.category == Token.Category.NAME:
+            raise Error('please write `while ' + self.expression.token_str() + ' != 0` or `while '
+                                               + self.expression.token_str() + ' == True` instead of `while '
+                                               + self.expression.token_str() + '`', Token(tokens[self.tokeni].start, self.expression.token.end, Token.Category.NAME))
+
         r = self.children_to_str(indent, 'L' if self.expression.token.category == Token.Category.CONSTANT and self.expression.token.value(source) == 'True' else 'L ' + self.expression.to_str())
 
         if self.was_no_break is not None:

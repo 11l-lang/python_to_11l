@@ -1511,6 +1511,14 @@ L(_) 0 .< Int(input())
 # from [https://codeforces.com/contest/1521/submission/117139834]
 C : List[int] = []
 C += [1] * 2
+B : List[int] = []
+border = 3
+D = B[border:]
+D += C[border:]
 ===
 [Int] _c_
 _c_ [+]= [1] * 2
+[Int] B
+V border = 3
+V D = B[border ..]
+D [+]= _c_[border ..]

@@ -1506,3 +1506,11 @@ L(_) 0 .< Int(input())
       print(‘YES’)
    E
       print(‘NO’)
+
+
+# from [https://codeforces.com/contest/1521/submission/117139834]
+C : List[int] = []
+C += [1] * 2
+===
+[Int] _c_
+_c_ [+]= [1] * 2

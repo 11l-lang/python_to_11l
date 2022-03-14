@@ -237,7 +237,7 @@ class SymbolNode:
         if self.function_call and self.children[0].token_str() == 'list':
             return 'List'
         if self.token.category == Token.Category.NAME:
-            return self.scope.var_type(self.token.value(source))
+            return self.scope.var_type(self.token_str())
         return None
 
     def append_child(self, child):

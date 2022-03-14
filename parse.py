@@ -1023,6 +1023,8 @@ class SymbolNode:
 
         elif self.symbol.id == '[': # ]
             if self.is_list:
+                if len(self.children) == 0 and (self.parent is not None or type(self.ast_parent) not in (ASTAssignmentWithTypeHint, ASTReturn)):
+                    raise Error('empty list is not supported here (but you can write `[0] * 0`)', self.left_to_right_token())
                 if len(self.children) == 1 and self.children[0].symbol.id == 'for':
                     return self.children[0].to_str()
                 res = '['

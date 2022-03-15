@@ -1959,7 +1959,8 @@ class ASTDel(ASTNodeWithExpression):
             return ' ' * (indent*3) + self.expression.children[0].to_str() + '.del(' + s[l+1:-1] + ")\n"
         else:
             assert(self.expression.symbol.id == '[' and not self.expression.is_list) # ]
-            return ' ' * (indent*3) + self.expression.children[0].to_str() + '.pop(' + self.expression.children[1].to_str() + ")\n"
+            c1 = self.expression.children[1].to_str()
+            return ' ' * (indent*3) + self.expression.children[0].to_str() + '.pop(' + '(len)'*(c1[0] == '-') + c1 + ")\n"
 
 class ASTClassDefinition(ASTNodeWithChildren):
     base_class_name : str = None

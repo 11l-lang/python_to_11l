@@ -679,6 +679,9 @@ class SymbolNode:
                             raise Error('to use `deque` the type of deque values must be specified in the comment', self.children[0].children[1].token)
                         sl = slice(self.token.end + 3, source.find("\n", self.token.end + 3))
                         return 'Deque[' + trans_type(source[sl].lstrip(' '), self.scope, Token(sl.start, sl.stop, Token.Category.NAME)) + ']()'
+                    if c00 == 'collections' and c01 == 'Counter':
+                        assert(len(self.children) == 3)
+                        return 'Counter(' + self.children[1].to_str() + ')'
                     if (c00 == 'int' or c00.startswith(('Int', 'UInt'))) and c01 == 'from_bytes':
                         assert(len(self.children) == 5)
                         if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little' if self.children[4] is None else

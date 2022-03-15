@@ -580,6 +580,8 @@ class SymbolNode:
                                 self.children[4].token.category == Token.Category.STRING_LITERAL and self.children[4].token_str()[1:-1] == 'little' and self.children[3].token_str() == 'byteorder'):
                             raise Error("only 'little' byteorder supported so far", self.children[3].token)
                         return 'bytes_from_int(UInt' + str(int(self.children[1].to_str()) * 8) + '(' + self.children[0].children[0].to_str() + '))'
+                    if c01 == 'pop' and len(self.children) == 3 and self.children[1].to_str()[0] == '-':
+                        return self.children[0].to_str() + '((len)' + self.children[1].to_str() + ')'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi',
                             'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha',
                             'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim',

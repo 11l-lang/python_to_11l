@@ -317,3 +317,10 @@ from math import sqrt
 
 d = [[] for i in range(10)]
      ^Error: empty list is not supported here (but you can write `[0] * 0`)
+
+
+T = int(input())
+
+while T:
+^Error: please write `while T != 0` or `while T == True` instead of `while T`
+    n = int(input())

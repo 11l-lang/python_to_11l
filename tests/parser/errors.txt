@@ -324,3 +324,7 @@ T = int(input())
 while T:
 ^Error: please write `while T != 0` or `while T == True` instead of `while T`
     n = int(input())
+
+
+d : Dict[Tuple[int, int]] = {}
+    ^Error: Dict must have 2 subtypes (not 1)

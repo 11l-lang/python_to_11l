@@ -1655,7 +1655,8 @@ def trans_type(ty, scope, type_token):
             if ty.startswith(('Tuple[', 'tuple[', 'MutTuple[')): # ]]]
                 return '(' + ', '.join(types) + ')'
             if ty.startswith(('Dict[', 'dict[')): # ]]
-                assert(len(types) == 2)
+                if len(types) != 2:
+                    raise Error('Dict must have 2 subtypes (not ' + str(len(types)) + ')', type_token)
                 return '[' + types[0] + ' = ' + types[1] + ']'
             if ty.startswith('Callable['): # ]
                 assert(len(types) == 2)

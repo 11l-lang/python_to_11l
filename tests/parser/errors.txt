@@ -328,3 +328,7 @@ while T:
 
 d : Dict[Tuple[int, int]] = {}
     ^Error: Dict must have 2 subtypes (not 1)
+
+
+d = dict()
+^Error: please specify type of empty dict

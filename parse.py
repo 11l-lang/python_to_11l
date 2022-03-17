@@ -2952,6 +2952,8 @@ def parse_internal(this_node, one_line_scope = False):
         elif token.category == Token.Category.NAME and peek_token().value(source) == '=':
             name_token = token
             name_token_str = tokensn.token_str()
+            if name_token_str == 'input':
+                raise Error('built-in function `input()` can not be redefined', token)
             node = ASTExprAssignment()
             node.set_dest_expression(tokensn)
             next_token()

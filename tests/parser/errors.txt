@@ -332,3 +332,8 @@ d : Dict[Tuple[int, int]] = {}
 
 d = dict()
 ^Error: please specify type of empty dict
+
+
+import sys
+input=sys.stdin.readline
+^Error: built-in function `input()` can not be redefined

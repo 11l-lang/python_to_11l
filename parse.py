@@ -223,7 +223,7 @@ class SymbolNode:
             return 'str'
         if self.symbol.id == '+' and len(self.children) == 2 and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
             return 'str'
-        if self.token.category == Token.Category.STRING_LITERAL:
+        if self.token.category in (Token.Category.STRING_LITERAL, Token.Category.FSTRING):
             return 'str'
         if self.symbol.id == '.':
             if self.children[0].token_str() == 'os' and self.children[1].token_str() == 'pathsep':
@@ -1320,7 +1320,9 @@ class SymbolNode:
                 c1 = self.children[1].to_str()
                 return self.children[0].to_str() + '‘’' + ('(' + c1 + ')' if c1[0] == '.' else c1)
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'str' or self.children[1].var_type() == 'str'):
-                return self.children[0].to_str() + '‘’' + self.children[1].to_str()
+                c0 = self.children[0].to_str()
+                c1 = self.children[1].to_str()
+                return c0 + '‘’' * (c1[0] not in ('‘', '"') and c0[-1] not in ('’', '"')) + c1
             elif self.symbol.id == '+' and self.children[0].symbol.id == '+' and self.children[0].children[1].is_list and len(self.children[0].children[1].children) == 0: # `a + [] + b` -> `a [+] b`
                 return self.children[0].children[0].to_str() + ' [+] ' + self.children[1].to_str()
             elif self.symbol.id == '+' and (self.children[0].var_type() == 'List' or self.children[1].var_type() == 'List'):

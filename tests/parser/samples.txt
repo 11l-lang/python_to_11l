@@ -1522,3 +1522,12 @@ _c_ [+]= [1] * 2
 V border = 3
 V D = B[border ..]
 D [+]= _c_[border ..]
+
+
+ans = [1]
+print(f'! {len(ans)} '+" ".join(map(str, ans)))
+print(f'! {len(ans)}'+" ".join(map(str, ans)))
+===
+V ans = [1]
+print(‘! ’ans.len‘ ’ans.map(String).join(‘ ’))
+print(‘! ’ans.len‘’ans.map(String).join(‘ ’))

@@ -342,3 +342,8 @@ input=sys.stdin.readline
 DIGITS = 55
 save = [{} for d in range(DIGITS)]
         ^Error: empty dict is not supported here (please specify type of the whole expression)
+
+
+left, right = {}, {}
+                  ^Error: empty dict is not supported here
+

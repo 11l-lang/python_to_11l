@@ -270,7 +270,7 @@ class SymbolNode:
         if self.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL, Token.Category.NAME, Token.Category.CONSTANT):
             return self.token.end
 
-        if self.symbol.id in '([': # ])
+        if self.symbol.id in '([{': # }])
             if len(self.children) == 0:
                 return self.token.end + 1
             return (self.children[-1] or self.children[-2]).rightmost() + 1
@@ -1093,6 +1093,12 @@ class SymbolNode:
 
         elif self.symbol.id == '{': # }
             if len(self.children) == 0:
+                if self.parent is not None and self.parent.symbol.id == 'for' and self.parent.parent.is_list and self.parent.parent.parent is None and type(self.parent.parent.ast_parent) == ASTAssignmentWithTypeHint:
+                    ty = self.parent.parent.ast_parent.trans_type_with_args()
+                    assert(ty.startswith('[')) # ]
+                    return ty[1:-1] + '()'
+                if self.parent is not None or type(self.ast_parent) not in (ASTAssignmentWithTypeHint, ASTReturn):
+                    raise Error('empty dict is not supported here (please specify type of the whole expression)', self.left_to_right_token())
                 return 'Dict()'
 
             if self.is_set:
@@ -1695,6 +1701,9 @@ class ASTTypeHint(ASTNode):
     def trans_type(self, ty):
         return trans_type(ty, self.scope, self.type_token)
 
+    def trans_type_with_args(self):
+        return self.trans_type(self.type + ('[' + ', '.join(self.type_args) + ']' if len(self.type_args) else ''))
+
     def to_str_(self, indent, nullable = False):
         if self.type == 'Callable':
             if self.type_args[0] == '':
@@ -1708,7 +1717,7 @@ class ASTTypeHint(ASTNode):
         elif self.type == 'Optional':
             assert(len(self.type_args) == 1)
             return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
-        return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type + ('[' + ', '.join(self.type_args) + ']' if len(self.type_args) else '')) + '?'*nullable + '&'*self.is_reference + ' ' + self.var
+        return self.pre_nl + ' ' * (indent*3) + self.trans_type_with_args() + '?'*nullable + '&'*self.is_reference + ' ' + self.var
 
     def to_str(self, indent):
         return self.to_str_(indent) + "\n"

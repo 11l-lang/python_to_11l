@@ -337,3 +337,8 @@ d = dict()
 import sys
 input=sys.stdin.readline
 ^Error: built-in function `input()` can not be redefined
+
+
+DIGITS = 55
+save = [{} for d in range(DIGITS)]
+        ^Error: empty dict is not supported here (please specify type of the whole expression)

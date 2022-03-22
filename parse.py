@@ -585,7 +585,7 @@ class SymbolNode:
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi',
                             'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha',
                             'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim',
-                            'appendleft':'append_left', 'extendleft':'extend_left', 'popleft':'pop_left', 'issubset':'is_subset'}.get(c01, '')
+                            'appendleft':'append_left', 'extendleft':'extend_left', 'popleft':'pop_left', 'issubset':'is_subset', 'setdefault':'set_default'}.get(c01, '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         c00 = self.children[0].children[0].to_str()
                         if repl == 'uppercase' and c00.endswith('[2..]') and self.children[0].children[0].children[0].symbol.id == '(' and self.children[0].children[0].children[0].children[0].token_str() == 'hex': # ) # `hex(x)[2:].upper()` -> `hex(x)`

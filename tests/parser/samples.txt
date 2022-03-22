@@ -1531,3 +1531,16 @@ print(f'! {len(ans)}'+" ".join(map(str, ans)))
 V ans = [1]
 print(‘! ’ans.len‘ ’ans.map(String).join(‘ ’))
 print(‘! ’ans.len‘’ans.map(String).join(‘ ’))
+
+
+ans = [i for i in range(10)]
+ant = list(range(10))
+n = 9
+s = sum(i for i in range(1, n + 1)) # [https://github.com/nayuki/Project-Euler-solutions/blob/master/python/p006.py?ts=4#L17]
+s = sum([i for i in range(1, n + 1)])
+===
+V ans = Array(0.<10)
+V ant = Array(0.<10)
+V n = 9
+V s = sum((1 .. n))
+s = sum(Array(1 .. n))

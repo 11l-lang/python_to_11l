@@ -1206,6 +1206,8 @@ class SymbolNode:
                     if self.children[0].token_str() in ('math', 'cmath'):
                         c1 = self.children[1].to_str()
                         if c1 not in ('e', 'pi'):
+                            if c1 == 'inf':
+                                return 'Float.infinity'
                             if c1 == 'fabs': c1 = 'abs'
                             elif c1 in ('ceil', 'floor'): c1 += 'i' # functions `math.ceil()` and `math.floor()` return `int` in Python
                             return c1

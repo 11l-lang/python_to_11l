@@ -1568,6 +1568,14 @@ class ASTExprAssignment(ASTNodeWithExpression):
                         else:
                             additional_args += self.expression.children[i].to_str() + "' " + self.expression.children[i+1].to_str()
                     return self.pre_nl + ' ' * (indent*3) + s[:l] + '.sort_range(' + s[l+1:-1] + additional_args + ")\n"
+            if self.expression.slicing and len(self.expression.children) == 4 and \
+                                               self.expression.children[1] is None and \
+                                               self.expression.children[2] is None and \
+                                               self.expression.children[3].symbol.id == '-' and len(self.expression.children[3].children) == 1 and \
+                                               self.expression.children[3].children[0].token_str() == '1' and \
+                                               self.expression.children[0].to_str() == s:
+                l = len(self.dest_expression.children[0].to_str())
+                return self.pre_nl + ' ' * (indent*3) + s[:l] + '.reverse_range(' + s[l+1:-1] + ")\n"
             raise Error('slice assignment is not supported', self.dest_expression.left_to_right_token())
 
         if self.drop_list_or_dict:

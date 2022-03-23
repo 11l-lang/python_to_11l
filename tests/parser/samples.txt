@@ -1562,3 +1562,20 @@ savf : List[Dict[int, int]] = [dict() for d in range(DIGITS)]
 V DIGITS = 55
 [[Int = Int]] save = (0 .< DIGITS).map(d -> [Int = Int]())
 [[Int = Int]] savf = (0 .< DIGITS).map(d -> [Int = Int]())
+
+
+class Flow:
+    g : List[Dict[int, float]]
+    h : List[Dict[int, float]]
+
+    def __init__(self, n):
+        self.g = [{} for _ in range(n)]
+        self.h = [dict() for _ in range(n)]
+===
+T Flow
+   [[Int = Float]] g
+   [[Int = Float]] h
+
+   F (n)
+      .g = (0 .< n).map(_ -> [Int = Float]())
+      .h = (0 .< n).map(_ -> [Int = Float]())

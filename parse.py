@@ -782,6 +782,14 @@ class SymbolNode:
                             ty = self.parent.parent.ast_parent.trans_type_with_args()
                             assert(ty.startswith('[')) # ]
                             return ty[1:-1] + '()'
+                        if inside_list_comprehension and type(self.parent.parent.ast_parent) == ASTExprAssignment and \
+                                                              self.parent.parent.ast_parent.dest_expression.symbol.id == '.' and \
+                                                              self.parent.parent.ast_parent.dest_expression.children[0].token_str() == 'self':
+                            m = self.parent.parent.ast_parent.parent.parent.find_member_including_base_classes(self.parent.parent.ast_parent.dest_expression.children[1].token_str())
+                            assert(m is not None)
+                            ty = m.trans_type_with_args()
+                            assert(ty.startswith('[')) # ]
+                            return ty[1:-1] + '()'
                         if self.parent is not None or type(self.ast_parent) not in (ASTAssignmentWithTypeHint, ASTReturn):
                             raise Error('empty dict is not supported here' + ' (please specify type of the whole expression)' * inside_list_comprehension, self.left_to_right_token())
                     func_name = 'Dict'
@@ -1104,6 +1112,14 @@ class SymbolNode:
                 inside_list_comprehension = self.parent is not None and self.parent.symbol.id == 'for' and self.parent.parent.is_list and self.parent.parent.parent is None
                 if inside_list_comprehension and type(self.parent.parent.ast_parent) == ASTAssignmentWithTypeHint:
                     ty = self.parent.parent.ast_parent.trans_type_with_args()
+                    assert(ty.startswith('[')) # ]
+                    return ty[1:-1] + '()'
+                if inside_list_comprehension and type(self.parent.parent.ast_parent) == ASTExprAssignment and \
+                                                      self.parent.parent.ast_parent.dest_expression.symbol.id == '.' and \
+                                                      self.parent.parent.ast_parent.dest_expression.children[0].token_str() == 'self':
+                    m = self.parent.parent.ast_parent.parent.parent.find_member_including_base_classes(self.parent.parent.ast_parent.dest_expression.children[1].token_str())
+                    assert(m is not None)
+                    ty = m.trans_type_with_args()
                     assert(ty.startswith('[')) # ]
                     return ty[1:-1] + '()'
                 if self.parent is not None or type(self.ast_parent) not in (ASTAssignmentWithTypeHint, ASTReturn):
@@ -2007,10 +2023,10 @@ class ASTClassDefinition(ASTNodeWithChildren):
     def find_member_including_base_classes(self, name):
         for child in self.children:
             if isinstance(child, ASTTypeHint) and child.var == name:
-                return True
+                return child
         if self.base_class_node is not None:
             return self.base_class_node.find_member_including_base_classes(name)
-        return False
+        return None
 
     def to_str(self, indent):
         if self.base_class_name == 'IntEnum':
@@ -3218,7 +3234,7 @@ def parse_internal(this_node, one_line_scope = False):
                 assert(type(this_node.parent) == ASTClassDefinition)
                 found_in_base_class = False
                 if this_node.parent.base_class_node is not None:
-                    found_in_base_class = this_node.parent.base_class_node.find_member_including_base_classes(node_expression.children[1].token_str())
+                    found_in_base_class = this_node.parent.base_class_node.find_member_including_base_classes(node_expression.children[1].token_str()) is not None
 
                 if not found_in_base_class and scope.parent.add_var(node_expression.children[1].token_str()):
                     if node.expression.symbol.id in ('[', '{') and len(node.expression.children) == 0: # }]

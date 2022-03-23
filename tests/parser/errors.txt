@@ -344,6 +344,14 @@ save = [{} for d in range(DIGITS)]
         ^Error: empty dict is not supported here (please specify type of the whole expression)
 
 
+DIGITS = 55
+save = [dict() for d in range(DIGITS)]
+        ^Error: empty dict is not supported here (please specify type of the whole expression)
+
+
 left, right = {}, {}
                   ^Error: empty dict is not supported here
 
+
+left, right = dict(), dict()
+                      ^Error: empty dict is not supported here

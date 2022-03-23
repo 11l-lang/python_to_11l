@@ -776,6 +776,14 @@ class SymbolNode:
                 elif func_name == 'MutTuple':
                     func_name = ''
                 elif func_name == 'dict':
+                    if len(self.children) == 1:
+                        inside_list_comprehension = self.parent is not None and self.parent.symbol.id == 'for' and self.parent.parent.is_list and self.parent.parent.parent is None
+                        if inside_list_comprehension and type(self.parent.parent.ast_parent) == ASTAssignmentWithTypeHint:
+                            ty = self.parent.parent.ast_parent.trans_type_with_args()
+                            assert(ty.startswith('[')) # ]
+                            return ty[1:-1] + '()'
+                        if self.parent is not None or type(self.ast_parent) not in (ASTAssignmentWithTypeHint, ASTReturn):
+                            raise Error('empty dict is not supported here' + ' (please specify type of the whole expression)' * inside_list_comprehension, self.left_to_right_token())
                     func_name = 'Dict'
                 elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`
                     if len(self.children) == 3:

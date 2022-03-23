@@ -1553,3 +1553,12 @@ a[-2:] = a[-2:][::-1]
 V a = [1, 2, 3]
 a.reverse_range((len)-2 ..)
 a.reverse_range((len)-2 ..)
+
+
+DIGITS = 55
+save : List[Dict[int, int]] = [{} for d in range(DIGITS)]
+savf : List[Dict[int, int]] = [dict() for d in range(DIGITS)]
+===
+V DIGITS = 55
+[[Int = Int]] save = (0 .< DIGITS).map(d -> [Int = Int]())
+[[Int = Int]] savf = (0 .< DIGITS).map(d -> [Int = Int]())

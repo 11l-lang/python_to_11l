@@ -91,6 +91,8 @@ class Scope:
             if name in ('move', 'ref') and self.parent is None:
                 return False
             raise Error('redefinition of already defined variable/function is not allowed', err_token if err_token is not None else token)
+        if self.vars[name].type == '(Function)':
+            raise Error('redefinition of built-in function is not allowed', err_token if err_token is not None else token)
         return False
 
     def find_and_get_prefix(self, name, token):
@@ -3006,7 +3008,7 @@ def parse_internal(this_node, one_line_scope = False):
             name_token = token
             name_token_str = tokensn.token_str()
             if name_token_str == 'input':
-                raise Error('built-in function `input()` can not be redefined', token)
+                raise Error('built-in function `input()` can not be redefined (but built-in `input()` is fast enough and need not be redefined)', token)
             node = ASTExprAssignment()
             node.set_dest_expression(tokensn)
             next_token()
@@ -3293,10 +3295,10 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
     scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
     for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
-                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key',
+                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod',
                       'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
                       'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
-        scope.add_var(func_name, True, '()') # `'()'` is needed just to prevent those functions from adding to .py_global_scope file
+        scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file
     for class_name in ['NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError']:
         scope.add_var(class_name, True, '(Class)')
     file_name = file_name_

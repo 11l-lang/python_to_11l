@@ -336,7 +336,7 @@ d = dict()
 
 import sys
 input=sys.stdin.readline
-^Error: built-in function `input()` can not be redefined
+^Error: built-in function `input()` can not be redefined (but built-in `input()` is fast enough and need not be redefined)
 
 
 DIGITS = 55
@@ -355,3 +355,11 @@ left, right = {}, {}
 
 left, right = dict(), dict()
                       ^Error: empty dict is not supported here
+
+
+degrees : Dict[int, int] = {}
+^Error: redefinition of already defined variable/function is not allowed
+
+
+mod = 10**9+7
+^Error: redefinition of built-in function is not allowed

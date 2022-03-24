@@ -1,5 +1,5 @@
-def sum(x, y) return x + y
-             ^Error: expected `:`
+def summ(x, y) return x + y
+              ^Error: expected `:`
 
 
 def (x, y):
@@ -7,19 +7,19 @@ def (x, y):
     return x + y
 
 
-def sum x, y:
-        ^Error: expected `(` after function name
+def summ x, y:
+         ^Error: expected `(` after function name
     return x + y
 # )
 
 
-def sum(, y):
-        ^Error: expected function's argument name
+def summ(, y):
+         ^Error: expected function's argument name
     return x + y
 
 
-def sum(x y): # (
-          ^Error: expected `,` or `)` in function's arguments list
+def summ(x y): # (
+           ^Error: expected `,` or `)` in function's arguments list
     return x + y
 
 
@@ -157,7 +157,7 @@ x = lambda , x
 
 i : int = 0
 i : int = 1
-^Error: redefinition of already defined variable is not allowed
+^Error: redefinition of already defined variable/function is not allowed
 
 
 i = j

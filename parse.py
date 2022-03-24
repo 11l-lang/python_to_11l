@@ -36,6 +36,7 @@ class Scope:
     globals   : set
     is_function : bool
     is_lambda_or_for = False
+    is_class = False
 
     def __init__(self, func_args):
         self.parent = None
@@ -79,7 +80,7 @@ class Scope:
             while True:
                 if name in s.vars:
                     return False
-                if s.is_function:
+                if s.is_function or s.is_class:
                     break
                 s = s.parent
                 if s is None:
@@ -87,16 +88,15 @@ class Scope:
             self.vars[name] = Scope.Var(type, node)
             return True
         elif error_if_already_defined:
-            raise Error('redefinition of already defined variable is not allowed', err_token if err_token is not None else token)
+            if name in ('move', 'ref') and self.parent is None:
+                return False
+            raise Error('redefinition of already defined variable/function is not allowed', err_token if err_token is not None else token)
         return False
 
     def find_and_get_prefix(self, name, token):
         if name == 'self':
             return ''
-        if name in ('isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'sum', 'product_of_a_seq', 'product',
-                    'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'list', 'tuple', 'dict', 'set', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key',
-                    'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
-                    'round', 'enumerate', 'hash', 'copy', 'deepcopy', 'NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError'):
+        if name == 'sum':
             return ''
 
         s = self
@@ -2490,6 +2490,8 @@ def parse_internal(this_node, one_line_scope = False):
         global scope
         prev_scope = scope
         scope = Scope(func_args)
+        if type(node) == ASTClassDefinition:
+            scope.is_class = True
         scope.parent = prev_scope
         if token.category != Token.Category.INDENT: # handling of `if ...: break`, `def ...(...): return ...`, etc.
             if one_line_scope:
@@ -3290,6 +3292,13 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
         scope.add_var(pytype)
     scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
     scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
+    for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
+                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key',
+                      'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
+                      'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
+        scope.add_var(func_name, True, '()') # `'()'` is needed just to prevent those functions from adding to .py_global_scope file
+    for class_name in ['NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError']:
+        scope.add_var(class_name, True, '(Class)')
     file_name = file_name_
     next_token()
     p = ASTProgram()

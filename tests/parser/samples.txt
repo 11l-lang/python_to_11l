@@ -1,8 +1,8 @@
-def sum(x, y):
+def summ(x, y):
     r = x + y
     return r
 ===
-F sum(x, y)
+F summ(x, y)
    V r = x + y
    R r
 

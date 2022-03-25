@@ -3299,7 +3299,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
     for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
                       'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod',
-                      'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref',
+                      'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref', 'exit',
                       'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
         scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file
     for class_name in ['NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError']:

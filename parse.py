@@ -1802,7 +1802,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         self.function_arguments = [arg.split('; ') for arg in d['function_arguments']]
 
     def to_str(self, indent):
-        if self.function_name in ('move', 'copy', 'ref') and type(self.parent) == ASTProgram:
+        if self.function_name in ('move', 'ref') and type(self.parent) == ASTProgram:
             assert(len(self.function_arguments) == 1)
             return ''
 
@@ -2734,6 +2734,9 @@ def parse_internal(this_node, one_line_scope = False):
 
                 node.parent = this_node
                 new_scope(node, map(lambda arg: (arg[0], arg[2]), node.function_arguments))
+
+                if node.function_name in ('move', 'ref') and scope.parent is None and (len(node.function_arguments) != 1 or node.function_arguments[0][0] != 'obj'):
+                    raise Error('function `' + node.function_name + '()` is special (please rename this function)', tokens[node.tokeni + 1])
 
                 if len(node.children) == 0: # needed for:
                     n = ASTPass()           # class FileToStringProxy:

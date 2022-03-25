@@ -363,3 +363,8 @@ degrees : Dict[int, int] = {}
 
 mod = 10**9+7
 ^Error: redefinition of built-in function is not allowed
+
+
+def move(x, d):
+    ^Error: function `move()` is special (please rename this function)
+    return x + d

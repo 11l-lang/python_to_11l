@@ -1579,3 +1579,12 @@ T Flow
    F (n)
       .g = (0 .< n).map(_ -> [Int = Float]())
       .h = (0 .< n).map(_ -> [Int = Float]())
+
+
+for _ in range(int(input())):
+    re = {1, 2}
+    re.discard(1)
+===
+L(_) 0 .< Int(input())
+   V re = Set([1, 2])
+   re.discard(1)

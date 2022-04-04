@@ -1951,7 +1951,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
                  len(self.expression.children) == 3 and self.expression.children[1].token.category == Token.Category.NUMERIC_LITERAL else self.expression.to_str())
             if self.expression.token.category == Token.Category.NAME:
                 sid = self.expression.scope.find(self.expression.token_str())
-                if sid.type in ('Dict', 'dict', 'DefaultDict', 'collections.defaultdict'):
+                if sid.type in ('Dict', 'dict', 'DefaultDict', 'collections.defaultdict', 'Counter'):
                     r += '.keys()'
         elif self.expression.symbol.id == '(' and len(self.expression.children) == 1 and self.expression.children[0].symbol.id == '.' and len(self.expression.children[0].children) == 2 and self.expression.children[0].children[1].token_str() == 'items': # )
             r = 'L(' + ', '.join(self.loop_variables) + ') ' + self.expression.children[0].children[0].to_str()
@@ -3030,6 +3030,10 @@ def parse_internal(this_node, one_line_scope = False):
                  node.expression.children[0].children[0].token_str() == 'collections' and \
                  node.expression.children[0].children[1].token_str() == 'defaultdict':
                 type_name = 'DefaultDict'
+            elif node.expression.function_call and node.expression.children[0].symbol.id == '.' and \
+                 node.expression.children[0].children[0].token_str() == 'collections' and \
+                 node.expression.children[0].children[1].token_str() == 'Counter':
+                type_name = 'Counter'
             node.add_vars = [scope.add_var(name_token_str, False, type_name, name_token, node = node)]
             if not node.add_vars[0] and node.expression.symbol.id == '.' and len(node.expression.children) == 2 and node.expression.children[1].token_str().isupper(): # replace `category = Token.Category.NAME` with `category = NAME`
                 node.set_expression(node.expression.children[1])

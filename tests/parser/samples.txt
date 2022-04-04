@@ -1588,3 +1588,54 @@ for _ in range(int(input())):
 L(_) 0 .< Int(input())
    V re = Set([1, 2])
    re.discard(1)
+
+
+# *[https://codeforces.com/contest/1447/submission/98523271]
+import collections
+n = int(input())
+A = list(map(int, input().split()))
+cnt = collections.Counter(A)
+maxv = max(cnt.values())
+xx = [c for c in cnt.keys() if cnt[c] == maxv]
+if len(xx) > 1:
+    print(n)
+else:
+    x = xx[0]
+    ans = 0
+    for c in cnt:
+        if c == x: continue
+        dic = {0: -1}
+        cur = 0
+        tmp = 0
+        for i, a in enumerate(A):
+            cur += 1 if a == c else -1 if a == x else 0
+            if cur in dic:
+                tmp = max(tmp, i - dic[cur])
+            dic.setdefault(cur, i)
+        ans = max(ans, tmp)
+    print(ans)
+===
+V n = Int(input())
+V A = input().split_py().map(Int)
+V cnt = Counter(A)
+V maxv = max(cnt.values())
+V xx = cnt.keys().filter(c -> :cnt[c] == :maxv)
+I xx.len > 1
+   print(n)
+E
+   V x = xx[0]
+   V ans = 0
+   L(c) cnt.keys()
+      I c == x
+         L.continue
+      V dic = [0 = -1]
+      V cur = 0
+      V tmp = 0
+      L(a) A
+         V i = L.index
+         cur += I a == c {1} E I a == x {-1} E 0
+         I cur C dic
+            tmp = max(tmp, i - dic[cur])
+         dic.set_default(cur, i)
+      ans = max(ans, tmp)
+   print(ans)

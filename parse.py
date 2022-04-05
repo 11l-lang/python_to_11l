@@ -1267,8 +1267,10 @@ class SymbolNode:
                              'getsize':'fs:file_size', 'splitext':'fs:path:split_ext'}.get(self.children[1].token_str(), '')
                         if r != '':
                             return r
+                    if self.scope.var_type(self.children[0].children[0].token_str() + '.' + self.children[0].children[1].token_str()) == '(Module)':
+                        return self.children[0].to_str() + ':' + self.children[1].to_str()
 
-                if len(self.children[0].children) == 2 and self.children[0].children[0].scope_prefix == ':::' and self.children[0].children[0].token_str() != 'sys': # for `os.path.join()` [and also take into account `sys.argv.index()`]
+                if len(self.children[0].children) == 2 and self.children[0].children[0].scope_prefix == ':::' and self.children[0].children[0].token_str() == 'os': # for `os.path.join()` [and also take into account `sys.argv.index()`]
                     return self.children[0].to_str() + ':' + self.children[1].to_str()
 
                 if self.children[0].to_str() == 'self':

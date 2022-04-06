@@ -1041,6 +1041,8 @@ def f(size):
     ncols = 3
     nrows = 4
     board = [[-1] * (ncols + 2) for _ in range(nrows + 2)]
+N = int(input())
+dp = [[0] * (i+1) for i in range(N+1)]
 ===
 V table = [[Int]()] * 10
 V ar4x5 = [[0] * 5] * 4
@@ -1050,6 +1052,8 @@ F f(size)
    V ncols = 3
    V nrows = 4
    V board = [[-1] * (ncols + 2)] * (nrows + 2)
+V _n_ = Int(input())
+V dp = (0 .. _n_).map(i -> [0] * (i + 1))
 
 
 def gen_row(w, s):

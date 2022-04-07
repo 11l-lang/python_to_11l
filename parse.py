@@ -2942,16 +2942,16 @@ def parse_internal(this_node, one_line_scope = False):
                         if source[token.end + 1 : token.end + 5] == "# =\n":
                             scope.nonlocals_copy.update(nonlocals)
                             nonlocals.clear()
-                            scope.nonlocals_copy.add(token.value(source))
+                            scope.nonlocals_copy.add(tokensn.token_str())
                         else:
-                            nonlocals.add(token.value(source))
+                            nonlocals.add(tokensn.token_str())
                     else:
                         if source[token.end + 1 : token.end + 5] == "# @\n":
                             nonlocals.update(scope.globals)
                             scope.globals.clear()
-                            nonlocals.add(token.value(source))
+                            nonlocals.add(tokensn.token_str())
                         else:
-                            scope.globals.add(token.value(source))
+                            scope.globals.add(tokensn.token_str())
                     next_token()
                     if token.value(source) == ',':
                         next_token()

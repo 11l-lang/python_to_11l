@@ -1643,3 +1643,13 @@ E
          dic.set_default(cur, i)
       ans = max(ans, tmp)
    print(ans)
+
+
+S = [1, 2, 3, 4]
+def poke(n):
+    global S
+    S = S[:2] + S[3:]
+===
+V _s_ = [1, 2, 3, 4]
+F poke(n)
+   :_s_ = :_s_[0.<2] [+] :_s_[3..]

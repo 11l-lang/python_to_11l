@@ -1254,6 +1254,7 @@ class SymbolNode:
                                 return 'Float.infinity'
                             if c1 == 'fabs': c1 = 'abs'
                             elif c1 in ('ceil', 'floor'): c1 += 'i' # functions `math.ceil()` and `math.floor()` return `int` in Python
+                            elif c1 == 'prod': c1 = 'product_of_a_seq'
                             return c1
                     r = self.children[0].token_str() + ':' + self.children[1].to_str()
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:sep': 'fs:path:sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir',

@@ -1325,6 +1325,8 @@ L(n) Array(1..10) [+] Array(95..105) [+] [297, 576, 594, 891, 909, 999, 1998, 20
    print(n)
 
 
+g = 0
+
 for _ in range(int(input())):
     n = int(input())
     a = list(map(int, input().split()))
@@ -1333,11 +1335,15 @@ for _ in range(int(input())):
     moves = 0
     def mov(i, j, k):
         global moves # @
+        global g
+        g = 1
         a[i] += 1
         a[j] -= 2
         a[k] += 1
         moves += 1
 ===
+V g = 0
+
 L(_) 0 .< Int(input())
    V n = Int(input())
    V a = input().split_py().map(Int)
@@ -1345,6 +1351,7 @@ L(_) 0 .< Int(input())
 
    V moves = 0
    F mov(i, j, k)
+      :g = 1
       @a[i]++
       @a[j] -= 2
       @a[k]++

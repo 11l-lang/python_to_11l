@@ -2934,6 +2934,18 @@ def parse_internal(this_node, one_line_scope = False):
 
             elif token.value(source) in ('nonlocal', 'global'):
                 nonlocal_or_global = token.value(source)
+                # if nonlocal_or_global == 'global':
+                #     if scope.parent.parent is None:
+                #         pass
+                #     else:
+                #         s = scope.parent
+                #         while True:
+                #             if s.is_function or s.is_class:
+                #                 break
+                #             s = s.parent
+                #             if s is None:
+                #                 nonlocal_or_global = 'nonlocal'
+                #                 break
                 next_token()
                 nonlocals = set()
                 while True:

@@ -1199,7 +1199,7 @@ class SymbolNode:
                 if not is_target_used(self.children[0].children[1]): # check for `dp = [[0] * (i+1) for i in range(N+1)]`
                     assert(len(self.children[2].children) == 3)
                     c21 = self.children[2].children[1]
-                    return '[' + self.children[0].to_str().replace('@', '') + '] * ' + (c21.to_str() if c21.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME) or c21.symbol.id == '(' else '(' + c21.to_str() + ')') # )
+                    return '[' + re.sub('@(@*)', r'\1', self.children[0].to_str()) + '] * ' + (c21.to_str() if c21.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME) or c21.symbol.id == '(' else '(' + c21.to_str() + ')') # )
 
             res = self.children[2].children[0].children[0].to_str() if self.children[2].symbol.id == '(' and len(self.children[2].children) == 1 and self.children[2].children[0].symbol.id == '.' and len(self.children[2].children[0].children) == 2 and self.children[2].children[0].children[1].token_str() == 'items' else self.children[2].to_str() # )
             l = len(res)

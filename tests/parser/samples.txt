@@ -1666,3 +1666,12 @@ import math
 print(math.prod([2, 3]))
 ===
 print(product([2, 3]))
+
+
+def solve():
+  r, g, b = map(int, input().split())
+  dp = [[[0]*(b+1) for _ in range(g+1)] for _ in range(r+1)]
+===
+F solve()
+   V (r, g, b) = input().split_py().map(Int)
+   V dp = (0 .. r).map(_ -> [[0] * (@b + 1)] * (@g + 1))

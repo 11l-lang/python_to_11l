@@ -368,3 +368,7 @@ mod = 10**9+7
 def move(x, d):
     ^Error: function `move()` is special (please rename this function)
     return x + d
+
+
+mas = list()
+^Error: please specify type of empty list

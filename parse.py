@@ -763,6 +763,8 @@ class SymbolNode:
                             return 'Bytes(‘' + s[2:-1] + '’)'
                     return self.children[1].to_str()
                 elif func_name == 'list': # `list(map(...))` -> `map(...)`
+                    if len(self.children) == 1:
+                        return '[]'
                     if len(self.children) == 3 and self.children[1].symbol.id == '(' and self.children[1].children[0].token_str() == 'range': # ) # `list(range(...))` -> `Array(...)`
                         parens = True#len(self.children[1].children) == 7 # if true, then this is a range with step
                         return 'Array' + '('*parens + self.children[1].to_str() + ')'*parens
@@ -3068,9 +3070,9 @@ def parse_internal(this_node, one_line_scope = False):
                 node.set_expression(node.expression.children[1])
                 node.expression.parent = None
                 node.expression.skip_find_and_get_prefix = True # this can not be replaced with `isupper()` check before `find_and_get_prefix()` call because there will be conflict with uppercase [constant] variables, like `WIDTH` or `HEIGHT` (they[‘variables’] will not be checked, but they should)
-            if (node.expression.symbol.id in ('[', '{') and len(node.expression.children) == 0) or (node.expression.function_call and node.expression.children[0].token_str() == 'dict' and len(node.expression.children) == 1): # }]
+            if (node.expression.symbol.id in ('[', '{') and len(node.expression.children) == 0) or (node.expression.function_call and node.expression.children[0].token_str() in ('list', 'dict') and len(node.expression.children) == 1): # }]
                 if node.add_vars[0]:
-                    raise Error('please specify type of empty ' + ('list' if node.expression.symbol.id == '[' else 'dict'), Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME)) # ]
+                    raise Error('please specify type of empty ' + ('list' if node.expression.symbol.id == '[' or (node.expression.function_call and node.expression.children[0].token_str() == 'list') else 'dict'), Token(node.dest_expression.token.start, node.expression.token.end + 1, Token.Category.NAME)) # ]
                 node.drop_list_or_dict = True
             if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)): # `poss_nbors = (x-1,y),(x-1,y+1)`
                 raise Error('expected end of statement', token)                                                      #                      ^

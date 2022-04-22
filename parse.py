@@ -1204,6 +1204,8 @@ class SymbolNode:
                     return '[' + re.sub('@(@*)', r'\1', self.children[0].to_str()) + '] * ' + (c21.to_str() if c21.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME) or c21.symbol.id == '(' else '(' + c21.to_str() + ')') # )
 
             res = self.children[2].children[0].children[0].to_str() if self.children[2].symbol.id == '(' and len(self.children[2].children) == 1 and self.children[2].children[0].symbol.id == '.' and len(self.children[2].children[0].children) == 2 and self.children[2].children[0].children[1].token_str() == 'items' else self.children[2].to_str() # )
+            if self.children[2].symbol.id == '+':
+                res = '(' + res + ')'
             l = len(res)
             if len(self.children) == 4:
                 res += '.filter(' + self.children[1].to_str() + ' -> ' + self.children[3].to_str() + ')'

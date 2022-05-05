@@ -1200,7 +1200,8 @@ class SymbolNode:
                                     return True
                         return False
                 if not is_target_used(self.children[0].children[1]): # check for `dp = [[0] * (i+1) for i in range(N+1)]`
-                    assert(len(self.children[2].children) == 3)
+                    if len(self.children[2].children) != 3:
+                        raise Error('please use `range()` with single argument', self.children[2].children[0].token)
                     c21 = self.children[2].children[1]
                     return '[' + re.sub('@(@*)', r'\1', self.children[0].to_str()) + '] * ' + (c21.to_str() if c21.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME) or c21.symbol.id == '(' else '(' + c21.to_str() + ')') # )
 

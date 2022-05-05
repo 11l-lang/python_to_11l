@@ -377,3 +377,8 @@ mas = list()
 import collections
 d = collections.Counter()
                 ^Error: `Counter` constructor requires one argument, please use `defaultdict(int)` here
+
+
+N = int(input())
+adj = [[0]*0 for x in range(0,N+1)]
+                      ^Error: please use `range()` with single argument

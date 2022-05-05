@@ -372,3 +372,8 @@ def move(x, d):
 
 mas = list()
 ^Error: please specify type of empty list
+
+
+import collections
+d = collections.Counter()
+                ^Error: `Counter` constructor requires one argument, please use `defaultdict(int)` here

@@ -1675,3 +1675,20 @@ def solve():
 F solve()
    V (r, g, b) = input().split_py().map(Int)
    V dp = (0 .. r).map(_ -> [[0] * (@b + 1)] * (@g + 1))
+
+
+from typing import ClassVar, Dict
+
+class Starship:
+    stats: ClassVar[Dict[str, int]] = {}
+    i1 : ClassVar[int]
+    i2 : ClassVar[int] = 1
+
+print(Starship.stats)
+===
+T Starship
+   [String = Int] :stats
+   Int :i1
+   Int :i2 = 1
+
+print(Starship.:stats)

@@ -1337,6 +1337,15 @@ class SymbolNode:
                 if c1ts == 'days':
                     return self.children[0].to_str() + '.' + c1ts + '()'
 
+                tid = self.scope.find(self.children[0].token_str())
+                if tid is not None and tid.type == '(Class)':
+                    assert(type(tid.node) == ASTClassDefinition)
+                    for child in tid.node.children:
+                        if isinstance(child, ASTTypeHint) and child.var == self.children[1].token_str():
+                            if child.type == 'ClassVar':
+                                return self.children[0].token_str() + '.:' + self.children[1].token_str()
+                            break
+
                 return self.children[0].to_str() + '.' + self.children[1].to_str()
 
             elif self.symbol.id == '+=' and self.children[1].var_type() == 'List':
@@ -1782,6 +1791,9 @@ class ASTTypeHint(ASTNode):
         elif self.type == 'Optional':
             assert(len(self.type_args) == 1)
             return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
+        elif self.type == 'ClassVar':
+            assert(len(self.type_args) == 1)
+            return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ' :' + self.var
         return self.pre_nl + ' ' * (indent*3) + self.trans_type_with_args() + '?'*nullable + '&'*self.is_reference + ' ' + self.var
 
     def to_str(self, indent):

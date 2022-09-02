@@ -1792,6 +1792,8 @@ class ASTTypeHint(ASTNode):
             assert(len(self.type_args) == 1)
             return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
         elif self.type == 'ClassVar':
+            if len(self.type_args) == 0:
+                return self.pre_nl + ' ' * (indent*3) + ':' + self.var
             assert(len(self.type_args) == 1)
             return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ' :' + self.var
         return self.pre_nl + ' ' * (indent*3) + self.trans_type_with_args() + '?'*nullable + '&'*self.is_reference + ' ' + self.var
@@ -1879,7 +1881,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
             return pre_nl(self.tokeni) + ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni]) + "\n"
 
         return "\n"*self.staticmethod + self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' + ':'*self.staticmethod +
-            {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__eq__':'==', '__add__':'+', '__sub__':'-', '__mul__':'*', '__truediv__':'/', '__floordiv__':'I/', '__str__':'String'}.get(self.function_name, self.function_name)
+            {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__eq__':'==', '__add__':'+', '__sub__':'-', '__neg__':'-', '__mul__':'*', '__truediv__':'/', '__floordiv__':'I/', '__str__':'String'}.get(self.function_name, self.function_name)
             + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 

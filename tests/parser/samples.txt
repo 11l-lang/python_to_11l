@@ -1684,11 +1684,22 @@ class Starship:
     i1 : ClassVar[int]
     i2 : ClassVar[int] = 1
 
+    @staticmethod
+    def set_i1(a, b):
+        Starship.i1 = a + b
+
 print(Starship.stats)
+Starship.set_i1(1, 2)
+print(Starship.i1)
 ===
 T Starship
    [String = Int] :stats
    Int :i1
    Int :i2 = 1
 
+   F :set_i1(a, b)
+      Starship.:i1 = a + b
+
 print(Starship.:stats)
+Starship.set_i1(1, 2)
+print(Starship.:i1)

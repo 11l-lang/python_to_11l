@@ -1814,6 +1814,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
     function_name : str
     function_return_type : str = ''
     is_const = False
+    staticmethod = False
     function_arguments : List[Tuple[str, str, str, str]]# = [] # (arg_name, default_value, type_name, qualifier)
     first_named_only_argument = None
     class VirtualCategory(IntEnum):
@@ -1877,7 +1878,7 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         if self.virtual_category == self.VirtualCategory.ABSTRACT:
             return pre_nl(self.tokeni) + ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni]) + "\n"
 
-        return self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' +
+        return "\n"*self.staticmethod + self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' + ':'*self.staticmethod +
             {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__eq__':'==', '__add__':'+', '__sub__':'-', '__mul__':'*', '__truediv__':'/', '__floordiv__':'I/', '__str__':'String'}.get(self.function_name, self.function_name)
             + '(' + fargs_str + ')'
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
@@ -2389,7 +2390,7 @@ def led(self, left):
     return self
 symbol('if').led = led
 
-symbol(':'); symbol('='); symbol('->')
+symbol(':'); symbol('='); symbol('->'); symbol('@')
 
 def nud(self):
     global scope
@@ -2573,6 +2574,8 @@ def parse_internal(this_node, one_line_scope = False):
                     if child is not None:
                         check_vars_defined(child)
 
+    staticmethod = False
+
     while token is not None:
         if token.category == Token.Category.KEYWORD:
             global scope
@@ -2673,6 +2676,8 @@ def parse_internal(this_node, one_line_scope = False):
 
             elif token.value(source) == 'def':
                 node = ASTFunctionDefinition()
+                node.staticmethod = staticmethod
+                staticmethod = False
                 node.function_name = expected_name('function name')
                 scope.add_var(node.function_name, True, node = node)
 
@@ -3205,6 +3210,17 @@ def parse_internal(this_node, one_line_scope = False):
                 next_token()
                 assert(token is None)
             return
+
+        elif token.value(source) == '@': # decorator
+            next_token()
+            if tokensn.token_str() != 'staticmethod':
+                raise Error('only `staticmethod` decorator is supported', token)
+            staticmethod = True
+            next_token()
+            assert(token.category == Token.Category.STATEMENT_SEPARATOR)
+            next_token()
+            assert(token.value(source) == 'def')
+            continue
 
         else:
             npre_nl = pre_nl()

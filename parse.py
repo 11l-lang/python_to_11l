@@ -899,6 +899,9 @@ class SymbolNode:
                 elif func_name in ('next_permutation', 'is_sorted'): # `next_permutation(arr)` -> `arr.next_permutation()`
                     assert(len(self.children) == 3)
                     return self.children[1].to_str() + '.' + func_name + '()'
+                elif func_name == 'nidiv': # `nidiv(a, b)` -> `a -I/ b`
+                    assert(len(self.children) == 5)
+                    return self.children[1].to_str() + ' -I/ ' + self.children[3].to_str()
                 elif func_name == 'range':
                     assert(3 <= len(self.children) <= 7)
                     parenthesis = ('(', ')') if self.parent is not None and (self.parent.symbol.id == 'for' or (self.parent.function_call and self.parent.children[0].token_str() in ('map', 'filter', 'reduce'))) else ('', '')
@@ -2657,13 +2660,13 @@ def parse_internal(this_node, one_line_scope = False):
             elif token.value(source) == 'from':
                 next_token()
                 module_name = token.value(source)
-                if module_name not in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l'):
+                if module_name not in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l', 'l11l'):
                     raise Error('`from` is not supported (try `import ' + module_name + '`)', tokens[tokeni-1])
                 next_token()
                 advance('import')
                 while True:
                     if token.category != Token.Category.NAME:
-                        if module_name == '_11l' and token.value(source) == '*':
+                        if module_name in ('_11l', 'l11l') and token.value(source) == '*':
                             scope.add_var('collections', True, '(Module)')
                         else:
                             raise Error('expected name', token)
@@ -3363,7 +3366,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
     scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
     for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
-                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod',
+                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod', 'nidiv',
                       'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref', 'exit', 'quit',
                       'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
         scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file

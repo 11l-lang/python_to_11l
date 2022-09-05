@@ -567,6 +567,10 @@ class SymbolNode:
                         return parenthesis[0] + self.children[0].to_str() + parenthesis[1]
                     if c01 == 'join' and not (self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'os'): # replace `', '.join(arr)` with `arr.join(‘, ’)`
                         assert(len(self.children) == 3)
+                        if self.children[0].children[0].token.category.STRING_LITERAL and self.children[0].children[0].token.value(source) in ('""', "''") and self.children[1].function_call and self.children[1].children[0].token_str() == 'sorted': # `''.join(sorted(s))` -> `sorted(s)`
+                            if not (self.children[1].children[1].function_call and self.children[1].children[1].children[0].token_str() == 'list'): # left `''.join(sorted(list(...)))` as is
+                                #return 'sorted(' + self.children[1].children[1].to_str() + ')' # this code works correctly for one argument only (i.e. it does not support multiple arguments)
+                                return self.children[1].to_str()
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' or self.children[1].function_call else '(' + self.children[1].to_str() + ')') + '.join(' + (self.children[0].children[0].children[0].to_str() if self.children[0].children[0].is_parentheses() else self.children[0].children[0].to_str()) + ')'
                     if c01 == 'split' and len(self.children) == 5 and not (self.children[0].children[0].token_str() == 're'): # split() second argument [limit] in 11l is similar to JavaScript, Ruby and PHP, but not Python
                         return self.children[0].to_str() + '(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'

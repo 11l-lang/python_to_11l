@@ -1862,13 +1862,16 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
                 ty = trans_type(arg[2], self.scope, tokens[self.tokeni])
                 # if ty.endswith('&'): # fix error ‘expected function's argument name’ at `F trazar(Rayo& =r; prof)` (when there was `r = ...` instead of `rr = ...`)
                 #     arg = (arg[0].lstrip('='), arg[1], arg[2])
-                farg += ty
-                if default_value == 'N':
-                    farg += '?'
-                    assert(arg[3] == '')
-                farg += ' '
-                if (ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) and not arg[2].startswith('ConstList[')) or arg[3] == '&': # ]]]]]
-                    farg += '&'
+                if ty.endswith('&'): # `F.virtual.abstract intersecta(Rayo& r, Vector v)` -> `F.virtual.abstract intersecta(Rayo &r, Vector v)`
+                    farg += ty[:-1] + ' &'
+                else:
+                    farg += ty
+                    if default_value == 'N':
+                        farg += '?'
+                        assert(arg[3] == '')
+                    farg += ' '
+                    if (ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) and not arg[2].startswith('ConstList[')) or arg[3] == '&': # ]]]]]
+                        farg += '&'
             else:
                 if arg[3] == '&':
                     farg += '&'

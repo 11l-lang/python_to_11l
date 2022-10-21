@@ -1701,7 +1701,7 @@ class ASTAssert(ASTNodeWithExpression):
         super().walk_expressions(f)
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Bytes':'Bytes',
-                       'Byte':'Byte', 'Int8':'Int8', 'Int16':'Int16', 'Int32':'Int32', 'Int64':'Int64', 'UInt16':'UInt16', 'UInt32':'UInt32', 'UInt64':'UInt64', 'BigInt':'BigInt',
+                       'Byte':'Byte', 'Int8':'Int8', 'Int16':'Int16', 'Int32':'Int32', 'Int64':'Int64', 'UInt16':'UInt16', 'UInt32':'UInt32', 'UInt64':'UInt64', 'BigInt':'BigInt', 'Size':'Size', 'USize':'USize',
                        'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
@@ -3112,7 +3112,7 @@ def parse_internal(this_node, one_line_scope = False):
             if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                 next_token()
             if ((node.dest_expression.token_str() == 'Char'   and node.expression.token_str() == 'str')   # skip `Char = str` statement
-             or (node.dest_expression.token_str() in ('Byte', 'Int8', 'Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'BigInt') and node.expression.token_str() == 'int') # skip `... = int` statement
+             or (node.dest_expression.token_str() in ('Byte', 'Int8', 'Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'BigInt', 'Size', 'USize') and node.expression.token_str() == 'int') # skip `... = int` statement
              or (node.dest_expression.token_str() == 'ConstList' and node.expression.token_str() == 'List')): # skip `ConstList = List` statement
                 continue
 

@@ -784,6 +784,8 @@ class SymbolNode:
                         return 'tuple_' + self.children[1].to_str()
                 elif func_name == 'MutTuple':
                     func_name = ''
+                elif func_name == 'PseudoTuple':
+                    func_name = 'Array'
                 elif func_name == 'dict':
                     if len(self.children) == 1:
                         inside_list_comprehension = self.parent is not None and self.parent.symbol.id == 'for' and self.parent.parent.is_list and self.parent.parent.parent is None
@@ -1702,7 +1704,7 @@ class ASTAssert(ASTNodeWithExpression):
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Bytes':'Bytes',
                        'Byte':'Byte', 'Int8':'Int8', 'Int16':'Int16', 'Int32':'Int32', 'Int64':'Int64', 'UInt16':'UInt16', 'UInt32':'UInt32', 'UInt64':'UInt64', 'BigInt':'BigInt', 'Size':'Size', 'USize':'USize',
-                       'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'PseudoTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):
@@ -3116,7 +3118,8 @@ def parse_internal(this_node, one_line_scope = False):
                 next_token()
             if ((node.dest_expression.token_str() == 'Char'   and node.expression.token_str() == 'str')   # skip `Char = str` statement
              or (node.dest_expression.token_str() in ('Byte', 'Int8', 'Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'BigInt', 'Size', 'USize') and node.expression.token_str() == 'int') # skip `... = int` statement
-             or (node.dest_expression.token_str() == 'ConstList' and node.expression.token_str() == 'List')): # skip `ConstList = List` statement
+             or (node.dest_expression.token_str() == 'ConstList' and node.expression.token_str() == 'List') # skip `ConstList = List` statement
+             or (node.dest_expression.token_str() == 'PseudoTuple' and node.expression.token_str() == 'tuple')): # skip `PseudoTuple = tuple` statement
                 continue
 
         elif token.category == Token.Category.NAME and (peek_token().value(source) == ':' # this is type hint

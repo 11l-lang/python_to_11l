@@ -3340,6 +3340,9 @@ def parse_internal(this_node, one_line_scope = False):
             if (type(node) == ASTExpression and type(this_node) == ASTFunctionDefinition and type(this_node.parent) == ASTClassDefinition and this_node.function_name == '__init__'
                 and node_expression.function_call and node_expression.children[0].symbol.id == '.' and node_expression.children[0].children[1].token_str() == '__init__' and node_expression.to_str() == 'T.base.__init__()'):
                 continue # ignore `super().__init__()` statement because in 11l and C++ constructor of base type/class is always called anyway
+            if type(node) == ASTExpression and node_expression.function_call and node_expression.children[0].symbol.id == '.' and node_expression.children[0].children[0].token_str() == 'sys' \
+                                                                                                                              and node_expression.children[0].children[1].token_str() == 'setrecursionlimit':
+                continue # ignore `sys.setrecursionlimit(...)`
 
         node.walk_expressions(check_vars_defined)
 

@@ -905,12 +905,10 @@ class SymbolNode:
                 elif func_name in ('next_permutation', 'is_sorted'): # `next_permutation(arr)` -> `arr.next_permutation()`
                     assert(len(self.children) == 3)
                     return self.children[1].to_str() + '.' + func_name + '()'
-                elif func_name == 'nidiv': # `nidiv(a, b)` -> `a -I/ b`
+                elif func_name in ('nidiv', 'nmod'): # `nidiv(a, b)` -> `a -I/ b` and `nmod(a, b)` -> `a -% b`
                     assert(len(self.children) == 5)
-                    return self.children[1].to_str() + ' -I/ ' + self.children[3].to_str()
-                elif func_name == 'nmod': # `nmod(a, b)` -> `a -% b`
-                    assert(len(self.children) == 5)
-                    return self.children[1].to_str() + ' -% ' + self.children[3].to_str()
+                    p = self.children[1].token.category == Token.Category.OPERATOR_OR_DELIMITER and self.children[1].symbol.lbp < symbol_table['//'].lbp
+                    return p * '(' + self.children[1].to_str() + ')' * p + (' -I/ ' if func_name == 'nidiv' else ' -% ') + self.children[3].to_str()
                 elif func_name == 'range':
                     assert(3 <= len(self.children) <= 7)
                     parenthesis = ('(', ')') if self.parent is not None and (self.parent.symbol.id == 'for' or (self.parent.function_call and self.parent.children[0].token_str() in ('map', 'filter', 'reduce'))) else ('', '')

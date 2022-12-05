@@ -1705,3 +1705,24 @@ T Starship
 print(Starship.:stats)
 Starship.set_i1(1, 2)
 print(Starship.:i1)
+
+
+import array, itertools
+
+n = 64000000
+quasiprimefactor = array.array("H", (0 for _ in range(n + 1)))
+quasiprimefactoR = array.array("H", (0 for _ in range(n)))
+sigma2 = array.array("Q", (0 for _ in range(n + 1)))
+totientchainlen = array.array("L", [0, 1])
+result = array.array("L", range(n + 1))
+smallestprimefactor = array.array("L", itertools.repeat(0, n + 1))
+smallestprimefactoR = array.array("L", itertools.repeat(0, n))
+===
+V n = 64000000
+V quasiprimefactor = [UInt16(0)] * (n + 1)
+V quasiprimefactoR = [UInt16(0)] * n
+V sigma2 = [UInt64(0)] * (n + 1)
+V totientchainlen = [UInt32(0), 1]
+V result = Array(UInt32(0) .< UInt32(n + 1))
+V smallestprimefactor = [UInt32(0)] * (n + 1)
+V smallestprimefactoR = [UInt32(0)] * n

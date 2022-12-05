@@ -727,6 +727,31 @@ class SymbolNode:
                             return '(' + r + ').step(' + self.children[3].to_str() + ')'
                         else:
                             return r
+                    if c00 == 'array':
+                        assert(c01 == 'array' and len(self.children) == 5 and self.children[1].token.category == Token.Category.STRING_LITERAL)
+                        ty = {'b':'Int8', 'B':'Byte', 'h':'Int16', 'H':'UInt16', 'l':'Int32', 'L':'UInt32', 'q':'Int64', 'Q':'UInt64', 'f':'Float32'}[self.children[1].token_str()[1:-1]]
+                        if self.children[3].is_parentheses() and self.children[3].children[0].symbol.id == 'for': # `array.array("H", (0 for _ in range(n + 1)))` -> `[UInt16(0)] * (n + 1)`
+                            s = self.children[3].children[0]
+                            if s.children[1].to_str() != '_':
+                                raise Error('loop variable must be `_`', s.children[1].token)
+                            c21 = s.children[2].children[1]
+                            return '[' + ty + '(' + s.children[0].to_str() + ')] * ' + (c21.to_str() if c21.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME) or c21.symbol.id == '(' else '(' + c21.to_str() + ')') # )
+                        elif self.children[3].is_list: # `array.array("L", [0, 1])` -> `[UInt32(0), 1]`
+                            s = self.children[3]
+                            res = '['
+                            for i in range(len(s.children)):
+                                if i == 0:
+                                    res += ty + '(' + s.children[i].to_str() + ')'
+                                else:
+                                    res += s.children[i].to_str()
+                                if i < len(s.children)-1:
+                                    res += ', '
+                            return res + ']'
+                        elif self.children[3].function_call and self.children[3].children[0].token_str() == 'range': # `array.array("L", range(n + 1))` -> `Array(UInt32(0) .< UInt32(n + 1))`
+                            return 'Array(' + ty + '(0) .< ' + ty + '(' + self.children[3].children[1].to_str() + '))'
+                        elif self.children[3].function_call and self.children[3].children[0].to_str() == 'itertools:repeat':# `array.array("L", itertools.repeat(0, n + 1))` -> `[UInt32(0)] * (n + 1)`
+                            c33 = self.children[3].children[3]
+                            return '[' + ty + '(' + self.children[3].children[1].to_str() + ')] * ' + (c33.to_str() if c33.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.NAME) or c33.symbol.id == '(' else '(' + c33.to_str() + ')') # )
                     if self.children[0].children[0].token.category == Token.Category.STRING_LITERAL and c01 == 'format':
                         return self.str_format()
 
@@ -2613,7 +2638,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct', 'bisect'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct', 'bisect', 'array'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 

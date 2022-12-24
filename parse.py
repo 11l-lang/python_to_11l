@@ -1019,7 +1019,9 @@ class SymbolNode:
 
                     return res + ')'
                 else:
+                    f_node = None
                     skip_first_self_argument = False
+
                     if ':' in func_name:
                         colon_pos = func_name.rfind(':')
                         module_name = func_name[:colon_pos].replace(':', '.')
@@ -1038,18 +1040,36 @@ class SymbolNode:
                             if s is None:
                                 tid = None
                                 break
+                    elif '.' in func_name:
+                        tid = None
+                        var = self.scope.find(func_name.split('.')[0])
+                        if var is not None and var.node is not None:
+                            if type(var.node) == ASTExprAssignment and var.node.expression.function_call:
+                                assert(var.node.dest_expression.token_str() == func_name.split('.')[0])
+                                cl = self.scope.find(var.node.expression.children[0].token_str())
+                                if cl is not None and cl.type == '(Class)':
+                                    assert(type(cl.node) == ASTClassDefinition)
+                                    method_name = func_name.split('.')[1]
+                                    for child in cl.node.children:
+                                        if type(child) == ASTFunctionDefinition and child.function_name == method_name:
+                                            skip_first_self_argument = True
+                                            f_node = child
+                                            break
                     else:
                         tid = self.scope.find(func_name.lstrip('@'))
-                    if tid is not None and type(tid.node) == ASTClassDefinition:
-                        for node in tid.node.children:
-                            if type(node) == ASTFunctionDefinition and node.function_name == '__init__':
-                                f_node = node
-                                skip_first_self_argument = True
-                                break
+
+                    if f_node is None:
+                        if tid is not None and type(tid.node) == ASTClassDefinition:
+                            for node in tid.node.children:
+                                if type(node) == ASTFunctionDefinition and node.function_name == '__init__':
+                                    f_node = node
+                                    skip_first_self_argument = True
+                                    break
+                            else:
+                                f_node = None
                         else:
-                            f_node = None
-                    else:
-                        f_node = tid.node if tid is not None and type(tid.node) == ASTFunctionDefinition else None
+                            f_node = tid.node if tid is not None and type(tid.node) == ASTFunctionDefinition else None
+
                     res = func_name + '('
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:

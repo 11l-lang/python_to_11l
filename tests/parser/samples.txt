@@ -1726,3 +1726,23 @@ V totientchainlen = [UInt32(0), 1]
 V result = Array(UInt32(0) .< UInt32(n + 1))
 V smallestprimefactor = [UInt32(0)] * (n + 1)
 V smallestprimefactoR = [UInt32(0)] * n
+
+
+# [https://rosettacode.org/wiki/Count_the_coins/0-1]
+from typing import List
+
+class Solver:
+    def count(self, rindices: List[int]) -> None:
+        self.count(rindices)
+
+solver = Solver()
+rindices = list(range(10))
+solver.count(rindices)
+===
+T Solver
+   F count([Int] &rindices) -> N
+      .count(&rindices)
+
+V solver = Solver()
+V rindices = Array(0.<10)
+solver.count(&rindices)

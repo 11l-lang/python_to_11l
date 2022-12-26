@@ -1746,3 +1746,11 @@ T Solver
 V solver = Solver()
 V rindices = Array(0.<10)
 solver.count(&rindices)
+
+
+# [https://rosettacode.org/wiki/Cyclops_numbers#Python]
+i = 100000
+print(f'... at position {i:,}')
+===
+V i = 100000
+print(f:‘... at position {commatize(i)}’)

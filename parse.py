@@ -518,7 +518,7 @@ class SymbolNode:
                                 commatize = True
                             i += 1
                         if commatize:
-                            r += '{commatize(' + child.to_str() + ')' + fmt + '}'
+                            r += '{commatize(' + child.to_str() + ')' + ('' if fmt == ':' else fmt) + '}'
                         else:
                             r += '{' + child.to_str() + fmt + '}'
                     i += 1

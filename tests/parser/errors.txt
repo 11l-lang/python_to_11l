@@ -389,3 +389,9 @@ class Obj:
      ^Error: only `staticmethod` decorator is supported
     def m(cls):
         pass
+
+
+text = ''
+print(f"{text(:10)}")
+             ^Error: there is no corresponding closing parenthesis/bracket/brace for `(`
+# )

@@ -203,6 +203,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                             s = j
                             colon_pos : Optional[int] = None
                             nesting_level = 0
+                            bracket_nesting_level = 0
                             while True:
                                 if source[j] == '{':
                                     nesting_level += 1
@@ -210,7 +211,11 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                                     if nesting_level == 0:
                                         break
                                     nesting_level -= 1
-                                elif source[j] == ':' and nesting_level == 0:
+                                elif source[j] == '[':
+                                    bracket_nesting_level += 1
+                                elif source[j] == ']':
+                                    bracket_nesting_level -= 1
+                                elif source[j] == ':' and nesting_level == 0 and bracket_nesting_level == 0:
                                     colon_pos = j
                                 j += 1
                             for new_token in tokenize(source[s:colon_pos if colon_pos is not None else j]):

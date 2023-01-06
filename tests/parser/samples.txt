@@ -1754,3 +1754,11 @@ print(f'... at position {i:,}')
 ===
 V i = 100000
 print(f:‘... at position {commatize(i)}’)
+
+
+# [https://rosettacode.org/wiki/Knuth-Morris-Pratt_string_search#Python]
+text, word = "GCTAGCTCTACGAGTCTA", "TCTA"
+print(f"`{word}` not found in `{text[:10]}...`")
+===
+V (text, word) = (‘GCTAGCTCTACGAGTCTA’, ‘TCTA’)
+print(‘`’word‘` not found in `’text[0.<10]‘...`’)

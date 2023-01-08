@@ -64,3 +64,14 @@ a = \1
 # {{
 print(f'a } b')
           ^Error: f-string: single '}' is not allowed
+
+
+class ASTIf:
+    pass
+if self.parent is None and isinstance(self.ast_parent, ASTIf) or (self.parent is not None and self.parent.symbol.id == 'if'):
+                                                                                                                              ^Error: expected an indented block
+
+
+print(f"{text(:10)}")
+             ^Error: there is no corresponding closing parenthesis/bracket/brace for `(`
+# )

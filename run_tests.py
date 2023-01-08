@@ -57,6 +57,9 @@ for file_name in ["tests/tokenizer/errors.txt", "tests/parser/errors.txt"]:
             else:
                 parse.parse_and_to_str(tokenizer.tokenize(test_source), test_source, file_name)
         except (tokenizer.Error, parse.Error) as e:
+            if (type(e) == tokenizer.Error) != (file_name == "tests/tokenizer/errors.txt"):
+                print("Wrong type of error in file '" + file_name + "' in test:\n" + test)
+                exit(1)
             was_error = True
             if error and 'Error: ' + e.message == error[0] and e.pos == error[1]:
                 print('OK (Error)')

@@ -1762,3 +1762,53 @@ print(f"`{word}` not found in `{text[:10]}...`")
 ===
 V (text, word) = (‘GCTAGCTCTACGAGTCTA’, ‘TCTA’)
 print(‘`’word‘` not found in `’text[0.<10]‘...`’)
+
+
+Char = str
+
+direction: str
+v = 1
+if v in (1, 5, 13):
+    direction = 'N'
+elif v in (2, 3, 7):
+    direction = 'E'
+elif v == 6:
+    direction = 'W'
+else:
+    raise RuntimeError('Illegal state.')
+
+dir = Char('E')
+if dir in ('N', 'W'):
+    v = 1
+elif dir == 'E':
+    v = 2
+
+dir2 = Char('E')
+if dir2 in ('NE', 'W'):
+    v = 1
+elif dir2 == 'E':
+    v = 2
+===
+String direction
+V v = 1
+S v
+   1, 5, 13
+      direction = ‘N’
+   2, 3, 7
+      direction = ‘E’
+   6
+      direction = ‘W’
+   E
+      X RuntimeError(‘Illegal state.’)
+
+S Char(‘E’)
+   ‘N’, ‘W’
+      v = 1
+   ‘E’
+      v = 2
+
+S Char(‘E’)
+   ‘NE’, ‘W’
+      v = 1
+   ‘E’
+      v = 2

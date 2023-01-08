@@ -1997,7 +1997,7 @@ class ASTSwitch(ASTNodeWithExpression):
     def to_str(self, indent):
         r = self.pre_nl + ' ' * (indent*3) + 'S ' + self.expression.to_str() + "\n"
         for case in self.cases:
-            r += case.children_to_str(indent + 1, 'E' if case.expression.token_str() == 'E' else case.expression.to_str())
+            r += case.children_to_str(indent + 1, 'E' if case.expression.token_str() == 'E' else case.expression.to_str()[1:-1] if case.expression.tuple else case.expression.to_str())
         return r
 
 class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):
@@ -3476,7 +3476,15 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                         if not (if_node.expression.symbol.id == '==' and if_node.expression.children[0].token.category == Token.Category.NAME and if_node.expression.children[0].token.value(source) == var_name
                                                                      and if_node.expression.children[1].token.category in (Token.Category.STRING_LITERAL, Token.Category.NUMERIC_LITERAL)):
                             transformation_possible = False
-                            break
+                            if if_node.expression.symbol.id == 'in' and if_node.expression.children[0].token.category == Token.Category.NAME and if_node.expression.children[0].token.value(source) == var_name \
+                                                                    and if_node.expression.children[1].tuple:
+                                for tuple_element in if_node.expression.children[1].children:
+                                    if tuple_element.token.category not in (Token.Category.STRING_LITERAL, Token.Category.NUMERIC_LITERAL):
+                                        break
+                                else:
+                                    transformation_possible = True
+                            if not transformation_possible:
+                                break
                         if_node = if_node.else_or_elif
                         if if_node is None or type(if_node) == ASTElse:
                             break

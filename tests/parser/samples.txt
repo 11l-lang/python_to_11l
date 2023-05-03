@@ -1839,3 +1839,12 @@ F calc(op, op1, op2)
 
 print(calc(Char(‘+’), 1, 2))
 calc(Char(‘*’), 1, 2)
+
+
+matches = ['a', 'b']
+for match in matches:
+    print(match)
+===
+V matches = [‘a’, ‘b’]
+L(match) matches
+   print(match)

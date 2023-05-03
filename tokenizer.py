@@ -255,6 +255,12 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                         category = Token.Category.KEYWORD
                 else:
                     category = Token.Category.NAME
+                    if source[lexem_start:i+1] == 'match ':
+                        j = i + 1
+                        while j < len(source) and source[j] == ' ':
+                            j += 1
+                        if source[j:j+1].isalpha() or source[j:j+1] == '_':
+                            category = Token.Category.KEYWORD
 
             elif (ch in '-+' and '0' <= source[i:i+1] <= '9') or '0' <= ch <= '9' or (ch == '.' and '0' <= source[i:i+1] <= '9'): # this is NUMERIC_LITERAL
                 if ch in '-+':

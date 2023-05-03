@@ -3117,6 +3117,27 @@ def parse_internal(this_node, one_line_scope = False):
                 if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
                     next_token()
 
+            elif token.value(source) == 'match':
+                node = ASTSwitch()
+                node.pre_nl = pre_nl()
+                next_token()
+                node.set_expression(expression())
+
+                advance(':')
+                assert(token.category == Token.Category.INDENT)
+                next_token()
+                while token.category != Token.Category.DEDENT:
+                    case = ASTSwitch.Case()
+                    case.parent = node
+                    advance('case')
+                    case.set_expression(expression())
+                    if case.expression.token_str() == '_':
+                        case.set_expression(SymbolNode(Token(0, 0, Token.Category.KEYWORD), 'E'))
+                        case.expression.symbol = symbol_table['(name)']
+                    new_scope(case)
+                    node.cases.append(case)
+                next_token()
+
             else:
                 raise Error('unrecognized statement started with keyword', token)
 

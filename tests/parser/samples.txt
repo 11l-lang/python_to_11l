@@ -1812,3 +1812,30 @@ S Char(‘E’)
       v = 1
    ‘E’
       v = 2
+
+
+Char = str
+
+def calc(op, op1, op2):
+    match op:
+        case '-':
+            return op1 - op2
+        case '+':
+            return op1 + op2
+        case _:
+            assert False, f'Unknown operation `{op}`'
+
+print(calc(Char('+'), 1, 2))
+calc(Char('*'), 1, 2)
+===
+F calc(op, op1, op2)
+   S op
+      ‘-’
+         R op1 - op2
+      ‘+’
+         R op1 + op2
+      E
+         assert(0B, ‘Unknown operation `’op‘`’)
+
+print(calc(Char(‘+’), 1, 2))
+calc(Char(‘*’), 1, 2)

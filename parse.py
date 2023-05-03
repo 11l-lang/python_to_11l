@@ -3137,6 +3137,9 @@ def parse_internal(this_node, one_line_scope = False):
                     new_scope(case)
                     node.cases.append(case)
                 next_token()
+                if token.category == Token.Category.STATEMENT_SEPARATOR: # Token.Category.EOF
+                    next_token()
+                    assert(token is None)
 
             else:
                 raise Error('unrecognized statement started with keyword', token)

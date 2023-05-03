@@ -255,7 +255,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
                         category = Token.Category.KEYWORD
                 else:
                     category = Token.Category.NAME
-                    if source[lexem_start:i+1] == 'match ' and tokens[-1].category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.INDENT, Token.Category.DEDENT):
+                    if source[lexem_start:i+1] == 'match ' and (len(tokens) == 0 or tokens[-1].category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.INDENT, Token.Category.DEDENT)):
                         j = i + 1
                         while j < len(source) and source[j] == ' ':
                             j += 1

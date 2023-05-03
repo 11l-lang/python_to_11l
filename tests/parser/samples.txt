@@ -1848,3 +1848,16 @@ for match in matches:
 V matches = [‘a’, ‘b’]
 L(match) matches
    print(match)
+
+
+match input('?'):
+    case '1':
+        print(1)
+    case '2':
+        print(2)
+===
+S input(‘?’)
+   ‘1’
+      print(1)
+   ‘2’
+      print(2)

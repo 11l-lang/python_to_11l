@@ -580,12 +580,12 @@ class SymbolNode:
                         return 'fract(' + self.children[0].children[0].to_str() + ') == 0'
                     if c01 == 'bit_length' and len(self.children) == 1: # `x.bit_length()` -> `bit_length(x)`
                         return 'bit_length(' + self.children[0].children[0].to_str() + ')'
-                    if c01 == 'to_bytes': # `i.to_bytes(length, byteorder)` -> `bytes_from_int(UIntXX(i))`
+                    if c01 == 'to_bytes': # `i.to_bytes(length, byteorder)` -> `UIntXX(i).to_bytes()`
                         assert(len(self.children) == 5)
                         if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little' if self.children[4] is None else
                                 self.children[4].token.category == Token.Category.STRING_LITERAL and self.children[4].token_str()[1:-1] == 'little' and self.children[3].token_str() == 'byteorder'):
                             raise Error("only 'little' byteorder supported so far", self.children[3].token)
-                        return 'bytes_from_int(UInt' + str(int(self.children[1].to_str()) * 8) + '(' + self.children[0].children[0].to_str() + '))'
+                        return 'UInt' + str(int(self.children[1].to_str()) * 8) + '(' + self.children[0].children[0].to_str() + ').to_bytes()'
                     if c01 == 'hex': # `b.hex()` -> `b.hex().lowercase()`
                         return self.children[0].to_str() + '().lowercase()'
                     if c01 == 'pop' and len(self.children) == 3 and self.children[1].to_str()[0] == '-':

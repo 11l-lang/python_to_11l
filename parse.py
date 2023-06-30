@@ -833,6 +833,8 @@ class SymbolNode:
                     func_name = 'Dict'
                 elif func_name == 'set': # `set() # KeyType` -> `Set[KeyType]()`
                     if len(self.children) == 3:
+                        if self.children[1].token.category == Token.Category.STRING_LITERAL:
+                            return 'Set(Array(' + self.children[1].to_str() + '))'
                         return 'Set(' + self.children[1].to_str() + ')'
                     assert(len(self.children) == 1)
                     if source[self.token.end + 2 : self.token.end + 3] != '#':

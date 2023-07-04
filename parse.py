@@ -2001,7 +2001,19 @@ class ASTSwitch(ASTNodeWithExpression):
     def to_str(self, indent):
         r = self.pre_nl + ' ' * (indent*3) + 'S ' + self.expression.to_str() + "\n"
         for case in self.cases:
-            r += case.children_to_str(indent + 1, 'E' if case.expression.token_str() == 'E' else case.expression.to_str()[1:-1] if case.expression.tuple else case.expression.to_str())
+            if case.expression.token_str() == 'E':
+                t = 'E'
+            elif case.expression.tuple:
+                t = case.expression.to_str()[1:-1]
+            else:
+                t = ''
+                e = case.expression
+                while e.token.category == Token.Category.OPERATOR_OR_DELIMITER:
+                    assert(e.symbol.id == '|' and len(e.children) == 2 and e.children[1].token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL))
+                    t = ', ' + e.children[1].to_str() + t
+                    e = e.children[0]
+                t = e.to_str() + t
+            r += case.children_to_str(indent + 1, t)
         return r
 
 class ASTWhile(ASTNodeWithChildren, ASTNodeWithExpression):

@@ -1874,3 +1874,24 @@ S input(‘?’)
 vowels_set = set('аеёиоуыэюяАЕЁИОУЫЭЮЯ')
 ===
 V vowels_set = Set(Array(‘аеёиоуыэюяАЕЁИОУЫЭЮЯ’))
+
+
+if (l := input()) != '':
+    print(l)
+
+code = ''
+while (line := input()) != '':
+    code += line + "\n"
+
+print('Your code:')
+print(code)
+===
+I (V l = input()) != ‘’
+   print(l)
+
+V code = ‘’
+L (V line = input()) != ‘’
+   code ‘’= line"\n"
+
+print(‘Your code:’)
+print(code)

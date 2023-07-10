@@ -1548,6 +1548,8 @@ class SymbolNode:
                     nfmtstr += fmtstr[i]
                     i += 1
                 return nfmtstr + '.format' + '('*add_parentheses + self.children[1].to_str() + ')'*add_parentheses
+            elif self.symbol.id == ':=':
+                return 'V ' + self.children[0].to_str() + ' = ' + self.children[1].to_str()
             else:
                 return self.children[0].to_str() + ' ' + {'and':'&', 'or':'|', 'in':'C', '//':'I/', '//=':'I/=', '**':'^', '**=':'^=', '^':'(+)', '^=':'(+)=', '|':'[|]', '|=':'[|]=', '&':'[&]', '&=':'[&]='}.get(self.symbol.id, self.symbol.id) + ' ' + self.children[1].to_str()
         elif len(self.children) == 3:
@@ -2286,6 +2288,7 @@ infix_r("**", 140)
 symbol(".", 150); symbol("[", 150); symbol("(", 150); symbol(")"); symbol("]")
 
 infix_r('+=', 10); infix_r('-=', 10); infix_r('*=', 10); infix_r('/=', 10); infix_r('//=', 10); infix_r('%=', 10); infix_r('>>=', 10); infix_r('<<=', 10); infix_r('**=', 10); infix_r('|=', 10); infix_r('^=', 10); infix_r('&=', 10)
+infix(':=', 10)
 
 symbol("(name)").nud = lambda self: self
 symbol("(literal)").nud = lambda self: self
@@ -2607,6 +2610,10 @@ def parse_internal(this_node, one_line_scope = False):
         scope = Scope(func_args)
         if type(node) == ASTClassDefinition:
             scope.is_class = True
+        elif type(node) in (ASTIf, ASTWhile):
+            if len(node.expression.children) == 2 and node.expression.children[0].is_parentheses() and node.expression.children[0].children[0].symbol.id == ':=':
+                scope.add_var(node.expression.children[0].children[0].children[0].token_str())
+                node.expression.children[0].children[0].children[0].skip_find_and_get_prefix = True
         scope.parent = prev_scope
         if token.category != Token.Category.INDENT: # handling of `if ...: break`, `def ...(...): return ...`, etc.
             if one_line_scope:

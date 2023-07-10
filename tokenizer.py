@@ -13,7 +13,7 @@ keywords = [ # https://docs.python.org/3/reference/lexical_analysis.html#keyword
 
 operators = [ # https://docs.python.org/3/reference/lexical_analysis.html#operators
              '+',       '-',       '*',       '**',      '/',       '//',      '%',      '@',
-             '<<',      '>>',      '&',       '|',       '^',       '~',
+             '<<',      '>>',      '&',       '|',       '^',       '~',       ':=',
              '<',       '>',       '<=',      '>=',      '==',      '!=',]
 #operators.sort(key = lambda x: len(x), reverse = True)
 

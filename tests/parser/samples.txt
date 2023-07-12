@@ -1895,3 +1895,8 @@ L (V line = input()) != ‘’
 
 print(‘Your code:’)
 print(code)
+
+
+print(oct(511))
+===
+print((‘0o’String(511, radix' 8)))

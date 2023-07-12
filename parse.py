@@ -889,6 +889,9 @@ class SymbolNode:
                 elif func_name == 'hex':
                     assert(len(self.children) == 3)
                     return '(‘0x’hex(' + self.children[1].to_str() + ').lowercase())'
+                elif func_name == 'oct':
+                    assert(len(self.children) == 3)
+                    return '(‘0o’String(' + self.children[1].to_str() + ", radix' 8))"
                 elif func_name == 'rotl32':
                     func_name = 'rotl'
                 elif func_name == 'rotr32':
@@ -3473,7 +3476,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
     scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
     for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
-                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod', 'nidiv', 'nmod',
+                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'oct', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod', 'nidiv', 'nmod',
                       'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref', 'exit', 'quit',
                       'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
         scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file

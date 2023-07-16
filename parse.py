@@ -558,6 +558,12 @@ class SymbolNode:
             return not((child1 is None or child1.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL))
                    and (child2 is None or child2.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL)))
 
+        def parenthesize_if_needed(child):
+            if child.token.category == Token.Category.NAME or child.symbol.id in ('[', '('): # )]
+                return child.to_str()
+            else:
+                return '(' + child.to_str() + ')'
+
         if self.symbol.id == '(': # )
             if self.function_call:
                 if self.children[0].symbol.id == '.':
@@ -580,6 +586,9 @@ class SymbolNode:
                         return 'fract(' + self.children[0].children[0].to_str() + ') == 0'
                     if c01 == 'bit_length' and len(self.children) == 1: # `x.bit_length()` -> `bit_length(x)`
                         return 'bit_length(' + self.children[0].children[0].to_str() + ')'
+                    if (c01 == 'count' and len(self.children) == 3 and self.children[1].token.category == Token.Category.STRING_LITERAL # `bin(x).count('1')` -> `x.popcount()`
+                            and self.children[1].token_str()[1:-1] == '1' and self.children[0].children[0].function_call and self.children[0].children[0].children[0].token_str() == 'bin'):
+                        return parenthesize_if_needed(self.children[0].children[0].children[1]) + '.popcount()'
                     if c01 == 'to_bytes': # `i.to_bytes(length, byteorder)` -> `UIntXX(i).to_bytes()`
                         assert(len(self.children) == 5)
                         if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little' if self.children[4] is None else
@@ -934,9 +943,9 @@ class SymbolNode:
                 elif func_name == 'super': # replace `super()` with `T.base`
                     assert(len(self.children) == 1)
                     return 'T.base'
-                elif func_name in ('next_permutation', 'is_sorted'): # `next_permutation(arr)` -> `arr.next_permutation()`
+                elif func_name in ('next_permutation', 'is_sorted', 'popcount'): # `next_permutation(arr)` -> `arr.next_permutation()`
                     assert(len(self.children) == 3)
-                    return self.children[1].to_str() + '.' + func_name + '()'
+                    return parenthesize_if_needed(self.children[1]) + '.' + func_name + '()'
                 elif func_name in ('nidiv', 'nmod'): # `nidiv(a, b)` -> `a -I/ b` and `nmod(a, b)` -> `a -% b`
                     assert(len(self.children) == 5)
                     p = self.children[1].token.category == Token.Category.OPERATOR_OR_DELIMITER and self.children[1].symbol.lbp < symbol_table['//'].lbp
@@ -3476,7 +3485,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
     scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
     for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
-                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'oct', 'rotl32', 'rotr32', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod', 'nidiv', 'nmod',
+                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'oct', 'rotl32', 'rotr32', 'popcount', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod', 'nidiv', 'nmod',
                       'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref', 'exit', 'quit',
                       'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
         scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file

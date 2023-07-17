@@ -558,12 +558,6 @@ class SymbolNode:
             return not((child1 is None or child1.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL))
                    and (child2 is None or child2.token.category in (Token.Category.NUMERIC_LITERAL, Token.Category.STRING_LITERAL)))
 
-        def parenthesize_if_needed(child):
-            if child.token.category == Token.Category.NAME or child.symbol.id in ('[', '('): # )]
-                return child.to_str()
-            else:
-                return '(' + child.to_str() + ')'
-
         if self.symbol.id == '(': # )
             if self.function_call:
                 if self.children[0].symbol.id == '.':
@@ -586,9 +580,9 @@ class SymbolNode:
                         return 'fract(' + self.children[0].children[0].to_str() + ') == 0'
                     if c01 == 'bit_length' and len(self.children) == 1: # `x.bit_length()` -> `bit_length(x)`
                         return 'bit_length(' + self.children[0].children[0].to_str() + ')'
-                    if (c01 == 'count' and len(self.children) == 3 and self.children[1].token.category == Token.Category.STRING_LITERAL # `bin(x).count('1')` -> `x.popcount()`
+                    if (c01 == 'count' and len(self.children) == 3 and self.children[1].token.category == Token.Category.STRING_LITERAL # `bin(x).count('1')` -> `bits:popcount(x)`
                             and self.children[1].token_str()[1:-1] == '1' and self.children[0].children[0].function_call and self.children[0].children[0].children[0].token_str() == 'bin'):
-                        return parenthesize_if_needed(self.children[0].children[0].children[1]) + '.popcount()'
+                        return 'bits:popcount(' + self.children[0].children[0].children[1].to_str() + ')'
                     if c01 == 'to_bytes': # `i.to_bytes(length, byteorder)` -> `UIntXX(i).to_bytes()`
                         assert(len(self.children) == 5)
                         if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little' if self.children[4] is None else
@@ -905,6 +899,8 @@ class SymbolNode:
                     func_name = 'rotl'
                 elif func_name == 'rotr32':
                     func_name = 'rotr'
+                elif func_name == 'popcount':
+                    func_name = 'bits:popcount'
                 elif func_name == 'quit':
                     func_name = 'exit'
                 elif func_name == 'print' and self.iterable_unpacking:
@@ -943,9 +939,9 @@ class SymbolNode:
                 elif func_name == 'super': # replace `super()` with `T.base`
                     assert(len(self.children) == 1)
                     return 'T.base'
-                elif func_name in ('next_permutation', 'is_sorted', 'popcount'): # `next_permutation(arr)` -> `arr.next_permutation()`
+                elif func_name in ('next_permutation', 'is_sorted'): # `next_permutation(arr)` -> `arr.next_permutation()`
                     assert(len(self.children) == 3)
-                    return parenthesize_if_needed(self.children[1]) + '.' + func_name + '()'
+                    return self.children[1].to_str() + '.' + func_name + '()'
                 elif func_name in ('nidiv', 'nmod'): # `nidiv(a, b)` -> `a -I/ b` and `nmod(a, b)` -> `a -% b`
                     assert(len(self.children) == 5)
                     p = self.children[1].token.category == Token.Category.OPERATOR_OR_DELIMITER and self.children[1].symbol.lbp < symbol_table['//'].lbp

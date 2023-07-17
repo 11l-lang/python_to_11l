@@ -578,8 +578,8 @@ class SymbolNode:
                         return self.children[0].to_str() + '_py()' # + '((‘ ’, "\\t", "\\r", "\\n"), group_delimiters\' 1B)'
                     if c01 == 'is_integer' and len(self.children) == 1: # `x.is_integer()` -> `fract(x) == 0`
                         return 'fract(' + self.children[0].children[0].to_str() + ') == 0'
-                    if c01 == 'bit_length' and len(self.children) == 1: # `x.bit_length()` -> `bit_length(x)`
-                        return 'bit_length(' + self.children[0].children[0].to_str() + ')'
+                    if c01 == 'bit_length' and len(self.children) == 1: # `x.bit_length()` -> `bits:length(x)`
+                        return 'bits:length(' + self.children[0].children[0].to_str() + ')'
                     if (c01 == 'count' and len(self.children) == 3 and self.children[1].token.category == Token.Category.STRING_LITERAL # `bin(x).count('1')` -> `bits:popcount(x)`
                             and self.children[1].token_str()[1:-1] == '1' and self.children[0].children[0].function_call and self.children[0].children[0].children[0].token_str() == 'bin'):
                         return 'bits:popcount(' + self.children[0].children[0].children[1].to_str() + ')'

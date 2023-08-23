@@ -640,11 +640,12 @@ class SymbolNode:
                     if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(2)`
                         if self.children[0].children[0].token.category == Token.Category.NAME:
                             tid = self.scope.find(self.children[0].children[0].token_str())
-                            if type(tid.node) == ASTExprAssignment and tid.node.expression.function_call and \
-                                                                       tid.node.expression.children[0].token_str() == 'open' and \
-                                                                   len(tid.node.expression.children) == 5 and \
-                                                                       tid.node.expression.children[4] is None and \
-                                                                       tid.node.expression.children[3].token_str()[-2] == 'b':
+                            if tid.type == 'BinaryIO' or \
+                              (type(tid.node) == ASTExprAssignment and tid.node.expression.function_call and
+                                                                       tid.node.expression.children[0].token_str() == 'open' and
+                                                                   len(tid.node.expression.children) == 5 and
+                                                                       tid.node.expression.children[4] is None and
+                                                                       tid.node.expression.children[3].token_str()[-2]) == 'b':
                                 return self.children[0].children[0].token_str() + '.' + c01 + '_bytes(' + self.children[1].to_str() + ')'
                         elif self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'self': # `out : BinaryIO...self.out.write(...)` -> `....out.write_bytes(...)`
                             tid = self.scope.find(self.children[0].children[0].children[1].token_str())

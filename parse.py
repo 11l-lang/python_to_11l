@@ -698,10 +698,10 @@ class SymbolNode:
                         return 'Counter(' + self.children[1].to_str() + ')'
                     if (c00 == 'int' or c00.startswith(('Int', 'UInt'))) and c01 == 'from_bytes':
                         assert(len(self.children) == 5)
-                        if not (self.children[3].token.category == Token.Category.STRING_LITERAL and self.children[3].token_str()[1:-1] == 'little' if self.children[4] is None else
-                                self.children[4].token.category == Token.Category.STRING_LITERAL and self.children[4].token_str()[1:-1] == 'little' and self.children[3].token_str() == 'byteorder'):
-                            raise Error("only 'little' byteorder supported so far", self.children[3].token)
-                        return ('Int' if c00 == 'int' else c00) + "(bytes' " + self.children[1].to_str() + ')'
+                        byteorder = self.children[3 if self.children[4] is None else 4].token_str()[1:-1]
+                        if byteorder not in ('little', 'big'):
+                            raise Error("only 'little' and 'big' byteorders are supported", self.children[3].token)
+                        return ('Int' if c00 == 'int' else c00) + '(bytes' + '_be' * (byteorder == 'big') + "' " + self.children[1].to_str() + ')'
                     if c00 == 'random' and c01 == 'shuffle':
                         return 'random:shuffle(&' + self.children[1].to_str() + ')'
                     if c00 == 'random' and c01 in ('randint', 'uniform'):

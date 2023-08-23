@@ -314,12 +314,12 @@ class SymbolNode:
                 if format_args != '':
                     format_args += ', '
                 if field_name.isdigit():
-                    format_args += self.children[1 + int(field_name)*2].to_str()
+                    format_arg = self.children[1 + int(field_name)*2].to_str()
                 else:
                     for j in range(1, len(self.children), 2): # `i` can not be used here :():
                         if self.children[j+1] is not None:
                             if self.children[j].token_str() == field_name:
-                                format_args += self.children[j+1].to_str()
+                                format_arg = self.children[j+1].to_str()
                                 break
                     else:
                         raise Error('argument `' + field_name + '` is not found', self.left_to_right_token())
@@ -365,7 +365,11 @@ class SymbolNode:
                         if before_period != 0:
                             nfmtstr += str(before_period)
                         else:
-                            nfmtstr += '.' # {{
+                            nfmtstr += '.'
+
+                        if fmtstr[i:i+1] == 'X':
+                            format_arg = 'hex(' + format_arg + ')'
+                            i += 1 # {{
 
                     if fmtstr[i] != '}':
                         tpos = self.children[0].children[0].token.start + i
@@ -373,6 +377,8 @@ class SymbolNode:
 
                 else:
                     nfmtstr += '.'
+
+                format_args += format_arg
 
                 i += 1
                 continue

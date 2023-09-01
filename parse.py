@@ -510,7 +510,7 @@ class SymbolNode:
                         r += child.token.value(source)
                     else:
                         fmt = ''
-                        commatize = False
+                        fmtf = ''
                         if i + 1 < len(self.children) and self.children[i + 1].token.category == Token.Category.STATEMENT_SEPARATOR:
                             fmt = ':' + self.children[i + 1].token.value(source).replace('>', '')
                             if '.' in fmt:
@@ -521,10 +521,13 @@ class SymbolNode:
                                 fmt = fmt[:-1] + '.6'
                             elif fmt[-1] == ',':
                                 fmt = fmt[:-1]
-                                commatize = True
+                                fmtf = 'commatize'
+                            elif fmt[-1] == 'g':
+                                fmt = fmt[:-1]
+                                fmtf = 'gconvfmt'
                             i += 1
-                        if commatize:
-                            r += '{commatize(' + child.to_str() + ')' + ('' if fmt == ':' else fmt) + '}'
+                        if fmtf != '':
+                            r += '{' + fmtf + '(' + child.to_str() + ')' + ('' if fmt == ':' else fmt) + '}'
                         else:
                             r += '{' + child.to_str() + fmt + '}'
                     i += 1

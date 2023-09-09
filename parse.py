@@ -742,6 +742,9 @@ class SymbolNode:
                             return '(' + r + ').step(' + self.children[3].to_str() + ')'
                         else:
                             return r
+                    if c00 == '.' and c01 == 'fromtimestamp' and len(self.children[0].children[0].children) == 2 \
+                        and self.children[0].children[0].children[0].token_str() == self.children[0].children[0].children[1].token_str() == 'datetime': # `datetime.datetime.fromtimestamp(s)` -> `Time(unix_time' s)`
+                        return "Time(unix_time' " + self.children[1].to_str() + ')'
                     if c00 == 'array':
                         assert(c01 == 'array' and len(self.children) == 5 and self.children[1].token.category == Token.Category.STRING_LITERAL)
                         ty = {'b':'Int8', 'B':'Byte', 'h':'Int16', 'H':'UInt16', 'l':'Int32', 'L':'UInt32', 'q':'Int64', 'Q':'UInt64', 'f':'Float32'}[self.children[1].token_str()[1:-1]]
@@ -1351,8 +1354,6 @@ class SymbolNode:
                         if self.children[0].children[1].token_str() == 'datetime':
                             if self.children[1].token_str() == 'now': # `datetime.datetime.now()` -> `Time()`
                                 return 'Time'
-                            if self.children[1].token_str() == 'fromtimestamp': # `datetime.datetime.fromtimestamp()` -> `time:from_unix_time()`
-                                return 'time:from_unix_time'
                             if self.children[1].token_str() == 'strptime': # `datetime.datetime.strptime()` -> `time:strptime()`
                                 return 'time:strptime'
                         if self.children[0].children[1].token_str() == 'date' and self.children[1].token_str() == 'today': # `datetime.date.today()` -> `time:today()`

@@ -604,7 +604,7 @@ class SymbolNode:
                         return self.children[0].to_str() + '((len)' + self.children[1].to_str() + ')'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi',
                             'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha',
-                            'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim',
+                            'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim', 'writerow':'write_row',
                             'appendleft':'append_left', 'extendleft':'extend_left', 'popleft':'pop_left', 'issubset':'is_subset', 'isdisjoint':'is_disjoint', 'setdefault':'set_default'}.get(c01, '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         c00 = self.children[0].children[0].to_str()
@@ -1347,7 +1347,7 @@ class SymbolNode:
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:sep': 'fs:path:sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir',
                     'os:mkdir': 'fs:create_dir', 'os:makedirs': 'fs:create_dirs', 'os:remove': 'fs:remove_file', 'os:rmdir': 'fs:remove_dir', 'os:rename': 'fs:rename', 'os:truncate': 'fs:resize_file',
                     'time:time': 'Time().unix_time', 'time:sleep': 'sleep', 'datetime:datetime': 'Time', 'datetime:date': 'Time', 'datetime:timedelta': 'TimeDelta', 're:compile': 're:',
-                    'random:random': 'random:', 'fractions:Fraction': 'Fraction'}.get(r, r)
+                    'random:random': 'random:', 'fractions:Fraction': 'Fraction', 'csv:reader': 'csv:readf', 'csv:writer': 'csv:WriterF'}.get(r, r)
 
                 if self.children[0].symbol.id == '.' and self.children[0].children[0].scope_prefix == ':::':
                     if self.children[0].children[0].token_str() == 'datetime':
@@ -2701,7 +2701,7 @@ def parse_internal(this_node, one_line_scope = False):
                     node.modules.append(module_name)
 
                     # Process module [transpile it if necessary]
-                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct', 'bisect', 'array', 'fractions'):
+                    if module_name not in ('sys', 'tempfile', 'os', 'time', 'datetime', 'math', 'cmath', 're', 'random', 'collections', 'heapq', 'itertools', 'eldf', 'struct', 'bisect', 'array', 'fractions', 'csv'):
                         if this_node.imported_modules is not None:
                             this_node.imported_modules.append(module_name)
 

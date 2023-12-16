@@ -876,8 +876,8 @@ class SymbolNode:
                             elif arg_name == 'newline':
                                 if mode not in ('‘w’', '"w"', '‘a’', '"a"'):
                                     raise Error("`newline` argument is only supported in 'w' and 'a' modes", self.children[i].token)
-                                if self.children[i+1].to_str() != '"\\n"':
-                                    raise Error(R'the only allowed value for `newline` argument is `"\n"`', self.children[i+1].token)
+                                if self.children[i+1].to_str() not in ('"\\n"', '‘’'):
+                                    raise Error('the only allowed values for `newline` argument are "\\n" and \'\'', self.children[i+1].token)
                                 self.children.pop(i+1)
                                 self.children.pop(i)
                                 break

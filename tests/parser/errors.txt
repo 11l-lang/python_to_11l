@@ -209,8 +209,8 @@ open("filename", newline = "\n")
                  ^Error: `newline` argument is only supported in 'w' and 'a' modes
 
 
-open("filename", 'w', newline = '')
-                                ^Error: the only allowed value for `newline` argument is `"\n"`
+open("filename", 'w', newline = "\r\n")
+                                ^Error: the only allowed values for `newline` argument are "\n" and ''
 
 
 animals : List[Animal] = []

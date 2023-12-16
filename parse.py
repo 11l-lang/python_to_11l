@@ -129,7 +129,7 @@ class Scope:
                 capture_level += 1
             s = s.parent
             if s is None:
-                if name in ('id',):
+                if name in ('id', 'next'):
                     return ''
                 raise Error('undefined identifier', token)
 
@@ -3622,6 +3622,30 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
                     node.children[index+1].expression.children[0] = child.expression
                     node.children.pop(index)
                     continue
+
+                if index < len(node.children) - 1 and type(child) == ASTExprAssignment and child.expression.function_call and child.expression.children[0].symbol.id == '.' \
+                        and child.expression.children[0].children[0].token_str() == 'csv' \
+                        and child.expression.children[0].children[1].token_str() == 'reader': # transform `reader = csv.reader(...); hdr = next(reader)` into `[String] hdr; V reader = csv:read(..., header' &hdr)`
+                    n = node.children[index+1]
+                    if type(n) == ASTExprAssignment and n.expression.function_call and n.expression.children[0].token_str() == 'next' \
+                                                                                   and n.expression.children[1].token_str() == child.dest_expression.token_str():
+                        # Remove `hdr = next(reader)`
+                        node.children.pop(index + 1)
+
+                        # Insert `[String] hdr`
+                        header_declaration = ASTTypeHint()
+                        header_declaration.pre_nl = child.pre_nl; child.pre_nl = ''
+                        header_declaration.type_token = n.dest_expression.token
+                        header_declaration.var = n.dest_expression.token_str()
+                        header_declaration.type = 'List'
+                        header_declaration.type_args = ['str']
+                        node.children.insert(index, header_declaration)
+
+                        # Append `header' &hdr` argument to `csv.reader(...)` call
+                        child.expression.append_child(SymbolNode(Token(0, 0, Token.Category.NAME), 'header'))
+                        child.expression.append_child(SymbolNode(n.dest_expression.token, '&' + n.dest_expression.token_str()))
+
+                        index += 1
 
                 if type(child) == ASTFor:
                     if len(child.loop_variables): # detect loop variables' changing/modification, and add qualifier `=` to changing ones

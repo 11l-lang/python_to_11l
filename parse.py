@@ -2087,6 +2087,10 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
                 sid = self.expression.scope.find(self.expression.token_str())
                 if sid.type in ('Dict', 'dict', 'DefaultDict', 'collections.defaultdict', 'Counter'):
                     r += '.keys()'
+            elif self.expression.function_call and self.expression.children[0].symbol.id == '.' \
+                                               and self.expression.children[0].children[0].token_str() == 'csv' \
+                                               and self.expression.children[0].children[1].token_str() == 'reader': # (
+                r = r[:-1] + ", skip_first_row' 0B)"
         elif self.expression.symbol.id == '(' and len(self.expression.children) == 1 and self.expression.children[0].symbol.id == '.' and len(self.expression.children[0].children) == 2 and self.expression.children[0].children[1].token_str() == 'items': # )
             r = 'L(' + ', '.join(self.loop_variables) + ') ' + self.expression.children[0].children[0].to_str()
         else:

@@ -1317,7 +1317,7 @@ class SymbolNode:
 
         if len(self.children) == 1:
             #return '(' + self.symbol.id + self.children[0].to_str() + ')'
-            return {'~':'(-)'}.get(self.symbol.id, self.symbol.id) + self.children[0].to_str()
+            return self.symbol.id + self.children[0].to_str()
         elif len(self.children) == 2:
             #return '(' + self.children[0].to_str() + ' ' + self.symbol.id + ' ' + self.children[1].to_str() + ')'
             if self.symbol.id == '.':

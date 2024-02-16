@@ -1347,7 +1347,7 @@ class SymbolNode:
                     return {'tempfile:gettempdir': 'fs:get_temp_dir', 'os:path': 'fs:path', 'os:pathsep': 'os:env_path_sep', 'os:sep': 'fs:path:sep', 'os:system': 'os:', 'os:listdir': 'fs:list_dir', 'os:walk': 'fs:walk_dir',
                     'os:mkdir': 'fs:create_dir', 'os:makedirs': 'fs:create_dirs', 'os:remove': 'fs:remove_file', 'os:rmdir': 'fs:remove_dir', 'os:rename': 'fs:rename', 'os:truncate': 'fs:resize_file',
                     'time:time': 'Time().unix_time', 'time:sleep': 'sleep', 'datetime:datetime': 'Time', 'datetime:date': 'Time', 'datetime:timedelta': 'TimeDelta', 're:compile': 're:',
-                    'random:random': 'random:', 'fractions:Fraction': 'Fraction', 'csv:reader': 'csv:readf', 'csv:DictReader': 'csv:readf', 'csv:writer': 'csv:WriterF'}.get(r, r)
+                    'random:random': 'random:', 'fractions:Fraction': 'Fraction', 'csv:reader': 'csv:read', 'csv:DictReader': 'csv:read', 'csv:writer': 'csv:Writer'}.get(r, r)
 
                 if self.children[0].symbol.id == '.' and self.children[0].children[0].scope_prefix == ':::':
                     if self.children[0].children[0].token_str() == 'datetime':

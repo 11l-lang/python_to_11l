@@ -642,9 +642,9 @@ class SymbolNode:
                    len(self.children[0].children[0].children) == 5 and \
                        self.children[0].children[0].children[4] is None and \
                        self.children[0].children[0].children[3].token_str() in ("'wb'", '"wb"') and \
-                       c01 == 'write': # transform `open(fname, 'wb').write(bytes)` into `File(fname, ‘w’).write_bytes(bytes)`
+                       c01 == 'write': # transform `open(fname, 'wb').write(bytes)` into `File(fname, WRITE).write_bytes(bytes)`
                         assert(self.children[0].children[0].children[2] is None)
-                        return 'File(' + self.children[0].children[0].children[1].to_str() + ', ‘w’).write_bytes(' + self.children[1].to_str() + ')'
+                        return 'File(' + self.children[0].children[0].children[1].to_str() + ', WRITE).write_bytes(' + self.children[1].to_str() + ')'
 
                     if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(2)`
                         if self.children[0].children[0].token.category == Token.Category.NAME:
@@ -885,15 +885,21 @@ class SymbolNode:
                     for i in range(1, len(self.children), 2):
                         if self.children[i+1] is None:
                             if i == 3:
-                                res += self.children[i].to_str().replace('b', '').replace('t', '') # there is neither binary nor text mode in 11l
+                                if mode[1] == 'r':
+                                    continue
+                                if mode[1] == 'w':
+                                    res += 'WRITE'
+                                elif mode[1] == 'a':
+                                    res += 'APPEND'
+                                else:
+                                    raise Error("wrong file open mode", self.children[i].token)
                             else:
                                 res += self.children[i].to_str()
                         else:
                             res += self.children[i].to_str() + "' "
                             res += self.children[i+1].to_str()
-                        if i < len(self.children)-2:
-                            res += ', '
-                    return res + ')'
+                        res += ', '
+                    return res[:-2] + ')'
                 elif func_name == 'product_of_a_seq':
                     func_name = 'product'
                 elif func_name == 'product':

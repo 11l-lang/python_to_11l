@@ -646,20 +646,21 @@ class SymbolNode:
                         assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ', WRITE).write_bytes(' + self.children[1].to_str() + ')'
 
-                    if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(2)`
+                    if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes_at_most(2)`
+                        method_name = 'read_bytes_at_most' if c01 == 'read' else 'write_bytes'
                         if self.children[0].children[0].token.category == Token.Category.NAME:
                             tid = self.scope.find(self.children[0].children[0].token_str())
-                            if tid.type == 'BinaryIO' or \
+                            if tid.type in ('BinaryIO', 'BinaryOutput') or \
                               (type(tid.node) == ASTExprAssignment and tid.node.expression.function_call and
                                                                        tid.node.expression.children[0].token_str() == 'open' and
                                                                    len(tid.node.expression.children) == 5 and
                                                                        tid.node.expression.children[4] is None and
                                                                        tid.node.expression.children[3].token_str()[-2]) == 'b':
-                                return self.children[0].children[0].token_str() + '.' + c01 + '_bytes(' + self.children[1].to_str() + ')'
+                                return self.children[0].children[0].token_str() + '.' + method_name + '(' + self.children[1].to_str() + ')'
                         elif self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'self': # `out : BinaryIO...self.out.write(...)` -> `....out.write_bytes(...)`
                             tid = self.scope.find(self.children[0].children[0].children[1].token_str())
-                            if tid.type == 'BinaryIO':
-                                return self.children[0].children[0].to_str() + '.' + c01 + '_bytes(' + self.children[1].to_str() + ')'
+                            if tid.type in ('BinaryIO', 'BinaryOutput'):
+                                return self.children[0].children[0].to_str() + '.' + method_name + '(' + self.children[1].to_str() + ')'
                     if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'
@@ -1779,7 +1780,7 @@ class ASTAssert(ASTNodeWithExpression):
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Bytes':'Bytes',
                        'Byte':'Byte', 'Int8':'Int8', 'Int16':'Int16', 'Int32':'Int32', 'Int64':'Int64', 'UInt16':'UInt16', 'UInt32':'UInt32', 'UInt64':'UInt64', 'BigInt':'BigInt', 'Size':'Size', 'USize':'USize',
-                       'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'PseudoTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'bytes':'[Byte]', 'bytearray':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'PseudoTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'BinaryOutput': 'FileWr', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):

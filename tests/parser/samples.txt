@@ -1118,10 +1118,10 @@ open('tmp.ppm', 'wb').write(b"P6\n")
 File(‘tmp.ppm’, WRITE).write_bytes(Bytes("P6\n"))
 
 
-from typing import BinaryIO
+from _11l import *
 
 class BitWriter:
-    out : BinaryIO
+    out : BinaryOutput
 
     def flush(self):
         self.out.write(b'A')
@@ -1133,7 +1133,7 @@ class BitReader:
         a = self.input.read(1)
 ===
 T BitWriter
-   File out
+   FileWr out
 
    F flush()
       .out.write_bytes('A'.code)
@@ -1142,7 +1142,7 @@ T BitReader
    File input
 
    F _readbit()
-      V a = .input.read_bytes(1)
+      V a = .input.read_bytes_at_most(1)
 
 
 print("="*54)

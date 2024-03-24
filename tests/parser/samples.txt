@@ -1133,7 +1133,7 @@ class BitReader:
         a = self.input.read(1)
 ===
 T BitWriter
-   FileWr out
+   File[WRITE] out
 
    F flush()
       .out.write_bytes('A'.code)

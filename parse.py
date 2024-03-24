@@ -1780,7 +1780,7 @@ class ASTAssert(ASTNodeWithExpression):
 
 python_types_to_11l = {'&':'&', 'int':'Int', 'float':'Float', 'complex':'Complex', 'str':'String', 'Char':'Char', 'Bytes':'Bytes',
                        'Byte':'Byte', 'Int8':'Int8', 'Int16':'Int16', 'Int32':'Int32', 'Int64':'Int64', 'UInt16':'UInt16', 'UInt32':'UInt32', 'UInt64':'UInt64', 'BigInt':'BigInt', 'Size':'Size', 'USize':'USize',
-                       'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'PseudoTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'BinaryOutput': 'FileWr', 'bytes':'[Byte]', 'bytearray':'[Byte]',
+                       'bool':'Bool', 'None':'N', 'List':'', 'list':'', 'ConstList':'', 'Tuple':'Tuple', 'tuple':'Tuple', 'MutTuple':'Tuple', 'PseudoTuple':'Tuple', 'Dict':'Dict', 'dict':'Dict', 'DefaultDict':'DefaultDict', 'collections.defaultdict':'DefaultDict', 'Set':'Set', 'set':'Set', 'IO[str]': 'File', 'BinaryIO': 'File', 'BinaryOutput': 'File[WRITE]', 'bytes':'[Byte]', 'bytearray':'[Byte]',
                        'datetime.date':'Time', 'datetime.datetime':'Time'}
 
 def trans_type(ty, scope, type_token):

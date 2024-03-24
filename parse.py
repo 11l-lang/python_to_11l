@@ -646,8 +646,8 @@ class SymbolNode:
                         assert(self.children[0].children[0].children[2] is None)
                         return 'File(' + self.children[0].children[0].children[1].to_str() + ', WRITE).write_bytes(' + self.children[1].to_str() + ')'
 
-                    if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes_at_most(2)`
-                        method_name = 'read_bytes_at_most' if c01 == 'read' else 'write_bytes'
+                    if c01 in ('read', 'write'): # `bmp = open('1.bmp', 'rb'); t = bmp.read(2)` -> `... bmp.read_bytes(at_most' 2)`
+                        method_name = "read_bytes(at_most' " if c01 == 'read' else 'write_bytes('
                         if self.children[0].children[0].token.category == Token.Category.NAME:
                             tid = self.scope.find(self.children[0].children[0].token_str())
                             if tid.type in ('BinaryIO', 'BinaryOutput') or \
@@ -656,11 +656,11 @@ class SymbolNode:
                                                                    len(tid.node.expression.children) == 5 and
                                                                        tid.node.expression.children[4] is None and
                                                                        tid.node.expression.children[3].token_str()[-2]) == 'b':
-                                return self.children[0].children[0].token_str() + '.' + method_name + '(' + self.children[1].to_str() + ')'
+                                return self.children[0].children[0].token_str() + '.' + method_name + self.children[1].to_str() + ')'
                         elif self.children[0].children[0].symbol.id == '.' and self.children[0].children[0].children[0].token_str() == 'self': # `out : BinaryIO...self.out.write(...)` -> `....out.write_bytes(...)`
                             tid = self.scope.find(self.children[0].children[0].children[1].token_str())
                             if tid.type in ('BinaryIO', 'BinaryOutput'):
-                                return self.children[0].children[0].to_str() + '.' + method_name + '(' + self.children[1].to_str() + ')'
+                                return self.children[0].children[0].to_str() + '.' + method_name + self.children[1].to_str() + ')'
                     if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'

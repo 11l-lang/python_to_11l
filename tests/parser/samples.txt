@@ -1142,7 +1142,7 @@ T BitReader
    File input
 
    F _readbit()
-      V a = .input.read_bytes_at_most(1)
+      V a = .input.read_bytes(at_most' 1)
 
 
 print("="*54)

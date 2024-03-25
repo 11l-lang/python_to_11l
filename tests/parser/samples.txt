@@ -1900,3 +1900,19 @@ print(code)
 print(oct(511))
 ===
 print((‘0o’String(511, radix' 8)))
+
+
+import os
+f = open('...')
+f.seek( 4, 1)
+f.seek( 4, os.SEEK_CUR)
+f.seek(-4, os.SEEK_END)
+f.seek( 0, os.SEEK_END)
+f.seek( 0, 2)
+===
+V f = File(‘...’)
+f. .seek(.tell() + 4)
+f. .seek(.tell() + 4)
+f. .seek(.get_file_size() + -4)
+f. .seek(.get_file_size())
+f. .seek(.get_file_size())

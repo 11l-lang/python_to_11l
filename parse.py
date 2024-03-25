@@ -661,6 +661,15 @@ class SymbolNode:
                             tid = self.scope.find(self.children[0].children[0].children[1].token_str())
                             if tid.type in ('BinaryIO', 'BinaryOutput'):
                                 return self.children[0].children[0].to_str() + '.' + method_name + self.children[1].to_str() + ')'
+                    if c01 == 'seek' and len(self.children) == 5 and ((self.children[3].symbol.id == '.' and self.children[3].children[0].token_str() == 'os') or self.children[3].token_str() in ('1', '2')):
+                        if self.children[3].symbol.id == '.':
+                            c3c1 = self.children[3].children[1].token_str()
+                            assert(c3c1 in ('SEEK_CUR', 'SEEK_END'))
+                            cur = c3c1 == 'SEEK_CUR'
+                        else:
+                            cur = self.children[3].token_str() == '1'
+                        c1s = self.children[1].to_str()
+                        return self.children[0].children[0].to_str() + '. .seek(.' + ('tell()' if cur else 'get_file_size()') + (' + ' + c1s)*(c1s != '0') + ')'
                     if c01 == 'total_seconds': # `delta.total_seconds()` -> `delta.seconds`
                         assert(len(self.children) == 1)
                         return self.children[0].children[0].to_str() + '.seconds'

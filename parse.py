@@ -2144,7 +2144,7 @@ class ASTException(ASTNodeWithExpression):
         self.pre_nl = pre_nl()
 
     def to_str(self, indent):
-        return self.pre_nl + ' ' * (indent*3) + 'X' + (' ' + self.expression.to_str() if self.expression is not None else '') + "\n"
+        return self.pre_nl + ' ' * (indent*3) + 'X.throw' + (' ' + self.expression.to_str() if self.expression is not None else '') + "\n"
 
     def walk_expressions(self, f):
         if self.expression is not None: f(self.expression)

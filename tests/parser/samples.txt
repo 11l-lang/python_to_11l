@@ -1379,7 +1379,7 @@ F solve(n)
          nn[i] = Char(digit' d)
          I Int(nn.join(‘’)) % 7 == 0
             R Int(nn.join(‘’))
-   X 0
+   X.throw 0
 
 
 # [https://codeforces.com/contest/1626/submission/146679304]
@@ -1799,7 +1799,7 @@ S v
    6
       direction = ‘W’
    E
-      X RuntimeError(‘Illegal state.’)
+      X.throw RuntimeError(‘Illegal state.’)
 
 S Char(‘E’)
    ‘N’, ‘W’

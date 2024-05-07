@@ -1740,7 +1740,7 @@ rindices = list(range(10))
 solver.count(rindices)
 ===
 T Solver
-   F count([Int] &rindices) -> N
+   F count([Int] &rindices) -> Void
       .count(&rindices)
 
 V solver = Solver()

@@ -245,7 +245,7 @@ def tokenize(source, newline_chars : List[int] = None, comments : List[Tuple[int
             elif ch.isalpha() or ch == '_': # this is NAME/IDENTIFIER or KEYWORD
                 while i < len(source):
                     ch = source[i]
-                    if not (ch.isalpha() or ch == '_' or '0' <= ch <= '9' or ch == '?'):
+                    if not (ch.isalpha() or ch == '_' or '0' <= ch <= '9'):
                         break
                     i += 1
                 if source[lexem_start:i] in keywords:

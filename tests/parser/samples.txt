@@ -1916,3 +1916,8 @@ f. .seek(.tell() + 4)
 f. .seek(.get_file_size() + -4)
 f. .seek(.get_file_size())
 f. .seek(.get_file_size())
+
+
+line = line.split(';', maxsplit = 1)[0]
+===
+V line = line.split(‘;’, 1 + 1)[0]

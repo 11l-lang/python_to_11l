@@ -582,7 +582,12 @@ class SymbolNode:
                                 return self.children[1].to_str()
                         return (self.children[1].to_str() if self.children[1].token.category == Token.Category.NAME or self.children[1].symbol.id == 'for' or self.children[1].function_call else '(' + self.children[1].to_str() + ')') + '.join(' + (self.children[0].children[0].children[0].to_str() if self.children[0].children[0].is_parentheses() else self.children[0].children[0].to_str()) + ')'
                     if c01 == 'split' and len(self.children) == 5 and not (self.children[0].children[0].token_str() == 're'): # split() second argument [limit] in 11l is similar to JavaScript, Ruby and PHP, but not Python
-                        return self.children[0].to_str() + '(' + self.children[1].to_str() + ', ' + self.children[3].to_str() + ' + 1)'
+                        if self.children[4] is None:
+                            maxsplit = self.children[3].to_str()
+                        else:
+                            assert(self.children[3].token_str() == 'maxsplit')
+                            maxsplit = self.children[4].to_str()
+                        return self.children[0].to_str() + '(' + self.children[1].to_str() + ', ' + maxsplit + ' + 1)'
                     if c01 == 'split' and len(self.children) == 1:
                         return self.children[0].to_str() + '_py()' # + '((‘ ’, "\\t", "\\r", "\\n"), group_delimiters\' 1B)'
                     if c01 == 'is_integer' and len(self.children) == 1: # `x.is_integer()` -> `fract(x) == 0`

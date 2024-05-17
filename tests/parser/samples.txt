@@ -1926,8 +1926,12 @@ V line = line.split(‘;’, 1 + 1)[0]
 class Token:
     pass
 indent_f: Callable[[List[Token]], str]
+
+print(indent_f([Token()]) + indent_f([Token()]))
 ===
 T Token
 {
 }
 ([Token] -> String) indent_f
+
+print(indent_f([Token()])‘’indent_f([Token()]))

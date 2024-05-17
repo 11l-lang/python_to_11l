@@ -236,10 +236,15 @@ class SymbolNode:
             if t0 is not None:
                 return t0
             return self.children[2].var_type()
-        if self.function_call and self.children[0].token_str() in ('str', 'chr'):
-            return 'str'
-        if self.function_call and self.children[0].token_str() == 'list':
-            return 'List'
+        if self.function_call:
+            if self.children[0].token_str() in ('str', 'chr'):
+                return 'str'
+            if self.children[0].token_str() == 'list':
+                return 'List'
+            id = self.scope.find(self.children[0].token_str())
+            if id is not None and isinstance(id.node, ASTTypeHint) and id.node.type == 'Callable':
+                if id.node.type_args[-1] == 'str':
+                    return 'str'
         if self.token.category == Token.Category.NAME:
             return self.scope.var_type(self.token_str())
         return None
@@ -3326,6 +3331,10 @@ def parse_internal(this_node, one_line_scope = False):
                     node.is_reference = True
                 if not (token is None or token.category in (Token.Category.STATEMENT_SEPARATOR, Token.Category.DEDENT)):
                     raise Error('expected end of statement', token)
+            if is_self:
+                scope.parent.vars.get(var).node = node
+            else:
+                scope.vars.get(var).node = node
             node.pre_nl = npre_nl
             node.type_token = type_token
             node.var = var

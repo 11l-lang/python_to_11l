@@ -1921,3 +1921,13 @@ f. .seek(.get_file_size())
 line = line.split(';', maxsplit = 1)[0]
 ===
 V line = line.split(‘;’, 1 + 1)[0]
+
+
+class Token:
+    pass
+indent_f: Callable[[List[Token]], str]
+===
+T Token
+{
+}
+([Token] -> String) indent_f

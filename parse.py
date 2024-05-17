@@ -1881,16 +1881,7 @@ class ASTTypeHint(ASTNode):
         return self.trans_type(self.type + ('[' + ', '.join(self.type_args) + ']' if len(self.type_args) else ''))
 
     def to_str_(self, indent, nullable = False):
-        if self.type == 'Callable':
-            if self.type_args[0] == '':
-                args = '()'
-            else:
-                tt = self.type_args[0].split(',')
-                args = ', '.join(self.trans_type(ty) for ty in tt)
-                if len(tt) > 1:
-                    args = '(' + args + ')'
-            return self.pre_nl + ' ' * (indent*3) + '(' + args + ' -> ' + self.trans_type(self.type_args[1]) + ') ' + self.var
-        elif self.type == 'Optional':
+        if self.type == 'Optional':
             assert(len(self.type_args) == 1)
             return self.pre_nl + ' ' * (indent*3) + self.trans_type(self.type_args[0]) + ('& ' if self.is_reference else '? ') + self.var
         elif self.type == 'ClassVar':
@@ -3292,22 +3283,12 @@ def parse_internal(this_node, one_line_scope = False):
             if token.value(source) == '[':
                 next_token()
                 while token.value(source) != ']':
-                    if token.value(source) == '[': # for `Callable[[str, int], str]`
-                        next_token()
-                        if token.value(source) == ']': # for `Callable[[], str]`
-                            type_arg = ''
-                        else:
-                            type_arg = token.value(source)
-                            next_token()
-                            while token.value(source) == ',':
-                                next_token()
-                                type_arg += ',' + token.value(source)
-                                next_token() # [
-                        advance(']')
-                        type_args.append(type_arg)
-                    elif peek_token().value(source) == '[': # ] # for `table : List[List[List[str]]] = []` and `empty_list : List[List[str]] = []`
+                    if token.value(source) != '[': # ]
                         type_arg = token.value(source)
                         next_token()
+                    else:
+                        type_arg = ''
+                    if token.value(source) == '[': # ] # for `table : List[List[List[str]]] = []`, `empty_list : List[List[str]] = []`, `Callable[[str, int], str]`, and `Callable[[], str]`
                         nesting_level = 0
                         while True:
                             type_arg += token.value(source)
@@ -3323,12 +3304,10 @@ def parse_internal(this_node, one_line_scope = False):
                                 type_arg += ' '
                                 next_token()
                             else:
-                                assert(token.category == Token.Category.NAME or (token.category == Token.Category.CONSTANT and token.value(source) == 'None'))
+                                assert(token.category in (Token.Category.NAME, Token.Category.STRING_LITERAL) or (token.category == Token.Category.CONSTANT and token.value(source) == 'None'))
                                 next_token()
-                        type_args.append(type_arg)
-                    else:
-                        type_args.append(token.value(source))
-                        next_token()
+                    type_args.append(type_arg)
+
                     while token.value(source) == '.': # for `datetime.date` in `dates : List[datetime.date] = []`
                         type_args[-1] += '.' + expected_name('subtype name') # [[
                     if token.value(source) not in ',]':

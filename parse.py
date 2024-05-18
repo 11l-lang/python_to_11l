@@ -2207,22 +2207,18 @@ class ASTClassDefinition(ASTNodeWithChildren):
         if self.base_class_name == 'NamedTuple':
             for c in self.children:
                 if type(c) != ASTTypeHint:
-                    break
-            else:
-                return pre_nl(self.tokeni) + 'T ' + self.class_name + ' = (' + ', '.join(c.trans_type_with_args() + ' ' + c.var for c in self.children) + ")\n"
+                    r = pre_nl(self.tokeni)
+                    r += ' ' * (indent*3) + 'T ' + self.class_name + '((' + ', '.join(c.trans_type_with_args() + ' ' + c.var for c in self.children if type(c) == ASTTypeHint) + "))\n"
+                    for cc in self.children:
+                        if type(cc) != ASTTypeHint:
+                            s = cc.to_str(indent+1)
+                            if cc is c:
+                                s = s.lstrip("\n") # remove pre_nl
+                            r += s
+                    return r
+            return pre_nl(self.tokeni) + 'T ' + self.class_name + ' = (' + ', '.join(c.trans_type_with_args() + ' ' + c.var for c in self.children) + ")\n"
 
-        r = self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name not in ('Exception', 'NamedTuple') else ''))
-
-        if self.base_class_name == 'NamedTuple':
-            members = []
-            for c in self.children:
-                if type(c) == ASTTypeHint:
-                    members.append(c.var)
-            r += ' ' * ((indent+1)*3) + 'F (' + ', '.join(members) + ")\n"
-            for m in members:
-                r += ' ' * ((indent+2)*3) + '.' + m + ' = ' + m + "\n"
-
-        return r
+        return self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name not in ('Exception', 'NamedTuple') else ''))
 
 class ASTPass(ASTNode):
     def to_str(self, indent):

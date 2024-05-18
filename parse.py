@@ -2204,6 +2204,13 @@ class ASTClassDefinition(ASTNodeWithChildren):
                 r += "\n"
             return r
 
+        if self.base_class_name == 'NamedTuple':
+            for c in self.children:
+                if type(c) != ASTTypeHint:
+                    break
+            else:
+                return pre_nl(self.tokeni) + 'T ' + self.class_name + ' = (' + ', '.join(c.trans_type_with_args() + ' ' + c.var for c in self.children) + ")\n"
+
         r = self.children_to_str(indent, 'T ' + self.class_name + ('(' + self.base_class_name + ')' if self.base_class_name and self.base_class_name not in ('Exception', 'NamedTuple') else ''))
 
         if self.base_class_name == 'NamedTuple':

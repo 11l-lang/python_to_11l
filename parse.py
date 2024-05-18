@@ -242,8 +242,10 @@ class SymbolNode:
             if self.children[0].token_str() == 'list':
                 return 'List'
             id = self.scope.find(self.children[0].token_str())
-            if id is not None and isinstance(id.node, ASTTypeHint) and id.node.type == 'Callable':
-                if id.node.type_args[-1] == 'str':
+            if id is not None:
+                if isinstance(id.node, ASTTypeHint) and id.node.type == 'Callable' and id.node.type_args[-1] == 'str':
+                    return 'str'
+                if isinstance(id.node, ASTFunctionDefinition) and id.node.function_return_type == 'str':
                     return 'str'
         if self.token.category == Token.Category.NAME:
             return self.scope.var_type(self.token_str())

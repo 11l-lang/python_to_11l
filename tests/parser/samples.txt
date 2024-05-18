@@ -1935,3 +1935,18 @@ T Token
 ([Token] -> String) indent_f
 
 print(indent_f([Token()])‘’indent_f([Token()]))
+
+
+def get_comment() -> str:
+    return ' '
+
+comment = get_comment()
+if True:
+    comment += get_comment()
+===
+F get_comment() -> String
+   R ‘ ’
+
+V comment = get_comment()
+I 1B
+   comment ‘’= get_comment()

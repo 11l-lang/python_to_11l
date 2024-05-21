@@ -237,7 +237,8 @@ class SymbolNode:
                 return t0
             return self.children[2].var_type()
         if self.function_call:
-            if self.children[0].token_str() in ('str', 'chr'):
+            if self.children[0].token_str() in ('str', 'chr') \
+                    or (self.children[0].symbol.id == '.' and self.children[0].children[1].token_str() == 'rstrip'): # for `annotated += indent + (...).rstrip(' ') + "\n"`
                 return 'str'
             if self.children[0].token_str() == 'list':
                 return 'List'
@@ -1861,6 +1862,8 @@ def trans_type(ty, scope, type_token):
         assert(ty.find(',') == -1)
 
         if '.' in ty: # for `category : Token.Category`
+            if ty[0].islower(): # for `errors: List[symasm.Error] = []`
+                ty = ty.replace('.', ':', 1)
             return ty # [-TODO: generalize-]
 
         id = scope.find(ty)

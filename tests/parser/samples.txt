@@ -1950,3 +1950,10 @@ F get_comment() -> String
 V comment = get_comment()
 I 1B
    comment ‘’= get_comment()
+
+
+def simd_to_symasm(mnem, ops: List[str]):
+    return ops[0] + mnem[-1] + ' |=| 0'
+===
+F simd_to_symasm(mnem, [String] &ops)
+   R ops[0]‘’mnem.last‘ |=| 0’

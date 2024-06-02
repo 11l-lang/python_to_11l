@@ -215,7 +215,7 @@ class SymbolNode:
         if self.is_list:
             return 'List'
         #if self.symbol.id == '[' and not self.is_list and self.children[0].var_type() == 'str': # ]
-        if self.symbol.id == '[' and self.children[0].var_type() == 'str': # ]
+        if self.symbol.id == '[' and self.children[0].var_type() in ('str', 'List[str]'): # ]
             return 'str'
         if self.slicing and self.children[0].var_type() == 'List':
             return 'List'

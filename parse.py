@@ -1694,6 +1694,13 @@ class ASTImport(ASTNode):
         #return ' ' * (indent*3) + '//import ' + ', '.join(self.modules) + "\n" # this is easier than avoid to add empty line here: `import sys\n\ndef f()` -> `\nF f()`
         return ''
 
+class ASTFromImportAll(ASTNode):
+    def __init__(self, module_name):
+        self.module_name = module_name
+
+    def to_str(self, indent):
+        return self.pre_nl + ' ' * (indent*3) + self.module_name + ":*\n"
+
 class ASTExpression(ASTNodeWithExpression):
     def to_str(self, indent):
         return self.pre_nl + ' ' * (indent*3) + self.expression.to_str() + "\n"
@@ -2649,6 +2656,8 @@ def led(self, left):
     return self
 symbol('is').led = led
 
+imported_py_files = set()
+
 def parse_internal(this_node, one_line_scope = False):
     global token
 
@@ -2788,26 +2797,82 @@ def parse_internal(this_node, one_line_scope = False):
                     next_token()
 
             elif token.value(source) == 'from':
+                if type(this_node) != ASTProgram:
+                    raise Error('only global `from` import statements are supported', token)
+                from_tokeni = tokeni
                 next_token()
                 module_name = token.value(source)
-                if module_name not in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l', 'l11l'):
-                    raise Error('`from` is not supported (try `import ' + module_name + '`)', tokens[tokeni-1])
+                if module_name == '.':
+                    next_token()
+                    module_name = token.value(source)
                 next_token()
                 advance('import')
-                while True:
-                    if token.category != Token.Category.NAME:
-                        if module_name in ('_11l', 'l11l') and token.value(source) == '*':
-                            scope.add_var('collections', True, '(Module)')
-                        else:
-                            raise Error('expected name', token)
-                    next_token()
-                    if token.value(source) != ',':
-                        break
+
+                if module_name not in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l', 'l11l'):
+                    if token.value(source) != '*':
+                        raise Error('`from` is not supported (try `import ' + module_name + '`)', tokens[from_tokeni])
                     next_token()
 
-                if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
-                    next_token()
-                continue
+                    def from_import_all(py_file_path):
+                        global imported_py_files
+                        if py_file_path in imported_py_files:
+                            return
+                        imported_py_files.add(py_file_path)
+                        module_source = open(py_file_path, encoding = 'utf-8-sig').read()
+                        s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, py_file_path, reset_scope = False)
+                        open(py_file_path.rsplit('.', 1)[0] + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
+
+                    module_file_name = os.path.join(os.path.dirname(file_name), module_name).replace('\\', '/')
+                    if not os.path.isdir(module_file_name):
+                        if not os.path.isfile(module_file_name + '.py'):
+                            raise Error(f"'{module_file_name}.py' is not found", tokens[from_tokeni])
+
+                        from_import_all(module_file_name + '.py')
+
+                    else:
+                        if not os.path.isfile(module_file_name + '/__init__.py'):
+                            raise Error(f"'{module_file_name}/__init__.py' is not found", tokens[from_tokeni])
+
+                        # Verify __init__.py
+                        disk_files = [fname for fname in os.listdir(module_file_name) if fname.endswith('.py') and fname != '__init__.py']
+                        py_files   = disk_files[:]
+
+                        for line in open(module_file_name + '/__init__.py', encoding = 'utf-8-sig').read().splitlines():
+                            m = re.fullmatch(r'from \.(\w+) import \*', line)
+                            if m is None:
+                                raise Error(f"unsupported line `{line}` in '{module_file_name}/__init__.py'", tokens[from_tokeni])
+                            if m.group(1) + '.py' not in disk_files:
+                                raise Error(f"file '{m.group(1)}.py' is not found in '{module_file_name}'", tokens[from_tokeni])
+                            disk_files.remove(m.group(1) + '.py')
+
+                        if len(disk_files) > 0:
+                            raise Error(f"file '{disk_files[0]}' is not imported in '{module_file_name}/__init__.py'", tokens[from_tokeni])
+
+                        # Transpile and import all Python files inside directory with __init__.py
+                        for py_file in py_files:
+                            from_import_all(module_file_name + '/' + py_file)
+
+                    node = ASTFromImportAll(module_name)
+                    node.pre_nl = pre_nl(from_tokeni)
+
+                    if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                        next_token()
+
+                else:
+                    while True:
+                        if token.category != Token.Category.NAME:
+                            if module_name in ('_11l', 'l11l') and token.value(source) == '*':
+                                scope.add_var('collections', True, '(Module)')
+                            else:
+                                raise Error('expected name', token)
+                        next_token()
+                        if token.value(source) != ',':
+                            break
+                        next_token()
+
+                    if token is not None and token.category == Token.Category.STATEMENT_SEPARATOR:
+                        next_token()
+                    continue
 
             elif token.value(source) == 'def':
                 node = ASTFunctionDefinition()
@@ -3499,7 +3564,7 @@ scope     = Scope(None)
 tokensn   = SymbolNode(token)
 file_name = ''
 
-def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
+def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None, reset_scope = True):
     if len(tokens_) == 0: return ASTProgram().to_str()
     global tokens, source, tokeni, token, scope, tokensn, file_name
     prev_tokens    = tokens
@@ -3513,18 +3578,19 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None):
     source = source_
     tokeni = -1
     token = None
-    scope = Scope(None)
-    for pytype in python_types_to_11l:
-        scope.add_var(pytype)
-    scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
-    scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
-    for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
-                      'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'oct', 'rotl32', 'rotr32', 'popcount', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod', 'nidiv', 'nmod',
-                      'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref', 'exit', 'quit',
-                      'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
-        scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file
-    for class_name in ['NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError']:
-        scope.add_var(class_name, True, '(Class)')
+    if reset_scope:
+        scope = Scope(None)
+        for pytype in python_types_to_11l:
+            scope.add_var(pytype)
+        scope.add_var('IntEnum', True, '(Class)', node = ASTClassDefinition())
+        scope.add_var('NamedTuple', True, '(Class)', node = ASTClassDefinition())
+        for func_name in ['isinstance', 'len', 'super', 'print', 'input', 'ord', 'chr', 'int_to_str_with_radix', 'range', 'zip', 'all', 'any', 'abs', 'pow', 'product_of_a_seq', 'product',# 'sum',
+                          'open', 'min', 'max', 'divmod', 'hex', 'hexu', 'oct', 'rotl32', 'rotr32', 'popcount', 'bin', 'map', 'sorted', 'reversed', 'filter', 'reduce', 'cmp_to_key', 'degrees', 'mod', 'nidiv', 'nmod',
+                          'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref', 'exit', 'quit',
+                          'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
+            scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file
+        for class_name in ['NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError']:
+            scope.add_var(class_name, True, '(Class)')
     file_name = file_name_
     next_token()
     p = ASTProgram()

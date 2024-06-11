@@ -1957,3 +1957,12 @@ def simd_to_symasm(mnem, ops: List[str]):
 ===
 F simd_to_symasm(mnem, [String] &ops)
    R ops[0]‘’mnem.last‘ |=| 0’
+
+
+def simd_to_symasm(mnem, ops: List[str]):
+    instruction_template, ty = ('<dst> v= <src>', 's')
+    ops[0] += ty
+===
+F simd_to_symasm(mnem, [String] &ops)
+   V (instruction_template, ty) = (‘<dst> v= <src>’, ‘s’)
+   ops[0] ‘’= ty

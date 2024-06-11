@@ -1463,8 +1463,8 @@ class SymbolNode:
                 return self.children[0].to_str() + '++'
             elif self.symbol.id == '-=' and self.children[1].token.value(source) == '1':
                 return '--' + self.children[0].to_str() if self.parent else self.children[0].to_str() + '--'
-            elif self.symbol.id == '+=' and ((self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'str')
-                                           or self.children[1].var_type() == 'str'):
+            elif self.symbol.id == '+=' and (self.children[0].var_type() == 'str'
+                                          or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'List':
                 return self.children[0].to_str() + ' [+]= ' + self.children[1].to_str()

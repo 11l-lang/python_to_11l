@@ -1966,3 +1966,16 @@ def simd_to_symasm(mnem, ops: List[str]):
 F simd_to_symasm(mnem, [String] &ops)
    V (instruction_template, ty) = (‘<dst> v= <src>’, ‘s’)
    ops[0] ‘’= ty
+
+
+def trans_char_keep_case(ch, fr: Char, to: Char) -> Char:
+    return chr(ord(ch) + (ord(to) - ord(fr)))
+
+for token in ['r8d']:
+    print(token[:-1] + trans_char_keep_case(token[-1], 'd', 'i'))
+===
+F trans_char_keep_case(ch, Char fr, Char to) -> Char
+   R Char(code' ch.code + (to.code - fr.code))
+
+L(token) [‘r8d’]
+   print(token[0 .< (len)-1]‘’trans_char_keep_case(token.last, ‘d’, ‘i’))

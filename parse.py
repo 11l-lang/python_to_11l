@@ -246,7 +246,7 @@ class SymbolNode:
             if id is not None:
                 if isinstance(id.node, ASTTypeHint) and id.node.type == 'Callable' and id.node.type_args[-1] == 'str':
                     return 'str'
-                if isinstance(id.node, ASTFunctionDefinition) and id.node.function_return_type == 'str':
+                if isinstance(id.node, ASTFunctionDefinition) and id.node.function_return_type in ('str', 'Char'):
                     return 'str'
         if self.token.category == Token.Category.NAME:
             return self.scope.var_type(self.token_str())

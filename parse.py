@@ -2818,6 +2818,10 @@ def parse_internal(this_node, one_line_scope = False):
                         if py_file_path in imported_py_files:
                             return
                         imported_py_files.add(py_file_path)
+
+                        if this_node.imported_modules is not None:
+                            this_node.imported_modules.append(py_file_path[:-3].replace('/', '.'))
+
                         module_source = open(py_file_path, encoding = 'utf-8-sig').read()
                         s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, py_file_path, reset_scope = False)
                         open(py_file_path.rsplit('.', 1)[0] + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)

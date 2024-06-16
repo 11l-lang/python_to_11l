@@ -413,7 +413,7 @@ class SymbolNode:
             res += '[' + self.children[5].to_str() + ' .+ ' + str(sz) + ']'
         return res + '))'
 
-    def to_str(self):
+    def to_str(self, indent = 0):
         # r = ''
         # prev_token_end = self.children[0].token.start
         # for c in self.children:
@@ -1261,11 +1261,26 @@ class SymbolNode:
                     res += '.filter(' + self.children[-1].children[1].to_str() + ' -> ' + self.children[-1].children[3].to_str() + ')'
                 return 'Dict(' + res + ', ' + c.children[1].to_str() + ' -> (' + self.children[0].to_str() + ', ' + c.children[0].to_str() + '))'
 
+            min_key_len = 10**9
+            max_key_len = 0
             res = '['
             for i in range(0, len(self.children), 2):
-                res += self.children[i].to_str() + ' = ' + self.children[i+1].to_str()
+                key = self.children[i].to_str()
+                min_key_len = min(min_key_len, len(key))
+                max_key_len = max(max_key_len, len(key))
+                res += key + ' = ' + self.children[i+1].to_str()
                 if i < len(self.children)-2:
                     res += ', '
+            if len(res) > 100:
+                if max_key_len - min_key_len > 20:
+                    max_key_len = 0
+                res = "[\n" # ]
+                for i in range(0, len(self.children), 2):
+                    res += ' ' * ((indent+1)*3) + self.children[i].to_str().ljust(max_key_len) + ' = ' + self.children[i+1].to_str()
+                    if i < len(self.children)-2:
+                        res += ','
+                    res += "\n"
+                res += ' ' * (indent*3)
             return res + ']'
 
         elif self.symbol.id == 'lambda':
@@ -1770,7 +1785,7 @@ class ASTExprAssignment(ASTNodeWithExpression):
             if self.expression.function_call and self.expression.children[0].token_str() == 'ref':
                 assert(len(self.expression.children) == 3)
                 return self.pre_nl + ' ' * (indent*3) + 'V& ' + self.dest_expression.to_str() + ' = ' + self.expression.children[1].to_str() + "\n"
-            return self.pre_nl + ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str() + "\n"
+            return self.pre_nl + ' ' * (indent*3) + 'V ' + self.dest_expression.to_str() + ' = ' + self.expression.to_str(indent) + "\n"
 
         assert(self.dest_expression.tuple and len(self.dest_expression.children) == len(self.add_vars))
         r = self.pre_nl + ' ' * (indent*3) + '('
@@ -2147,7 +2162,7 @@ class ASTReturn(ASTNodeWithExpression):
         self.pre_nl = pre_nl()
 
     def to_str(self, indent):
-        return self.pre_nl + ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str() if self.expression is not None else '') + "\n"
+        return self.pre_nl + ' ' * (indent*3) + 'R' + (' ' + self.expression.to_str(indent) if self.expression is not None else '') + "\n"
 
     def walk_expressions(self, f):
         if self.expression is not None: f(self.expression)

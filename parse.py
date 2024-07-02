@@ -617,7 +617,7 @@ class SymbolNode:
                         return self.children[0].to_str() + '((len)' + self.children[1].to_str() + ')'
                     repl = {'startswith':'starts_with', 'endswith':'ends_with', 'find':'findi', 'rfind':'rfindi',
                             'lower':'lowercase', 'islower':'is_lowercase', 'upper':'uppercase', 'isupper':'is_uppercase', 'isdigit':'is_digit', 'isalpha':'is_alpha',
-                            'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim', 'writerow':'write_row',
+                            'timestamp':'unix_time', 'lstrip':'ltrim', 'rstrip':'rtrim', 'strip':'trim', 'writerow':'write_row', 'isatty':'is_associated_with_console',
                             'appendleft':'append_left', 'extendleft':'extend_left', 'popleft':'pop_left', 'issubset':'is_subset', 'isdisjoint':'is_disjoint', 'setdefault':'set_default'}.get(c01, '')
                     if repl != '': # replace `startswith` with `starts_with`, `endswith` with `ends_with`, etc.
                         c00 = self.children[0].children[0].to_str()

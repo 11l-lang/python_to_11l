@@ -497,6 +497,8 @@ class SymbolNode:
                     return 'Bytes(‘' + s[2:-1] + '’)'
             else:
                 l = 3 if s[0:3] in ('"""', "'''") else 1
+                if l == 3 and s[3:5] == "\\\n" and not '\\' in s[4:]:
+                    return r'\/‘' + s[4:-3] + '’'
                 if '\\' in s or ('‘' in s and not '’' in s) or (not '‘' in s and '’' in s):
                     if s == R'"\\"' or s == R"'\\'":
                         return R'‘\’'

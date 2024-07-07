@@ -383,3 +383,7 @@ class Obj:
      ^Error: only `staticmethod` decorator is supported
     def m(cls):
         pass
+
+
+from collections import deque
+^Error: `from` is not supported (try `import collections`)

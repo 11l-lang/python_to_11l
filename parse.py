@@ -2010,9 +2010,19 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         if self.virtual_category == self.VirtualCategory.ABSTRACT:
             return pre_nl(self.tokeni) + ' ' * (indent*3) + 'F.virtual.abstract ' + self.function_name + '(' + fargs_str + ') -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni]) + "\n"
 
+        exceptions_spec = ''
+        if self.function_name == '__next__':
+            exceptions_spec = ' X(StopIteration)'
+            function_name = 'next'
+        elif self.function_name == '__iter__':
+            if len(self.children) == 1 and type(self.children[0]) == ASTReturn and self.children[0].expression.token_str() == 'self':
+                return ''
+            function_name = 'iter'
+        else:
+            function_name = {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__eq__':'==', '__ne__':'!=', '__add__':'+', '__sub__':'-', '__neg__':'-', '__mul__':'*', '__truediv__':'/', '__floordiv__':'I/', '__str__':'String'}.get(self.function_name, self.function_name)
+
         return "\n"*self.staticmethod + self.children_to_str(indent, ('F', 'F.virtual.new', 'F.virtual.override', '', 'F.virtual.assign')[self.virtual_category] + '.const'*self.is_const + ' ' + ':'*self.staticmethod +
-            {'__init__':'', '__call__':'()', '__and__':'[&]', '__lt__':'<', '__eq__':'==', '__ne__':'!=', '__add__':'+', '__sub__':'-', '__neg__':'-', '__mul__':'*', '__truediv__':'/', '__floordiv__':'I/', '__str__':'String'}.get(self.function_name, self.function_name)
-            + '(' + fargs_str + ')'
+            function_name + '(' + fargs_str + ')' + exceptions_spec
             + ('' if self.function_return_type == '' else ' -> ' + trans_type(self.function_return_type, self.scope, tokens[self.tokeni])))
 
 class ASTIf(ASTNodeWithChildren, ASTNodeWithExpression):
@@ -2174,7 +2184,8 @@ class ASTException(ASTNodeWithExpression):
         self.pre_nl = pre_nl()
 
     def to_str(self, indent):
-        return self.pre_nl + ' ' * (indent*3) + 'X.throw' + (' ' + self.expression.to_str() if self.expression is not None else '') + "\n"
+        exc = ' ' + self.expression.to_str() if self.expression is not None else ''
+        return self.pre_nl + ' ' * (indent*3) + 'X' + '.throw'*(exc != ' StopIteration()') + exc + "\n"
 
     def walk_expressions(self, f):
         if self.expression is not None: f(self.expression)
@@ -3610,7 +3621,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None, rese
                           'next_permutation', 'is_sorted', 'format_float', 'format_float_exp', 'move', 'ref', 'exit', 'quit',
                           'round', 'enumerate', 'hash', 'copy', 'deepcopy']:
             scope.add_var(func_name, True, '(Function)') # `'(Function)'` is needed just to prevent those functions from adding to .py_global_scope file
-        for class_name in ['NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError']:
+        for class_name in ['NotImplementedError', 'ValueError', 'IndexError', 'RuntimeError', 'AssertionError', 'StopIteration']:
             scope.add_var(class_name, True, '(Class)')
     file_name = file_name_
     next_token()

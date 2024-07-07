@@ -1979,3 +1979,41 @@ F trans_char_keep_case(ch, Char fr, Char to) -> Char
 
 L(token) [‘r8d’]
    print(token[0 .< (len)-1]‘’trans_char_keep_case(token.last, ‘d’, ‘i’))
+
+
+class RangeIterator:
+    cur: int
+    end: int
+
+    def __init__(self, start, end):
+        self.cur = start - 1
+        self.end = end
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.cur += 1
+        if self.cur == self.end:
+            raise StopIteration()
+        return self.cur
+
+for i in RangeIterator(1, 10):
+    print(i)
+===
+T RangeIterator
+   Int cur
+   Int end
+
+   F (start, end)
+      .cur = start - 1
+      .end = end
+
+   F next() X(StopIteration)
+      .cur++
+      I .cur == .end
+         X StopIteration()
+      R .cur
+
+L(i) RangeIterator(1, 10)
+   print(i)

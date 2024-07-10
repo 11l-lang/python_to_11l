@@ -2834,6 +2834,8 @@ def parse_internal(this_node, one_line_scope = False):
                     next_token()
                     module_name = token.value(source)
                 next_token()
+                while token.value(source) == '.':
+                    module_name += ':' + expected_name('submodule name')
                 advance('import')
 
                 if module_name not in ('typing', 'functools', 'itertools', 'enum', 'copy', '_11l', 'l11l'):
@@ -2854,7 +2856,7 @@ def parse_internal(this_node, one_line_scope = False):
                         s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, py_file_path, reset_scope = False)
                         open(py_file_path.rsplit('.', 1)[0] + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
 
-                    module_file_name = os.path.join(os.path.dirname(file_name), module_name).replace('\\', '/')
+                    module_file_name = os.path.join(os.path.dirname(file_name), module_name.replace(':', '/')).replace('\\', '/')
                     if not os.path.isdir(module_file_name):
                         if not os.path.isfile(module_file_name + '.py'):
                             raise Error(f"'{module_file_name}.py' is not found", tokens[from_tokeni])

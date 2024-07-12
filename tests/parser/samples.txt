@@ -2017,3 +2017,12 @@ T RangeIterator
 
 L(i) RangeIterator(1, 10)
    print(i)
+
+
+mnemonics: Dict[str, int] = {}
+mnem = 'mov'
+s = f'x{mnemonics[mnem]}'.rjust(6) + ' '
+===
+[String = Int] mnemonics
+V mnem = ‘mov’
+V s = (‘x’mnemonics[mnem]).rjust(6)‘ ’

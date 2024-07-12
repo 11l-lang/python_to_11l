@@ -568,6 +568,8 @@ class SymbolNode:
                             r += child.to_str()
                         else:
                             r += '(' + child.to_str() + ')'
+                if self.parent is not None and self.parent.symbol.id == '.':
+                    r = '(' + r + ')'
             return r
 
         if self.token.category == Token.Category.CONSTANT:

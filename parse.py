@@ -2855,8 +2855,11 @@ def parse_internal(this_node, one_line_scope = False):
                             this_node.imported_modules.append(py_file_path[:-3].replace('/', '.'))
 
                         module_source = open(py_file_path, encoding = 'utf-8-sig').read()
-                        s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, py_file_path, reset_scope = False)
+                        imported_modules = []
+                        s = parse_and_to_str(tokenizer.tokenize(module_source), module_source, py_file_path, imported_modules, reset_scope = False)
                         open(py_file_path.rsplit('.', 1)[0] + '.11l', 'w', encoding = 'utf-8', newline = "\n").write(s)
+                        if this_node.imported_modules is not None:
+                            this_node.imported_modules.extend(imported_modules)
 
                     module_file_name = os.path.join(os.path.dirname(file_name), module_name.replace(':', '/')).replace('\\', '/')
                     if not os.path.isdir(module_file_name):

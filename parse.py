@@ -3367,6 +3367,7 @@ def parse_internal(this_node, one_line_scope = False):
                 next_token()
             if ((node.dest_expression.token_str() == 'Char'   and node.expression.token_str() == 'str')   # skip `Char = str` statement
              or (node.dest_expression.token_str() in ('Byte', 'Int8', 'Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'BigInt', 'Size', 'USize') and node.expression.token_str() == 'int') # skip `... = int` statement
+             or (node.dest_expression.token_str() in ('SFloat', 'Float32') and node.expression.token_str() == 'float') # skip `... = float` statement
              or (node.dest_expression.token_str() == 'ConstList' and node.expression.token_str() == 'List') # skip `ConstList = List` statement
              or (node.dest_expression.token_str() == 'PseudoTuple' and node.expression.token_str() == 'tuple')): # skip `PseudoTuple = tuple` statement
                 continue

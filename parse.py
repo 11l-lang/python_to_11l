@@ -1477,7 +1477,7 @@ class SymbolNode:
 
             elif self.symbol.id == '+=' and self.children[1].var_type() == 'List':
                 c1 = self.children[1].to_str()
-                return self.children[0].to_str() + ' [+]= ' + (c1[1:-1] if len(self.children[1].children) == 1 and c1.startswith('[') else c1) # ]
+                return self.children[0].to_str() + '.' + ('append(' + c1[1:-1] if len(self.children[1].children) == 1 and c1.startswith('[') else 'extend(' + c1) + ')' # ])
             elif self.symbol.id == '+=' and self.children[1].token.value(source) == '1':
                 return self.children[0].to_str() + '++'
             elif self.symbol.id == '-=' and self.children[1].token.value(source) == '1':
@@ -1486,7 +1486,7 @@ class SymbolNode:
                                           or self.children[1].var_type() == 'str'):
                 return self.children[0].to_str() + ' ‘’= ' + self.children[1].to_str()
             elif self.symbol.id == '+=' and self.children[0].token.category == Token.Category.NAME and self.children[0].var_type() == 'List':
-                return self.children[0].to_str() + ' [+]= ' + self.children[1].to_str()
+                return self.children[0].to_str() + '.extend(' + self.children[1].to_str() + ')'
             elif self.symbol.id == '*' and (self.children[0].token.category == Token.Category.STRING_LITERAL or
                                             self.children[1].token.category == Token.Category.STRING_LITERAL): # for `print(10*" " + "left:" + 21*" " + "right: ")`
                 p = self.parent is not None and self.parent.symbol.id == '+'

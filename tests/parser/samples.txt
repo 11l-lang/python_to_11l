@@ -94,7 +94,7 @@ T Converter
          V i = 0
          L i < @instr.len
             I @instr[i] == "\r" | (@instr[i] == "\n" & @instr[i - 1 .< i] != "\r")
-               newline_chars [+]= i
+               newline_chars.append(i)
             i++
          R newline_chars
 
@@ -114,7 +114,7 @@ arr : List[int] = []
 arr += [1, 2]
 ===
 [Int] arr
-arr [+]= [1, 2]
+arr.extend([1, 2])
 
 
 (1,)
@@ -924,7 +924,7 @@ arr : List[int] = []
 arr += [i*2 for i in range(10)]
 ===
 [Int] arr
-arr [+]= (0.<10).map(i -> i * 2)
+arr.extend((0.<10).map(i -> i * 2))
 
 
 def get_f(a, b):
@@ -1528,11 +1528,11 @@ D = B[border:]
 D += C[border:]
 ===
 [Int] _c_
-_c_ [+]= [1] * 2
+_c_.extend([1] * 2)
 [Int] B
 V border = 3
 V D = B[border ..]
-D [+]= _c_[border ..]
+D.extend(_c_[border ..])
 
 
 ans = [1]

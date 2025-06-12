@@ -432,7 +432,7 @@ class SymbolNode:
                 ast_parent = parent.ast_parent
                 while ast_parent is not None:
                     if isinstance(ast_parent, ASTFunctionDefinition):
-                        if len(ast_parent.function_arguments) and ast_parent.function_arguments[0][0] == 'self' and isinstance(ast_parent.parent, ASTClassDefinition):
+                        if len(ast_parent.function_arguments) and ast_parent.function_arguments[0].name == 'self' and isinstance(ast_parent.parent, ASTClassDefinition):
                             return '(.)'
                         break
                     ast_parent = ast_parent.parent
@@ -1134,8 +1134,7 @@ class SymbolNode:
                             arg = self.children[i].to_str()
                             if f_node is not None and arg != 'N':
                                 farg = f_node.function_arguments[i//2 + int(skip_first_self_argument)]
-                                arg_type_name = farg[2]
-                                if arg_type_name.startswith(('List[', 'list[', 'Dict[', 'dict[', 'DefaultDict[', 'collections.defaultdict[')) or (arg_type_name != '' and trans_type(arg_type_name, self.scope, self.children[i].token).endswith('&')) or farg[3] == '&': # ]]]]]]
+                                if farg.type_name.startswith(('List[', 'list[', 'Dict[', 'dict[', 'DefaultDict[', 'collections.defaultdict[')) or (farg.type_name != '' and trans_type(farg.type_name, self.scope, self.children[i].token).endswith('&')) or farg.qualifier == '&': # ]]]]]]
                                     res += '&'
                             res += arg
                         else:
@@ -1144,8 +1143,8 @@ class SymbolNode:
                             arg = self.children[i+1].to_str()
                             if f_node is not None and arg != 'N':
                                 for farg in f_node.function_arguments:
-                                    if farg[0] == ci_str:
-                                        if farg[2].startswith(('List[', 'list[', 'Dict[', 'dict[', 'DefaultDict[', 'collections.defaultdict[')) or farg[3] == '&': # ]]]]]]
+                                    if farg.name == ci_str:
+                                        if farg.type_name.startswith(('List[', 'list[', 'Dict[', 'dict[', 'DefaultDict[', 'collections.defaultdict[')) or farg.qualifier == '&': # ]]]]]]
                                             res += '&'
                                         break
                             res += arg
@@ -1451,7 +1450,7 @@ class SymbolNode:
                     function_nesting = 0
                     while type(ast_parent) != ASTProgram:
                         if type(ast_parent) == ASTFunctionDefinition:
-                            if len(ast_parent.function_arguments) >= 1 and ast_parent.function_arguments[0][0] == 'self' and type(ast_parent.parent) != ASTClassDefinition:
+                            if len(ast_parent.function_arguments) >= 1 and ast_parent.function_arguments[0].name == 'self' and type(ast_parent.parent) != ASTClassDefinition:
                                 return 'self.' + self.children[1].to_str()
                             function_nesting += 1
                             if function_nesting == 2:
@@ -1946,7 +1945,22 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
     function_return_type : str = ''
     is_const = False
     staticmethod = False
-    function_arguments : List[Tuple[str, str, str, str]]# = [] # (arg_name, default_value, type_name, qualifier)
+    class Argument:
+        def __init__(self, arg_name, default_value, type_name, qualifier):
+            self.name = arg_name
+            self.default_value = default_value
+            self.type_name = type_name
+            self.qualifier = qualifier
+        def serialize_to_dict(self):
+            d = {'name': self.name}
+            def a(key, value):
+                if value != '':
+                    d[key] = value
+            a('default_value', self.default_value)
+            a('type', self.type_name)
+            a('qualifier', self.qualifier)
+            return d
+    function_arguments: List[Argument]# = []
     first_named_only_argument = None
     class VirtualCategory(IntEnum):
         NO = 0
@@ -1963,10 +1977,11 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         self.scope = scope
 
     def serialize_to_dict(self):
-        return {'function_arguments': ['; '.join(arg) for arg in self.function_arguments]}
+        return {'function_arguments': [arg.serialize_to_dict() for arg in self.function_arguments]}
 
     def deserialize_from_dict(self, d):
-        self.function_arguments = [arg.split('; ') for arg in d['function_arguments']]
+        for ad in d['function_arguments']:
+            self.function_arguments.append(self.Argument(ad['name'], ad.get('default_value', ''), ad.get('type', ''), ad.get('qualifier', '')))
 
     def to_str(self, indent):
         if self.function_name in ('move', 'ref') and type(self.parent) == ASTProgram:
@@ -1976,29 +1991,28 @@ class ASTFunctionDefinition(ASTNodeWithChildren):
         fargs = []
         for arg in self.function_arguments:
             farg = ''
-            default_value = arg[1]
-            if arg[2] != '':
-                ty = trans_type(arg[2], self.scope, tokens[self.tokeni])
+            if arg.type_name != '':
+                ty = trans_type(arg.type_name, self.scope, tokens[self.tokeni])
                 # if ty.endswith('&'): # fix error ‘expected function's argument name’ at `F trazar(Rayo& =r; prof)` (when there was `r = ...` instead of `rr = ...`)
-                #     arg = (arg[0].lstrip('='), arg[1], arg[2])
+                #     arg = (arg.name.lstrip('='), arg.default_value, arg.type_name)
                 if ty.endswith('&'): # `F.virtual.abstract intersecta(Rayo& r, Vector v)` -> `F.virtual.abstract intersecta(Rayo &r, Vector v)`
                     farg += ty[:-1] + ' &'
                 else:
                     farg += ty
-                    if default_value == 'N':
+                    if arg.default_value == 'N':
                         farg += '?'
-                        assert(arg[3] == '')
+                        assert(arg.qualifier == '')
                     farg += ' '
-                    if (ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) and not arg[2].startswith('ConstList[')) or arg[3] == '&': # ]]]]]
+                    if (ty.startswith(('Array[', '[', 'Dict[', 'DefaultDict[')) and not arg.type_name.startswith('ConstList[')) or arg.qualifier == '&': # ]]]]]
                         farg += '&'
             else:
-                if arg[3] == '&':
+                if arg.qualifier == '&':
                     farg += '&'
-            farg += arg[0] + ('' if default_value == '' else ' = ' + default_value)
-            fargs.append((farg, arg[2] != ''))
+            farg += arg.name + ('' if arg.default_value == '' else ' = ' + arg.default_value)
+            fargs.append((farg, arg.type_name != ''))
         if self.first_named_only_argument is not None:
             fargs.insert(self.first_named_only_argument, ("'", fargs[self.first_named_only_argument][1]))
-        if len(self.function_arguments) and self.function_arguments[0][0] == 'self' and type(self.parent) == ASTClassDefinition:
+        if len(self.function_arguments) and self.function_arguments[0].name == 'self' and type(self.parent) == ASTClassDefinition:
             fargs.pop(0)
 
         fargs_str = ''
@@ -2991,7 +3005,7 @@ def parse_internal(this_node, one_line_scope = False):
                         if was_default_argument and node.first_named_only_argument is None:
                             raise Error('non-default argument follows default argument', tokens[tokeni-1])
                         default = ''
-                    node.function_arguments.append((func_arg_name, default, type_, qualifier)) # ((
+                    node.function_arguments.append(ASTFunctionDefinition.Argument(func_arg_name, default, type_, qualifier)) # ((
                     if token.value(source) not in ',)':
                         raise Error('expected `,` or `)` in function\'s arguments list', token)
                     if token.value(source) == ',':
@@ -3012,9 +3026,9 @@ def parse_internal(this_node, one_line_scope = False):
                     node.is_const = True
 
                 node.parent = this_node
-                new_scope(node, map(lambda arg: (arg[0], arg[2]), node.function_arguments))
+                new_scope(node, map(lambda arg: (arg.name, arg.type_name), node.function_arguments))
 
-                if node.function_name in ('move', 'ref') and scope.parent is None and (len(node.function_arguments) != 1 or node.function_arguments[0][0] != 'obj'):
+                if node.function_name in ('move', 'ref') and scope.parent is None and (len(node.function_arguments) != 1 or node.function_arguments[0].name != 'obj'):
                     raise Error('function `' + node.function_name + '()` is special (please rename this function)', tokens[node.tokeni + 1])
 
                 if len(node.children) == 0: # needed for:
@@ -3045,10 +3059,10 @@ def parse_internal(this_node, one_line_scope = False):
                     if type(n) == ASTIf and n.expression.symbol.id == 'is' and n.expression.children[1].token_str() == 'None' and len(n.children) == 1 and type(n.children[0]) == ASTExprAssignment and n.else_or_elif is None:
                         nc = n.children[0]
                         if nc.dest_expression.token_str() == n.expression.children[0].token_str() and nc.expression.is_list:
-                            for i, farg in enumerate(node.function_arguments):
-                                if farg[0] == nc.dest_expression.token_str():
-                                    assert(farg[1] == 'N')
-                                    node.function_arguments[i] = (farg[0], trans_type(farg[2], node.scope, tokens[node.tokeni]) + '()' if len(nc.expression.children) == 0 else nc.expression.to_str(), farg[2], farg[3])
+                            for farg in node.function_arguments:
+                                if farg.name == nc.dest_expression.token_str():
+                                    assert(farg.default_value == 'N')
+                                    farg.default_value = trans_type(farg.type_name, node.scope, tokens[node.tokeni]) + '()' if len(nc.expression.children) == 0 else nc.expression.to_str()
                                     node.children.pop(0)
                                     break # `^L.continue`
                             else:         # ``
@@ -3849,7 +3863,7 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None, rese
 
                 elif type(child) == ASTFunctionDefinition: # detect function's arguments changing/modification inside this function, and add qualifier `=` to changing ones
                     if len(child.function_arguments):
-                        fargs = [farg[0] for farg in child.function_arguments]
+                        fargs = [farg.name for farg in child.function_arguments]
                         found = set()
                         def detect_arguments_modification(node):
                             if type(node) == ASTExprAssignment:
@@ -3872,9 +3886,9 @@ def parse_and_to_str(tokens_, source_, file_name_, imported_modules = None, rese
                             node.walk_children(detect_arguments_modification)
                         detect_arguments_modification(child)
                         for farg in found:
-                            fargi = fargs.index(farg)
-                            if child.function_arguments[fargi][3] != '&': # if argument already has `&` qualifier, then qualifier `=` is not needed
-                                child.function_arguments[fargi] = ('=' + child.function_arguments[fargi][0], child.function_arguments[fargi][1], child.function_arguments[fargi][2], child.function_arguments[fargi][3])
+                            arg = child.function_arguments[fargs.index(farg)]
+                            if arg.qualifier != '&': # if argument already has `&` qualifier, then qualifier `=` is not needed
+                                arg.name = '=' + arg.name
 
                 index += 1
 

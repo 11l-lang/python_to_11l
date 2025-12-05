@@ -205,6 +205,14 @@ class SymbolNode:
         self.scope = scope
         self.token_str_override = token_str_override
 
+    def var_type_with_args(self):
+        id = self.scope.find(self.token_str())
+        if id is not None:
+            if id.node is not None and isinstance(id.node, ASTTypeHint):
+                return id.node.type + ('[' + ', '.join(id.node.type_args) + ']' if len(id.node.type_args) else '')
+            return id.type
+        return None
+
     def var_type(self):
         if self.is_parentheses():
             return self.children[0].var_type()
@@ -215,7 +223,7 @@ class SymbolNode:
         if self.is_list:
             return 'List'
         #if self.symbol.id == '[' and not self.is_list and self.children[0].var_type() == 'str': # ]
-        if self.symbol.id == '[' and self.children[0].var_type() in ('str', 'List[str]'): # ]
+        if self.symbol.id == '[' and (self.children[0].var_type() in ('str', 'List[str]') or self.children[0].var_type_with_args() == 'List[str]'): # ]
             return 'str'
         if self.slicing and self.children[0].var_type() == 'List':
             return 'List'

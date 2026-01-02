@@ -755,7 +755,7 @@ for i in range(700_000):
     pass
 print(range(1, 1_000))
 ===
-L(i) 700'000
+L(i) 0.<700'000
 {
 }
 print(1..999)

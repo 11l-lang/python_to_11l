@@ -2160,9 +2160,7 @@ class ASTFor(ASTNodeWithChildren, ASTNodeWithExpression):
                 + ' ' * ((indent+1)*3) + 'I fs:is_dir(_fname) {' + self.loop_variables[1] + ' [+]= fs:path:base_name(_fname)} E ' + self.loop_variables[2] + ' [+]= fs:path:base_name(_fname)')
 
         if len(self.loop_variables) == 1:
-            r = 'L(' + self.loop_variables[0] + ') ' + (self.expression.children[1].to_str()
-                   if self.expression.function_call and self.expression.children[0].token_str() == 'range' and # `L(i) 100` instead of `L(i) 0.<100`
-                 len(self.expression.children) == 3 and self.expression.children[1].token.category == Token.Category.NUMERIC_LITERAL else self.expression.to_str())
+            r = 'L(' + self.loop_variables[0] + ') ' + self.expression.to_str()
             if self.expression.token.category == Token.Category.NAME:
                 sid = self.expression.scope.find(self.expression.token_str())
                 if sid.type in ('Dict', 'dict', 'DefaultDict', 'collections.defaultdict', 'Counter'):
